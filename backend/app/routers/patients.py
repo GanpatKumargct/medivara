@@ -1,19 +1,24 @@
-"""API-06 GET /patients and API-07 GET /patients/{patient_id}."""
+"""API-06 GET /patients, API-07 GET /patients/{patient_id} and API-41 POST /patients."""
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel, Field
 from sqlalchemy import case
 from sqlmodel import Session, func, select
 
+from app import audit
 from app.access import PatientAccess, effective_scopes, require_access
 from app.auth import CurrentUser, current_user
 from app.db import get_session
+from app.errors import ApiError
 from app.models import (
+    ALL_SCOPES,
     ConsultationBrief,
     DocumentStatus,
     GrantStatus,
     MedicalDocument,
     PatientAccessGrant,
     PatientProfile,
+    ProfileDetails,
     Reminder,
     ReminderStatus,
     Role,
@@ -21,6 +26,9 @@ from app.models import (
     iso_z,
 )
 from app.routers import API_PREFIX
+from app.validation import Relationship, clean_name, validation_error
+
+MAX_OWNED_PROFILES = 10
 
 router = APIRouter(prefix=API_PREFIX, tags=["patients"])
 
@@ -106,3 +114,54 @@ def get_patient(
         **patient_summary(session, access.patient, access.grant),
         "created_at": iso_z(access.patient.created_at),
     }
+
+
+class PatientCreate(BaseModel):
+    display_name: str
+    age_years: int | None = Field(None, ge=0, le=130)
+    relationship: Relationship
+
+
+@router.post("/patients", status_code=201)
+def create_patient(
+    body: PatientCreate,
+    request: Request,
+    current: CurrentUser = Depends(current_user),
+    session: Session = Depends(get_session),
+) -> dict:
+    """API-41: a family member's profile, owned and managed by the current user."""
+    display_name = clean_name(body.display_name)
+    if not 1 <= len(display_name) <= 80:
+        raise validation_error([("display_name", "must be between 1 and 80 characters")])
+    user = current.user
+    owned = session.exec(
+        select(func.count()).select_from(PatientProfile).where(PatientProfile.owner_user_id == user.id)
+    ).one()
+    if owned >= MAX_OWNED_PROFILES:
+        raise ApiError(409, "PROFILE_LIMIT", f"You can manage up to {MAX_OWNED_PROFILES} profiles.")
+    patient = PatientProfile(
+        owner_user_id=user.id, display_name=display_name, age_years=body.age_years, is_synthetic=True
+    )
+    session.add(patient)
+    session.flush()
+    grant = PatientAccessGrant(
+        patient_id=patient.id,
+        grantee_user_id=user.id,
+        role=Role.owner,
+        scopes=list(ALL_SCOPES),
+        granted_by_user_id=user.id,
+    )
+    session.add(grant)
+    session.add(ProfileDetails(patient_id=patient.id, relationship=body.relationship, updated_by_user_id=user.id))
+    session.commit()
+    session.refresh(patient)
+    session.refresh(grant)
+    audit.write(
+        request,
+        "patient.created",
+        actor_user_id=user.id,
+        patient_id=patient.id,
+        resource_type="patient",
+        resource_id=patient.id,
+    )
+    return {"patient": {**patient_summary(session, patient, grant), "created_at": iso_z(patient.created_at)}}

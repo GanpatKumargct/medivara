@@ -91,7 +91,7 @@ export function FlagBadge({ flag }: { flag: string }) {
 }
 
 /** Global AI-status banner. Polls health every 60 s (SCR-16, FR-040). */
-export function AiStatusBanner() {
+export function AiStatusBanner({ className }: { className?: string }) {
   const { data } = useQuery({
     queryKey: ['health'],
     queryFn: api.getHealth,
@@ -99,7 +99,7 @@ export function AiStatusBanner() {
   })
   if (!data || data.ai.available) return null
   return (
-    <div className="no-print">
+    <div className={'no-print ' + (className ?? '')}>
       <Alert tone="warn" icon={<IconInfo />}>
         {COPY['COPY-09']}
       </Alert>

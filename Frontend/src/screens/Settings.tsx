@@ -10,18 +10,25 @@ import { IconSettings } from '../components/icons'
 import { cn } from '../lib/cn'
 import { COPY } from '../lib/copy'
 
+const CONSENT_LABELS = {
+  terms_and_disclaimer: 'Terms and disclaimer',
+  ai_processing: 'AI processing',
+  voice_input: 'Voice input and voice conversation',
+} as const
+
 export default function Settings() {
   const { patientId } = useParams()
   const { me } = useAuth()
   const prefs = useDisplayPrefs()
   const healthQ = useQuery({ queryKey: ['health'], queryFn: api.getHealth })
+  const voiceQ = useQuery({ queryKey: ['voice-config'], queryFn: api.getVoiceConfig, staleTime: 60_000 })
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <PageHeader
         icon={<IconSettings className="h-5 w-5" />}
         title="Settings"
-        subtitle="Display, consent and privacy for this prototype."
+        subtitle="Display, layout, consent and privacy for this prototype."
       />
 
       <Card>
@@ -50,6 +57,25 @@ export default function Settings() {
               Reduce motion
               <input type="checkbox" checked={prefs.reducedMotion} onChange={(e) => prefs.setReducedMotion(e.target.checked)} className="h-5 w-5" />
             </label>
+            <div>
+              <p className="mb-1 text-sm text-ink">Sidebar position</p>
+              <div className="flex gap-2">
+                {(['left', 'right'] as const).map((side) => (
+                  <button
+                    key={side}
+                    onClick={() => prefs.setSidebarSide(side)}
+                    aria-pressed={prefs.sidebarSide === side}
+                    className={cn('flex-1 rounded-lg border px-3 py-2 text-sm capitalize', prefs.sidebarSide === side ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-ink-muted')}
+                  >
+                    {side}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="flex items-center justify-between text-sm text-ink">
+              Compact sidebar (icons only)
+              <input type="checkbox" checked={prefs.sidebarCollapsed} onChange={(e) => prefs.setSidebarCollapsed(e.target.checked)} className="h-5 w-5" />
+            </label>
           </div>
         </CardBody>
       </Card>
@@ -59,9 +85,9 @@ export default function Settings() {
           <h2 className="text-sm font-semibold text-ink">Consents</h2>
           <ul className="mt-2 divide-y divide-line text-sm">
             {me &&
-              (['terms_and_disclaimer', 'ai_processing'] as const).map((key) => (
+              (['terms_and_disclaimer', 'ai_processing', 'voice_input'] as const).map((key) => (
                 <li key={key} className="flex items-center justify-between py-2">
-                  <span className="text-ink">{key === 'ai_processing' ? 'AI processing' : 'Terms and disclaimer'}</span>
+                  <span className="text-ink">{CONSENT_LABELS[key]}</span>
                   <Badge tone={me.consents[key]?.granted ? 'ok' : 'neutral'}>
                     {me.consents[key]?.granted ? 'Granted' : 'Not granted'}
                   </Badge>
@@ -81,6 +107,7 @@ export default function Settings() {
             <p>{COPY['COPY-04']}</p>
             <p>Requests go through OpenRouter to AI providers that don’t store or train on them (<code>data_collection: deny</code>). Synthetic data only.</p>
             <p>Browser speech features are cloud services in some browsers.</p>
+            <p>{COPY['COPY-39']}</p>
           </div>
         </CardBody>
       </Card>
@@ -93,6 +120,7 @@ export default function Settings() {
             <div><dt className="text-xs text-ink-subtle">Profile</dt><dd className="text-ink">{patientId}</dd></div>
             <div><dt className="text-xs text-ink-subtle">Contract version</dt><dd className="text-ink">{healthQ.data?.contract_version ?? '—'}</dd></div>
             <div><dt className="text-xs text-ink-subtle">AI mode</dt><dd className="text-ink">{healthQ.data?.ai.mode ?? '—'}</dd></div>
+            <div><dt className="text-xs text-ink-subtle">Voice conversation</dt><dd className="text-ink">{voiceQ.data ? (voiceQ.data.available ? 'Available (ElevenLabs)' : 'Not set up') : '—'}</dd></div>
             <div><dt className="text-xs text-ink-subtle">Data</dt><dd className="text-ink">{api.API_MODE === 'dummy' ? 'Synthetic (in-browser dummy data)' : 'Synthetic (MediVara backend)'}</dd></div>
           </dl>
         </CardBody>

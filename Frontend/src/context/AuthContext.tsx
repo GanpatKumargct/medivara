@@ -16,6 +16,7 @@ interface AuthContextValue {
   me: MeResponse | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<MeResponse>
+  signUp: (email: string, password: string, displayName: string) => Promise<MeResponse>
   signOut: () => Promise<void>
   refreshMe: () => Promise<MeResponse | null>
 }
@@ -76,6 +77,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data
   }
 
+  const signUp = async (email: string, password: string, displayName: string) => {
+    await api.register(email, password, displayName)
+    qc.clear()
+    const data = await api.getMe()
+    setUser(data.user)
+    setMe(data)
+    return data
+  }
+
   const signOut = async () => {
     try {
       await api.logout()
@@ -88,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ user, me, loading, signIn, signOut, refreshMe }}>
+    <Ctx.Provider value={{ user, me, loading, signIn, signUp, signOut, refreshMe }}>
       {children}
     </Ctx.Provider>
   )

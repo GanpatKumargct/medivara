@@ -7,7 +7,24 @@ from fastapi import FastAPI
 from app.db import init_db
 from app.errors import install_error_handlers
 from app.middleware import RequestIdMiddleware, configure_logging
-from app.routers import API_PREFIX, access, ask, auth, briefs, documents, facts, health, patients, reminders, timeline
+from app.routers import (
+    API_PREFIX,
+    access,
+    ask,
+    auth,
+    briefs,
+    chats,
+    details,
+    documents,
+    facts,
+    health,
+    invitations,
+    patients,
+    reminders,
+    timeline,
+    vitals,
+    voice,
+)
 
 
 @asynccontextmanager
@@ -27,7 +44,24 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(RequestIdMiddleware)
     install_error_handlers(app)
-    routers = (health, auth, patients, documents, facts, timeline, briefs, ask, access, reminders)
+    routers = (
+        health,
+        auth,
+        patients,
+        documents,
+        facts,
+        timeline,
+        briefs,
+        ask,
+        access,
+        reminders,
+        # Redesign extensions (API contract §5b).
+        details,
+        vitals,
+        chats,
+        invitations,
+        voice,
+    )
     for module in routers:
         app.include_router(module.router)
     return app

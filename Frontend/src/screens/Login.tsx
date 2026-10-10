@@ -1,7 +1,7 @@
 // SCR-02 — Login and demo entry (FR-001). Demo cards sign in through the same
 // API-02 call; there is no client-side bypass.
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ApiError } from '../api/types'
 import { DEMO_CARDS, DEMO_PASSWORD, USERS } from '../dummy-data/accounts'
@@ -13,15 +13,17 @@ import { COPY } from '../lib/copy'
 export default function Login() {
   const { signIn, user, loading } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation() as { state?: { sessionEnded?: boolean } }
+  const location = useLocation() as { state?: { sessionEnded?: boolean; from?: string } }
+  // Return to an invitation (or any page) the user was sent from.
+  const from = location.state?.from?.startsWith('/') ? location.state.from : null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (!loading && user) navigate('/', { replace: true })
-  }, [loading, user, navigate])
+    if (!loading && user) navigate(from ?? '/', { replace: true })
+  }, [loading, user, navigate, from])
 
   async function submit(nextEmail: string, nextPassword: string) {
     setBusy(true)
@@ -29,7 +31,7 @@ export default function Login() {
     try {
       const me = await signIn(nextEmail, nextPassword)
       if (me.onboarding_required) navigate('/onboarding', { replace: true })
-      else navigate('/profiles', { replace: true })
+      else navigate(from ?? '/profiles', { replace: true })
     } catch (e) {
       if (e instanceof ApiError && e.code === 'RATE_LIMITED') setError(COPY['COPY-34f'])
       else setError(e instanceof ApiError ? COPY['COPY-34a'] : 'Something went wrong. Try again.')
@@ -98,6 +100,12 @@ export default function Login() {
               Sign in
             </Button>
           </form>
+          <p className="mt-4 text-center text-sm text-ink-muted">
+            New to MediVara?{' '}
+            <Link to="/signup" state={from ? { from } : undefined} className="font-semibold text-brand-700 hover:underline">
+              Create an account
+            </Link>
+          </p>
         </CardBody>
       </Card>
 

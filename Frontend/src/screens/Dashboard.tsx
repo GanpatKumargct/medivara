@@ -1,4 +1,4 @@
-// SCR-04 — Patient dashboard (FR-004). Redesigned as the product showcase:
+// SCR-04 — Overview (FR-004; the chat is now the home screen). Product showcase:
 // gradient hero, data-viz stat cards, a neutral health snapshot and a rich
 // recent-documents list. Controls the viewer's scopes don't allow stay hidden.
 import type { ReactNode } from 'react'
@@ -77,7 +77,7 @@ export default function Dashboard() {
                 <IconBrief className="h-4 w-4" /> Consultation brief
               </button>
             </Link>
-            <Link to={`${base}/ask`}>
+            <Link to={base}>
               <button className="mv-press inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/25 transition hover:bg-white/25">
                 <IconAsk className="h-4 w-4" /> Ask a question
               </button>

@@ -54,6 +54,22 @@ class Settings(BaseSettings):
     sample_manifest: str = "../demo-data/manifest.json"
     snapshot_dir: str = "snapshots"
 
+    # Invitation emails (API-54). Sent only when smtp_host and smtp_from are both set.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_starttls: bool = True
+    # Where the frontend runs; invitation links are {app_base_url}/invite/{invitation_id}.
+    app_base_url: str = "http://localhost:5173"
+
+    # Voice conversation through an ElevenLabs Agent (API-60/61). Never returned or logged.
+    elevenlabs_api_key: str = ""
+    elevenlabs_agent_id: str = ""
+    elevenlabs_base_url: str = "https://api.elevenlabs.io"
+    timeout_voice_s: int = 10
+
     @field_validator("storage_dir", "database_path", "golden_cache_dir", "sample_manifest", "snapshot_dir")
     @classmethod
     def _anchor_to_backend(cls, value: str) -> str:

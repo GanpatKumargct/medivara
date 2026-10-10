@@ -36,6 +36,16 @@ export default {
           sunken: '#EDF3FB',
         },
         line: '#E2E8F0',
+        // Calm, Claude-desktop-style app chrome: a warm-neutral canvas and sidebar
+        // so the brand blue is reserved for actions and highlights.
+        canvas: {
+          DEFAULT: '#FAFAF8',
+          sidebar: '#F3F3F0',
+          hover: '#E9E9E4',
+          active: '#E2E3DD',
+          border: '#E5E5E0',
+          bubble: '#EEF1F5',
+        },
         ok: { fg: '#0F7A54', bg: '#E6F8F0', border: '#9EE3C4' },
         warn: { fg: '#8A5300', bg: '#FDF2E2', border: '#F0C983' },
         danger: { fg: '#B0152A', bg: '#FDECEE', border: '#F0A9B1' },
@@ -59,6 +69,7 @@ export default {
         'grad-violet': 'linear-gradient(135deg, #818CF8 0%, #5B46C9 100%)',
       },
       fontFamily: {
+        serif: ['"Source Serif 4"', 'Georgia', 'Cambria', '"Times New Roman"', 'serif'],
         sans: [
           'Inter',
           'system-ui',
@@ -78,6 +89,7 @@ export default {
         card: '0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.06)',
         pop: '0 12px 34px rgba(11, 59, 140, 0.16)',
         brand: '0 8px 20px rgba(2, 132, 247, 0.22)',
+        composer: '0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 24px rgba(15, 23, 42, 0.07)',
       },
     },
   },

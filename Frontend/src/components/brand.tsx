@@ -2,11 +2,13 @@
 // supplied PNG, used for large brand moments (login, onboarding). The compact
 // LogoMark is an SVG lockup in the brand gradient for the header, sidebar and
 // mobile nav, where the full stacked logo would be illegible.
+import { useId } from 'react'
 import { cn } from '../lib/cn'
 
 /** Compact square app mark: gradient tile with a white "M" and a care cross. */
 export function LogoMark({ className, size = 32 }: { className?: string; size?: number }) {
-  const id = 'mv-grad'
+  // Unique per instance: a shared id breaks every copy when the first one is display:none.
+  const id = `mv-grad-${useId().replace(/:/g, '')}`
   return (
     <svg
       width={size}
