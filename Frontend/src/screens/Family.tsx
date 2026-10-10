@@ -7,8 +7,10 @@ import { ApiError } from '../api/types'
 import type { Grant, Scope } from '../api/types'
 import * as api from '../api/endpoints'
 import { useToast } from '../context/ToastContext'
-import { Alert, Badge, Button, Card, CardBody, Checkbox, Dialog, Field, Input, Tabs } from '../components/ui'
+import { Badge, Button, Card, CardBody, Checkbox, Dialog, Field, Input, Tabs } from '../components/ui'
 import { AccessDeniedPage, ErrorBanner, LoadingRows } from '../components/states'
+import { PageHeader } from '../components/page-header'
+import { IconUsers } from '../components/icons'
 import { COPY, fill } from '../lib/copy'
 import { formatTimestampDate } from '../lib/format'
 
@@ -30,7 +32,11 @@ export default function Family() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-ink">Family sharing</h1>
+      <PageHeader
+        icon={<IconUsers className="h-5 w-5" />}
+        title="Family sharing"
+        subtitle="Decide who can see this profile and what they can do. Revoke access any time."
+      />
       <Tabs
         tabs={[{ id: 'people', label: 'People with access' }, { id: 'log', label: 'Access log' }]}
         active={tab}

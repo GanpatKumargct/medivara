@@ -85,3 +85,30 @@ export const IconExternal = (p: SVGProps<SVGSVGElement>) => (
 export const IconLock = (p: SVGProps<SVGSVGElement>) => (
   <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></Icon>
 )
+export const IconMenu = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M3 6h18M3 12h18M3 18h18" /></Icon>
+)
+export const IconLogout = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><path d="M16 17l5-5-5-5M21 12H9" /></Icon>
+)
+export const IconChevronRight = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M9 18l6-6-6-6" /></Icon>
+)
+export const IconSparkle = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /></Icon>
+)
+export const IconTrendDown = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M3 7l6 6 4-4 8 8" /><path d="M21 17v-4h-4" /></Icon>
+)
+export const IconTrendUp = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M3 17l6-6 4 4 8-8" /><path d="M21 7v4h-4" /></Icon>
+)
+export const IconMic = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0014 0M12 18v3" /></Icon>
+)
+export const IconKeyboard = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="2" y="6" width="20" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /></Icon>
+)
+export const IconSend = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" /></Icon>
+)

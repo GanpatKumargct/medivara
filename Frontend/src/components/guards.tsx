@@ -1,14 +1,10 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Spinner } from './ui'
+import { Splash } from './Splash'
 
 function FullPageSpinner() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Spinner className="h-8 w-8 text-brand-600" />
-    </div>
-  )
+  return <Splash />
 }
 
 /** Protect a route: must be signed in and past onboarding. */

@@ -89,11 +89,11 @@ function EvidenceDrawer({
 }) {
   return (
     <div className="no-print fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-ink/30" onClick={onClose} aria-hidden="true" />
+      <div className="animate-fade-in absolute inset-0 bg-ink/30 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
       <aside
         role="dialog"
         aria-label="Evidence"
-        className="relative z-10 flex h-full w-full max-w-md flex-col bg-surface shadow-pop"
+        className="animate-slide-in-right relative z-10 flex h-full w-full max-w-md flex-col bg-surface shadow-pop"
       >
         <header className="flex items-center justify-between border-b border-line p-4">
           <h2 className="text-base font-semibold text-ink">Evidence</h2>

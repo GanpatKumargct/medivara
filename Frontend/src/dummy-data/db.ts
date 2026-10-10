@@ -51,7 +51,6 @@ export function getDocumentDetail(
   const sum = (db.documents[patientId] ?? []).find((d) => d.id === documentId)
   if (!sum) return null
   const pages = db.pages[documentId] ?? []
-  const facts = db.facts[documentId] ?? []
 
   const headerLine = pages[0]?.text ?? ''
   const detail: DocumentDetail = {

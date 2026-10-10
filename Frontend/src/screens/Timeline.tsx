@@ -7,7 +7,10 @@ import type { TimelineChange, TimelineEvent } from '../api/types'
 import * as api from '../api/endpoints'
 import { Badge, Button, Card, CardBody } from '../components/ui'
 import { EmptyState, ErrorBanner, LoadingRows } from '../components/states'
+import { PageHeader } from '../components/page-header'
+import { IconTimeline } from '../components/icons'
 import { cn } from '../lib/cn'
+import { categoryOf } from '../lib/category'
 import { formatDate, FACT_TYPE_LABELS } from '../lib/format'
 
 const TYPE_CHIPS = [
@@ -40,7 +43,11 @@ export default function Timeline() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-semibold text-ink">Timeline</h1>
+      <PageHeader
+        icon={<IconTimeline className="h-5 w-5" />}
+        title="Timeline"
+        subtitle="Your history in order, built from your documents. Every item opens its source."
+      />
 
       {/* Filters */}
       <Card>
@@ -82,13 +89,13 @@ export default function Timeline() {
       )}
 
       {q.data && hasEvents && (
-        <ol className="relative space-y-6 border-l-2 border-line pl-5">
+        <ol className="relative space-y-6 border-l-2 border-brand-100 pl-5">
           {q.data.groups.map((group) => (
             <li key={group.date}>
-              <div className="sticky top-16 -ml-[26px] mb-2 inline-block rounded-full bg-brand-600 px-3 py-0.5 text-xs font-semibold text-white">
+              <div className="sticky top-16 z-[1] -ml-[26px] mb-2 inline-block rounded-full bg-brand-gradient px-3 py-0.5 text-xs font-semibold text-white shadow-brand">
                 {formatDate(group.date)}
               </div>
-              <ul className="space-y-2">
+              <ul className="mv-stagger space-y-2">
                 {group.events.map((e) => (
                   <li key={e.id}>
                     <EventCard event={e} onOpen={() => openEvent(e)} />
@@ -117,8 +124,15 @@ export default function Timeline() {
 
 function EventCard({ event, onOpen }: { event: TimelineEvent; onOpen: () => void }) {
   const isDoc = event.event_type === 'document'
+  const cat = categoryOf(event.event_type)
   return (
-    <Card>
+    <Card interactive className="relative">
+      {/* node dot on the spine, coloured by category */}
+      <span
+        className="absolute -left-[26px] top-5 h-3 w-3 rounded-full ring-4 ring-surface"
+        style={{ background: cat.dot }}
+        aria-hidden="true"
+      />
       <CardBody className="p-3">
         <button onClick={onOpen} className="block w-full text-left">
           <div className="flex items-start justify-between gap-2">
@@ -127,7 +141,7 @@ function EventCard({ event, onOpen }: { event: TimelineEvent; onOpen: () => void
               <p className="text-xs text-ink-muted">{event.summary}</p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
-              {!isDoc && <Badge tone="neutral">{FACT_TYPE_LABELS[event.event_type] ?? event.event_type}</Badge>}
+              {!isDoc && <Badge tone={cat.tone}>{FACT_TYPE_LABELS[event.event_type] ?? event.event_type}</Badge>}
               {event.status === 'unverified' && <Badge tone="warn">Unverified</Badge>}
             </div>
           </div>
