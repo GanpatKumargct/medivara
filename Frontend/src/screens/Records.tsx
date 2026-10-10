@@ -8,6 +8,7 @@ import * as api from '../api/endpoints'
 import { Badge, Button, Card, CardBody, Dialog } from '../components/ui'
 import { EmptyState, ErrorBanner, LoadingRows } from '../components/states'
 import { FlagBadge, SyntheticWarning } from '../components/common'
+import { PageHeader } from '../components/page-header'
 import { PROCESSING_STAGE_LABELS, COPY, fill } from '../lib/copy'
 import { useToast } from '../context/ToastContext'
 import { DOCUMENT_TYPE_LABELS, formatDate } from '../lib/format'
@@ -269,7 +270,7 @@ function DocumentRow({
 
   return (
     <>
-      <Card>{body}</Card>
+      <Card className="mv-lift">{body}</Card>
       {confirming && (
         <Dialog
           open
