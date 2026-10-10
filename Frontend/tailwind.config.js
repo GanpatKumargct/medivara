@@ -1,39 +1,62 @@
 /** @type {import('tailwindcss').Config} */
+// Medivara design system. Token NAMES are kept stable (brand/ink/surface/line/
+// ok/warn/danger/info) so every component re-skins from here with no churn.
+// Official palette: navy #0B3B8C · tech blue #0284F7 · cyan #06B6D4 ·
+// teal #10B981 · fresh green #34D399 · bg #F8FAFC · text #1F2937 / #64748B ·
+// borders #E2E8F0.
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   darkMode: ['class', '[data-contrast="high"]'],
   theme: {
     extend: {
       colors: {
-        // Calm, clinical palette. Status colours are always paired with text + icon
-        // in the UI; colour is never the only signal (SCR §1, NFR-A11Y-06).
+        // Primary brand ramp: tech blue → navy. 500/600 = actions, 900 = navy headings.
         brand: {
-          50: '#eef6ff',
-          100: '#d9ebff',
-          200: '#bcdcff',
-          300: '#8ec6ff',
-          400: '#59a6ff',
-          500: '#2f83f5',
-          600: '#1b66db',
-          700: '#1850b0',
-          800: '#19448c',
-          900: '#1a3c73',
+          50: '#E6F4FF',
+          100: '#CFE8FF',
+          200: '#A6D2FD',
+          300: '#6FB6FB',
+          400: '#3B9AF9',
+          500: '#0284F7',
+          600: '#0A6FD6',
+          700: '#0B57B0',
+          800: '#0C4A9C',
+          900: '#0B3B8C',
         },
+        // Cyan accent + teal/green for positive highlights (used via `ok`).
+        accent: { DEFAULT: '#06B6D4', soft: '#34D399' },
         ink: {
-          DEFAULT: '#1a2230',
-          muted: '#4b5566',
-          subtle: '#6b7485',
+          DEFAULT: '#1F2937',
+          muted: '#475569',
+          subtle: '#64748B',
         },
         surface: {
-          DEFAULT: '#ffffff',
-          muted: '#f4f6fa',
-          sunken: '#eceff5',
+          DEFAULT: '#FFFFFF',
+          muted: '#F8FAFC',
+          sunken: '#EDF3FB',
         },
-        line: '#d8dde7',
-        ok: { fg: '#1a6b3c', bg: '#e6f6ec', border: '#9fd9b4' },
-        warn: { fg: '#8a5300', bg: '#fdf2e2', border: '#f0c983' },
-        danger: { fg: '#a01423', bg: '#fdecee', border: '#f0a9b1' },
-        info: { fg: '#1850b0', bg: '#e8f1ff', border: '#aecdfb' },
+        line: '#E2E8F0',
+        ok: { fg: '#0F7A54', bg: '#E6F8F0', border: '#9EE3C4' },
+        warn: { fg: '#8A5300', bg: '#FDF2E2', border: '#F0C983' },
+        danger: { fg: '#B0152A', bg: '#FDECEE', border: '#F0A9B1' },
+        info: { fg: '#0B57B0', bg: '#E6F4FF', border: '#A6D2FD' },
+        // Full logo palette as categorical tints (never used to judge values).
+        cyan: { fg: '#0E7490', bg: '#E0F7FB', border: '#A5E8F2' },
+        teal: { fg: '#0F766E', bg: '#E3F7F2', border: '#9DE6D6' },
+        green: { fg: '#0F7A54', bg: '#E6F8F0', border: '#9EE3C4' },
+        violet: { fg: '#5B46C9', bg: '#EEEBFB', border: '#CFC6F3' },
+      },
+      backgroundImage: {
+        // Use sparingly: primary CTAs, selected highlights, brand surfaces.
+        'brand-gradient': 'linear-gradient(135deg, #0284F7 0%, #10B981 100%)',
+        'brand-gradient-soft': 'linear-gradient(135deg, #06B6D4 0%, #34D399 100%)',
+        'hero-fade': 'linear-gradient(180deg, #E6F4FF 0%, #F8FAFC 100%)',
+        // Categorical gradients across the full logo range.
+        'grad-blue': 'linear-gradient(135deg, #0284F7 0%, #0B3B8C 100%)',
+        'grad-cyan': 'linear-gradient(135deg, #22C3E6 0%, #0284F7 100%)',
+        'grad-teal': 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+        'grad-green': 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+        'grad-violet': 'linear-gradient(135deg, #818CF8 0%, #5B46C9 100%)',
       },
       fontFamily: {
         sans: [
@@ -49,10 +72,12 @@ export default {
       },
       borderRadius: {
         xl: '0.875rem',
+        '2xl': '1rem',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(26, 34, 48, 0.06), 0 1px 3px rgba(26, 34, 48, 0.08)',
-        pop: '0 10px 30px rgba(26, 34, 48, 0.14)',
+        card: '0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.06)',
+        pop: '0 12px 34px rgba(11, 59, 140, 0.16)',
+        brand: '0 8px 20px rgba(2, 132, 247, 0.22)',
       },
     },
   },

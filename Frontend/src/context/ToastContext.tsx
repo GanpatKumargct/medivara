@@ -39,7 +39,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={t.id}
             role="status"
             className={
-              'rounded-lg px-4 py-2 text-sm font-medium shadow-pop ' +
+              'animate-slide-up rounded-lg px-4 py-2 text-sm font-medium shadow-pop ' +
               (t.tone === 'error'
                 ? 'bg-danger-bg text-danger-fg border border-danger-border'
                 : t.tone === 'info'

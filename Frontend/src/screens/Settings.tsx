@@ -5,6 +5,8 @@ import * as api from '../api/endpoints'
 import { useAuth } from '../context/AuthContext'
 import { useDisplayPrefs } from '../context/DisplayPrefsContext'
 import { Badge, Card, CardBody } from '../components/ui'
+import { PageHeader } from '../components/page-header'
+import { IconSettings } from '../components/icons'
 import { cn } from '../lib/cn'
 import { COPY } from '../lib/copy'
 
@@ -16,7 +18,11 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <h1 className="text-xl font-semibold text-ink">Settings</h1>
+      <PageHeader
+        icon={<IconSettings className="h-5 w-5" />}
+        title="Settings"
+        subtitle="Display, consent and privacy for this prototype."
+      />
 
       <Card>
         <CardBody>

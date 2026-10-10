@@ -24,8 +24,10 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-600 text-white hover:bg-brand-700 disabled:bg-brand-300',
-  secondary: 'bg-white text-ink border border-line hover:bg-surface-muted disabled:opacity-60',
+  // Primary CTA uses the brand gradient (used sparingly, per the design system).
+  primary:
+    'bg-brand-gradient text-white shadow-brand hover:brightness-105 active:brightness-95 disabled:opacity-50 disabled:shadow-none',
+  secondary: 'bg-white text-brand-800 border border-line hover:bg-brand-50 hover:border-brand-200 disabled:opacity-60',
   ghost: 'bg-transparent text-brand-700 hover:bg-brand-50 disabled:opacity-60',
   danger: 'bg-danger-fg text-white hover:opacity-90 disabled:opacity-60',
 }
@@ -44,7 +46,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed',
+        'mv-press inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 disabled:cursor-not-allowed',
         BTN_VARIANT[variant],
         BTN_SIZE[size],
         className,
@@ -70,9 +72,30 @@ export function Spinner({ className }: { className?: string }) {
 
 // --- Card -------------------------------------------------------------------
 
-export function Card({ className, children, ...rest }: { className?: string; children: ReactNode } & React.HTMLAttributes<HTMLDivElement>) {
+export function Card({
+  className,
+  children,
+  interactive,
+  accent,
+  ...rest
+}: {
+  className?: string
+  children: ReactNode
+  interactive?: boolean
+  accent?: boolean
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('mv-card rounded-xl border border-line bg-surface shadow-card', className)} {...rest}>
+    <div
+      className={cn(
+        'mv-card relative overflow-hidden rounded-2xl border border-line bg-surface shadow-card',
+        interactive && 'mv-lift cursor-pointer',
+        className,
+      )}
+      {...rest}
+    >
+      {accent && (
+        <span className="absolute inset-x-0 top-0 h-1 bg-brand-gradient" aria-hidden="true" />
+      )}
       {children}
     </div>
   )
@@ -84,7 +107,7 @@ export function CardBody({ className, children }: { className?: string; children
 
 // --- Badge ------------------------------------------------------------------
 
-type BadgeTone = 'neutral' | 'ok' | 'warn' | 'danger' | 'info' | 'brand'
+type BadgeTone = 'neutral' | 'ok' | 'warn' | 'danger' | 'info' | 'brand' | 'cyan' | 'teal' | 'violet'
 
 const BADGE_TONE: Record<BadgeTone, string> = {
   neutral: 'bg-surface-sunken text-ink-muted border-line',
@@ -93,6 +116,9 @@ const BADGE_TONE: Record<BadgeTone, string> = {
   danger: 'bg-danger-bg text-danger-fg border-danger-border',
   info: 'bg-info-bg text-info-fg border-info-border',
   brand: 'bg-brand-50 text-brand-700 border-brand-200',
+  cyan: 'bg-cyan-bg text-cyan-fg border-cyan-border',
+  teal: 'bg-teal-bg text-teal-fg border-teal-border',
+  violet: 'bg-violet-bg text-violet-fg border-violet-border',
 }
 
 export function Badge({
@@ -154,7 +180,7 @@ export function Alert({
         {icon && <span className="mt-0.5 shrink-0" aria-hidden="true">{icon}</span>}
         <div className="min-w-0">
           {title && <p className="font-semibold">{title}</p>}
-          {children && <div className={cn(title && 'mt-1')}>{children}</div>}
+          {children && <div className={title ? 'mt-1' : undefined}>{children}</div>}
         </div>
       </div>
     </div>
@@ -252,7 +278,7 @@ export function Checkbox({
 // --- Skeleton ---------------------------------------------------------------
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-md bg-surface-sunken', className)} aria-hidden="true" />
+  return <div className={cn('mv-skeleton rounded-md', className)} aria-hidden="true" />
 }
 
 // --- Dialog (modal) ---------------------------------------------------------
@@ -285,14 +311,14 @@ export function Dialog({
   if (!open) return null
   return (
     <div className="no-print fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink/40" onClick={onClose} aria-hidden="true" />
+      <div className="animate-fade-in absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="relative z-10 w-full max-w-lg rounded-xl bg-surface p-5 shadow-pop focus:outline-none"
+        className="animate-scale-in relative z-10 w-full max-w-lg rounded-2xl bg-surface p-5 shadow-pop focus:outline-none"
       >
         <h2 className="text-lg font-semibold text-ink">{title}</h2>
         <div className="mt-3">{children}</div>

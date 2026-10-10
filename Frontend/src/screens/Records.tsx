@@ -11,7 +11,7 @@ import { FlagBadge, SyntheticWarning } from '../components/common'
 import { PROCESSING_STAGE_LABELS, COPY, fill } from '../lib/copy'
 import { useToast } from '../context/ToastContext'
 import { DOCUMENT_TYPE_LABELS, formatDate } from '../lib/format'
-import { IconUpload } from '../components/icons'
+import { IconDoc, IconUpload } from '../components/icons'
 
 const STATUS_FILTERS = [
   { id: 'needs_review', label: 'Needs review' },
@@ -79,9 +79,14 @@ export default function Records() {
   const toggle = (arr: string[], set: (v: string[]) => void, id: string) =>
     set(arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id])
 
+  const docCount = docsQ.data?.items.length ?? 0
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-semibold text-ink">Records</h1>
+      <PageHeader
+        icon={<IconDoc className="h-5 w-5" />}
+        title="Records"
+        subtitle={docCount ? `${docCount} document${docCount === 1 ? '' : 's'} on file. Upload a PDF to add more.` : 'Upload prescriptions, lab reports and discharge summaries as PDFs.'}
+      />
 
       {canUpload && (
         <Card>
@@ -154,7 +159,7 @@ export default function Records() {
       )}
 
       {docsQ.data && docsQ.data.items.length > 0 && (
-        <ul className="space-y-3">
+        <ul className="mv-stagger space-y-3">
           {docsQ.data.items.map((d) => (
             <li key={d.id}>
               <DocumentRow patientId={patientId} doc={d} canRetry={canUpload} canDelete={isOwner} patientName={patientQ.data?.display_name ?? ''} />
@@ -224,9 +229,12 @@ function DocumentRow({
           {doc.date_ambiguous && ' · date to check'}
         </p>
         {processing && (
-          <p className="mt-1 text-xs text-ink-muted" role="status" aria-live="polite">
-            {PROCESSING_STAGE_LABELS[doc.stage] ?? 'Processing…'}
-          </p>
+          <div className="mt-1.5 max-w-xs">
+            <p className="text-xs text-ink-muted" role="status" aria-live="polite">
+              {PROCESSING_STAGE_LABELS[doc.stage] ?? 'Processing…'}
+            </p>
+            <div className="mv-progress mt-1" aria-hidden="true" />
+          </div>
         )}
         {doc.status === 'failed' && (
           <p className="mt-1 text-xs text-danger-fg">{doc.failure_message}</p>

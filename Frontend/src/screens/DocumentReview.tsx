@@ -11,6 +11,7 @@ import { Alert, Badge, Button, Card, CardBody, Dialog, Field, Input, Tabs } from
 import { ErrorBanner, LoadingRows } from '../components/states'
 import { FlagBadge } from '../components/common'
 import { cn } from '../lib/cn'
+import { categoryOf } from '../lib/category'
 import { COPY, PROCESSING_STAGE_LABELS } from '../lib/copy'
 import { DOCUMENT_TYPE_LABELS, FACT_TYPE_LABELS, UNCERTAINTY_LABELS, formatDate } from '../lib/format'
 import { IconCheck, IconEdit, IconUndo, IconWarn, IconX } from '../components/icons'
@@ -168,7 +169,10 @@ export default function DocumentReview() {
         if (group.length === 0) return null
         return (
           <section key={type}>
-            <h3 className="mb-2 text-sm font-semibold text-ink">{FACT_TYPE_LABELS[type]}</h3>
+            <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: categoryOf(type).dot }} aria-hidden="true" />
+              {FACT_TYPE_LABELS[type]}
+            </h3>
             <ul className="space-y-2">
               {group.map((f) => (
                 <li key={f.id}>

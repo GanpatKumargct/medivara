@@ -6,6 +6,7 @@ import * as api from '../api/endpoints'
 import { useAuth } from '../context/AuthContext'
 import { useDisplayPrefs } from '../context/DisplayPrefsContext'
 import { Button, Card, CardBody, Checkbox } from '../components/ui'
+import { LogoLockup } from '../components/brand'
 import { cn } from '../lib/cn'
 import { COPY } from '../lib/copy'
 
@@ -32,6 +33,9 @@ export default function Onboarding() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-4 py-10">
+      <div className="mb-5 flex justify-center">
+        <LogoLockup markSize={34} />
+      </div>
       <ol className="mb-4 flex items-center justify-center gap-2 text-xs text-ink-subtle" aria-hidden="true">
         {[1, 2, 3].map((n) => (
           <li key={n} className={cn('flex items-center gap-2')}>
@@ -53,7 +57,7 @@ export default function Onboarding() {
         <CardBody>
           {step === 1 && (
             <section aria-labelledby="ob-h1">
-              <h1 id="ob-h1" className="text-xl font-semibold text-ink">
+              <h1 id="ob-h1" className="text-xl font-semibold text-brand-900">
                 What MediVara does
               </h1>
               <p className="mt-3 text-sm text-ink-muted">{COPY['COPY-01']}</p>
@@ -71,7 +75,7 @@ export default function Onboarding() {
 
           {step === 2 && (
             <section aria-labelledby="ob-h2">
-              <h1 id="ob-h2" className="text-xl font-semibold text-ink">
+              <h1 id="ob-h2" className="text-xl font-semibold text-brand-900">
                 Your consent
               </h1>
               <div className="mt-4 space-y-4">
@@ -87,7 +91,7 @@ export default function Onboarding() {
 
           {step === 3 && (
             <section aria-labelledby="ob-h3">
-              <h1 id="ob-h3" className="text-xl font-semibold text-ink">
+              <h1 id="ob-h3" className="text-xl font-semibold text-brand-900">
                 Make it comfortable
               </h1>
               <p className="mt-2 text-sm text-ink-muted">You can change these any time from the “Aa” menu.</p>
