@@ -107,7 +107,7 @@ export const COPY = {
   'COPY-38': 'AI-generated, checked against your documents',
   // Redesign additions (not yet in the SRD copy deck).
   'COPY-39':
-    'Voice conversation streams your microphone audio to ElevenLabs, a third-party voice AI service, which turns your speech into text and speaks answers back. Answers about your records still come only from MediVara’s checked answers, and each one is saved to this chat. Use synthetic data only. In an emergency, call 112.',
+    'Voice conversation streams your microphone audio to ElevenLabs, a third-party voice AI service, which turns your speech into text and speaks answers back. ElevenLabs also receives your first names, a list of this profile’s documents (type, clinic and date — not their contents) and the answers it reads out. Answers about your records still come only from MediVara’s checked answers, and each one is saved to this chat. Use synthetic data only. In an emergency, call 112.',
   'COPY-40':
     'Voice conversation isn’t set up on this server yet. An administrator needs to add the ElevenLabs agent settings (see the backend README). You can still dictate with the microphone button and use Read aloud.',
   'COPY-41':

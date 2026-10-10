@@ -18,7 +18,7 @@ import { LogoMark } from '../components/brand'
 import { Composer } from '../components/chat/Composer'
 import { AssistantAnswer, AttachmentCard, ThinkingRow, UserBubble } from '../components/chat/Messages'
 import { Button, Skeleton, Spinner } from '../components/ui'
-import { IconBrief, IconHeartPulse, IconPaperclip, IconPill, IconUpload, IconWaveform } from '../components/icons'
+import { IconArrowUp, IconBrief, IconHeartPulse, IconPaperclip, IconPill, IconUpload, IconWaveform } from '../components/icons'
 
 const VoiceMode = lazy(() => import('../components/chat/VoiceMode'))
 
@@ -197,31 +197,36 @@ export default function Chat() {
           <Skeleton className="ml-auto h-10 w-1/2 rounded-3xl" />
         </div>
       ) : showHero ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
-          <div className="w-full max-w-2xl">
-            <div className="mb-2 flex items-center justify-center gap-3">
-              <LogoMark size={38} />
-              <h1 className="font-serif text-3xl tracking-tight text-ink sm:text-[2.6rem]">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pb-[8vh] pt-10">
+          <div className="w-full max-w-[680px]">
+            <header className="flex flex-col items-center text-center">
+              <span className="relative mb-5 inline-flex">
+                <span className="absolute -inset-3 rounded-[24px] bg-brand-gradient-soft opacity-25 blur-xl" aria-hidden="true" />
+                <LogoMark size={56} className="relative drop-shadow-[0_8px_18px_rgba(2,132,247,0.28)]" />
+              </span>
+              <h1 className="font-serif text-[2.1rem] leading-tight tracking-tight text-ink sm:text-[2.6rem]">
                 {greeting()}{firstName ? `, ${firstName}` : ''}
               </h1>
-            </div>
-            <p className="mb-7 text-center text-sm text-ink-muted">
-              {patient && patient.my_role !== 'owner'
-                ? `You’re viewing ${patient.display_name}’s records, shared with you.`
-                : 'Ask about your records, add a report, or talk it through by voice.'}
-            </p>
-            {composer('hero')}
+              <p className="mt-2 max-w-md text-[15px] text-ink-muted">
+                {patient && patient.my_role !== 'owner'
+                  ? `You’re viewing ${patient.display_name}’s records, shared with you.`
+                  : 'How can I help with your health records today?'}
+              </p>
+            </header>
+
+            <div className="mt-8">{composer('hero')}</div>
             {notice && <p className="mt-2 text-center text-sm font-medium text-danger-fg" role="alert">{notice}</p>}
 
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {canUpload && (
-                <Chip icon={<IconPaperclip className="h-4 w-4" />} onClick={() => fileRef.current?.click()}>Upload a report</Chip>
+            <nav aria-label="Quick actions" className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              {canUpload ? (
+                <ActionTile icon={<IconPaperclip />} tint="bg-brand-50 text-brand-700" title="Upload a report" caption="PDF to your records" onClick={() => fileRef.current?.click()} />
+              ) : (
+                <ActionTile icon={<IconPill />} tint="bg-brand-50 text-brand-700" title="Medicines" caption="All in your documents" to={`/p/${patientId}/medicines`} />
               )}
-              <Chip icon={<IconWaveform className="h-4 w-4" />} onClick={() => setVoiceOpen(true)}>Talk by voice</Chip>
-              <Chip icon={<IconBrief className="h-4 w-4" />} to={`/p/${patientId}/brief`}>Prepare for a visit</Chip>
-              <Chip icon={<IconPill className="h-4 w-4" />} to={`/p/${patientId}/medicines`}>Medicines</Chip>
-              <Chip icon={<IconHeartPulse className="h-4 w-4" />} to={`/p/${patientId}/vitals`}>Vitals</Chip>
-            </div>
+              <ActionTile icon={<IconWaveform />} tint="bg-violet-bg text-violet-fg" title="Talk by voice" caption="Ask hands-free" onClick={() => setVoiceOpen(true)} />
+              <ActionTile icon={<IconBrief />} tint="bg-teal-bg text-teal-fg" title="Prepare for a visit" caption="One-page doctor brief" to={`/p/${patientId}/brief`} />
+              <ActionTile icon={<IconHeartPulse />} tint="bg-cyan-bg text-cyan-fg" title="Track vitals" caption="BP, sugar, weight" to={`/p/${patientId}/vitals`} />
+            </nav>
             <input
               ref={fileRef}
               type="file"
@@ -235,22 +240,27 @@ export default function Chat() {
               }}
             />
 
-            <div className="mx-auto mt-8 max-w-xl">
-              <p className="mb-1 px-3 text-xs font-medium text-ink-subtle">Try asking</p>
-              <ul>
-                {examples.map((ex) => (
+            <section aria-labelledby="try-asking" className="mt-9">
+              <h2 id="try-asking" className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
+                Try asking
+              </h2>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {examples.slice(0, 4).map((ex) => (
                   <li key={ex}>
                     <button
                       onClick={() => void ask(ex, false)}
                       disabled={busy}
-                      className="w-full rounded-xl px-3 py-2 text-left text-sm text-ink-muted transition-colors hover:bg-canvas-hover hover:text-ink"
+                      className="group flex h-full w-full items-center justify-between gap-3 rounded-xl border border-canvas-border bg-white/70 px-3.5 py-2.5 text-left text-sm text-ink-muted transition-colors hover:border-brand-200 hover:bg-white hover:text-ink"
                     >
-                      {ex}
+                      <span>{ex}</span>
+                      <IconArrowUp className="h-4 w-4 shrink-0 rotate-45 text-ink-subtle opacity-0 transition-opacity group-hover:opacity-100" />
                     </button>
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
+
+            <p className="mt-8 text-center text-[11px] text-ink-subtle">{COPY['COPY-02']}</p>
           </div>
         </div>
       ) : (
@@ -299,12 +309,35 @@ export default function Chat() {
   )
 }
 
-function Chip({ icon, children, onClick, to }: { icon: ReactNode; children: ReactNode; onClick?: () => void; to?: string }) {
+function ActionTile({
+  icon,
+  tint,
+  title,
+  caption,
+  onClick,
+  to,
+}: {
+  icon: ReactNode
+  tint: string
+  title: string
+  caption: string
+  onClick?: () => void
+  to?: string
+}) {
   const cls =
-    'mv-press inline-flex items-center gap-1.5 rounded-xl border border-canvas-border bg-white px-3 py-1.5 text-sm text-ink-muted transition-colors hover:border-brand-200 hover:text-ink'
+    'mv-press group flex h-full flex-col items-start gap-2 rounded-2xl border border-canvas-border bg-white p-3 text-left transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card'
+  const body = (
+    <>
+      <span className={`flex h-8 w-8 items-center justify-center rounded-lg [&_svg]:h-[18px] [&_svg]:w-[18px] ${tint}`}>{icon}</span>
+      <span>
+        <span className="block text-sm font-medium text-ink">{title}</span>
+        <span className="block text-xs text-ink-subtle">{caption}</span>
+      </span>
+    </>
+  )
   return to ? (
-    <Link to={to} className={cls}>{icon}{children}</Link>
+    <Link to={to} className={cls}>{body}</Link>
   ) : (
-    <button type="button" onClick={onClick} className={cls}>{icon}{children}</button>
+    <button type="button" onClick={onClick} className={cls}>{body}</button>
   )
 }
