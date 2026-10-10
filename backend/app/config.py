@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     timeout_narrative_s: int = 25
 
     session_hours: int = 12
+    # Failed sign-ins allowed per email and per client IP within the window (app/ratelimit.py).
+    login_max_failures_per_email: int = 5
+    login_max_failures_per_ip: int = 20
+    login_window_minutes: int = 15
     policy_version: str = "2026-10-demo-1"
 
     storage_dir: str = "storage/files"

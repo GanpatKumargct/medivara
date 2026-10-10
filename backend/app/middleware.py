@@ -38,6 +38,30 @@ ALLOWED_LOG_FIELDS = (
 )
 
 
+# On every API response (SRD 12 threat model). JSON responses also get a CSP that allows nothing,
+# since they never need to load or frame anything. Not on Swagger UI (/docs loads scripts from a
+# CDN) or on the PDF file route (a strict CSP can stop the browser's built-in PDF viewer).
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Cache-Control": "no-store",
+}
+API_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+_DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
+
+
+def apply_security_headers(request: Request, response) -> None:
+    for name, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)  # a route's own value (e.g. Cache-Control) wins
+    is_json = response.headers.get("content-type", "").startswith("application/json")
+    if is_json and not request.url.path.endswith(_DOCS_PATHS):
+        response.headers.setdefault("Content-Security-Policy", API_CSP)
+
+
 def new_request_id() -> str:
     return "req_" + secrets.token_hex(13).upper()
 
@@ -72,6 +96,7 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
 
             response = envelope(request, 413, "FILE_TOO_LARGE", "This file is larger than 10 MB. Please choose a smaller file.")
             response.headers["X-Request-ID"] = request.state.request_id
+            apply_security_headers(request, response)
             log.info("request", extra={"request_id": request.state.request_id, "method": request.method,
                                        "route": "unmatched", "status": 413, "duration_ms": 0, "error_code": "FILE_TOO_LARGE"})
             return response
@@ -84,6 +109,7 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
             log.error("unhandled_exception", extra={"request_id": request.state.request_id, "exc_type": type(exc).__name__})
             response = envelope(request, 500, "INTERNAL_ERROR", "Something went wrong. Try again.")
         response.headers["X-Request-ID"] = request.state.request_id
+        apply_security_headers(request, response)
         route = request.scope.get("route")
         log.info(
             "request",

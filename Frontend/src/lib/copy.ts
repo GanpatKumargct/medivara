@@ -89,6 +89,7 @@ export const COPY = {
   'COPY-34c': 'Only PDF files can be added in this prototype.',
   'COPY-34d': 'This file is already in {patient}’s records.',
   'COPY-34e': 'This PDF has more than 10 pages. Please split it into smaller files.',
+  'COPY-34f': 'Too many sign-in attempts. Please wait a few minutes and try again.',
   'COPY-35': 'Synthetic sample',
   'COPY-37': 'General information — not from your documents',
   'COPY-38': 'AI-generated, checked against your documents',

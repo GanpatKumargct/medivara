@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
-from app import audit
+from app import audit, ratelimit
 from app.auth import CurrentUser, current_user, issue_session, verify_password
 from app.config import get_settings
 from app.consents import latest_consent, onboarding_required
@@ -18,6 +18,7 @@ from app.routers import API_PREFIX
 router = APIRouter(prefix=API_PREFIX, tags=["auth"])
 
 LOGIN_FAILED = "That email and password don't match a MediVara account."
+RATE_LIMITED = "Too many sign-in attempts. Please wait a few minutes and try again."
 
 
 def user_summary(user: User) -> dict:
@@ -32,8 +33,15 @@ class LoginRequest(BaseModel):
 @router.post("/auth/login")
 def login(body: LoginRequest, request: Request, session: Session = Depends(get_session)) -> dict:
     email = body.email.strip().lower()
+    ip = ratelimit.client_ip(request)
+    # Checked before the user lookup, so the answer is the same for known and unknown emails.
+    wait = ratelimit.retry_after_s(email, ip)
+    if wait is not None:
+        audit.write(request, "auth.rate_limited", AuditOutcome.denied)
+        raise ApiError(429, "RATE_LIMITED", RATE_LIMITED, {"retry_after_s": wait}, headers={"Retry-After": str(wait)})
     user = session.exec(select(User).where(User.email == email)).first()
     if not verify_password(user.password_hash if user else None, body.password):
+        ratelimit.record_failure(email, ip)
         audit.write(
             request,
             "auth.login_failed",
@@ -42,6 +50,7 @@ def login(body: LoginRequest, request: Request, session: Session = Depends(get_s
         )
         raise ApiError(401, "INVALID_CREDENTIALS", LOGIN_FAILED)
 
+    ratelimit.record_success(email)
     token, row = issue_session(session, user)
     user.last_login_at = row.created_at
     session.add(user)

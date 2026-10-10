@@ -68,7 +68,7 @@ Everything that crosses into the backend (files, questions, IDs in URLs) and eve
 |---|---|---|
 | Account enumeration through the grant endpoint (`USER_NOT_FOUND`) | Keeps the family demo to one step; demo accounts only | Invitation flow (FR-085) |
 | SQLite without encryption at rest | Synthetic data on a single laptop | Managed database with encryption and key management |
-| Bearer token in session storage (exposed to script injection in the page) | No third-party scripts other than the video embed in a sandboxed frame; synthetic data | HttpOnly secure cookies with CSRF protection, content security policy |
-| No rate limiting on login | Local demo | Rate limiting and lockout |
+| Bearer token in session storage (exposed to script injection in the page) | No third-party scripts other than the video embed in a sandboxed frame; synthetic data | HttpOnly secure cookies with CSRF protection; a content security policy on the hosted frontend (the API already sends one on JSON) |
+| Sign-in limit is in memory and per process (5 failures per email, 20 per IP, 15 minutes; `app/ratelimit.py`) | One server process in the demo | Shared store (for example Redis) across workers; CAPTCHA or MFA after repeated failures |
 | Pattern-based safety validation can miss novel phrasing | Combined with evidence-only rules and citation checks | Trained safety classifiers and clinician-reviewed policies |
 | ISL content not reviewed by a Deaf ISL user | No access in two days | Co-design and expert review (H-05) |

@@ -16,6 +16,7 @@
 | Nulls | Every documented key is always present. Unknown or not-applicable values are `null`, never omitted. |
 | Unknown fields | Clients must ignore fields they do not recognise. This lets additive changes ship without breaking the frontend. |
 | Pagination | List endpoints accept `limit` (default 50, max 100) and `offset` (default 0) and return `{ items, total, limit, offset }`. The MVP UI does not show pagination controls. |
+| Security headers | Every response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy: same-origin`, a `Permissions-Policy` and `Cache-Control: no-store` (unless the route sets its own). JSON responses also carry `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`. |
 | Request IDs | Every response carries an `X-Request-ID` header. Errors repeat it in the body. Logs use the same ID. |
 | AI results | AI paths (API-20, API-21) **never** return an HTTP error because the AI failed. They return 200 with a `status` such as `degraded`, `unavailable` or `withheld`, so the frontend handles a single response shape. |
 | Fixtures | `contracts/API-<NN>.<http-status>[.<variant>].json` for endpoint examples and `contracts/errors/<CODE>.json` for shared errors. Person C copies the blocks at kickoff and Person B reviews them. |
@@ -73,6 +74,7 @@ Fixture: `contracts/errors/VALIDATION_ERROR.json`
 | 415 | `UNSUPPORTED_FILE_TYPE` | Content is not a PDF (P0). PNG and JPEG are accepted only when FR-024 ships | Inline upload error |
 | 422 | `VALIDATION_ERROR` | Field-level problems; `details.fields` | Inline field errors |
 | 422 | `TOO_MANY_PAGES` | Over 10 pages | Inline upload error |
+| 429 | `RATE_LIMITED` | API-02 only: 5 failed sign-ins for one email, or 20 from one IP, within 15 minutes. Same answer for known and unknown emails; `details.retry_after_s` and a `Retry-After` header | Inline form error (COPY-34f) |
 | 500 | `INTERNAL_ERROR` | Unexpected failure | Error banner with the request ID |
 
 ## 3. Shared objects
@@ -191,7 +193,7 @@ Fixture: `contracts/API-01.200.ai-off.json`
 | email | string | Required; trimmed and lowercased; max 254 chars |
 | password | string | Required; 1–128 chars |
 
-Status codes: 200 · 401 `INVALID_CREDENTIALS` (identical for unknown email and wrong password) · 422.
+Status codes: 200 · 401 `INVALID_CREDENTIALS` (identical for unknown email and wrong password) · 422 · 429 `RATE_LIMITED` (checked before the password; a successful sign-in clears the email's count).
 
 Example request:
 ```json

@@ -14,10 +14,20 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Page-level security headers for the dev server. No Content-Security-Policy here: Vite's
+    // dev mode injects inline scripts (HMR); set a CSP where the production build is hosted.
+    headers: {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'no-referrer',
+      'Permissions-Policy': 'camera=(), geolocation=(), microphone=(self)',
+    },
     proxy: {
       '/api/v1': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        // Adds X-Forwarded-For so the backend's sign-in limit counts each browser, not the proxy.
+        xfwd: true,
       },
     },
   },

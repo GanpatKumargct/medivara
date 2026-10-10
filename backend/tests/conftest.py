@@ -32,15 +32,17 @@ def client(tmp_path, monkeypatch) -> Iterator[TestClient]:
     monkeypatch.setenv("GEMINI_API_KEY", "test-key-not-real")
     monkeypatch.setenv("GEMINI_RETRY_BACKOFF_S", "0")
 
-    from app import config, db, seed
+    from app import config, db, ratelimit, seed
 
     config.get_settings.cache_clear()
     db.reset_engine()
     seed.reset()
+    ratelimit.reset()
 
     from app.main import create_app
 
-    with TestClient(create_app(), raise_server_exceptions=False) as test_client:
+    # Connect from loopback, like the Vite proxy, so X-Forwarded-For is honoured as in the dev setup.
+    with TestClient(create_app(), raise_server_exceptions=False, client=("127.0.0.1", 50000)) as test_client:
         yield test_client
 
     db.reset_engine()

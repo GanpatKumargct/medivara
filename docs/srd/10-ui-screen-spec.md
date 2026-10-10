@@ -504,6 +504,7 @@ Use these strings verbatim. Placeholders appear in `{braces}`. Strings that also
 | COPY-34c | Upload unsupported | "Only PDF files can be added in this prototype." |
 | COPY-34d | Upload duplicate | "This file is already in {patient}'s records." |
 | COPY-34e | Upload too many pages | "This PDF has more than 10 pages. Please split it into smaller files." |
+| COPY-34f | Sign-in rate limited | "Too many sign-in attempts. Please wait a few minutes and try again." |
 | COPY-35 | Sample badge | "Synthetic sample" |
 | COPY-36 | Processing stages | queued: "Waiting to be read" · reading_text: "Reading text" · screening: "Checking content" · extracting: "Extracting information" · validating: "Checking results" |
 | COPY-37 | Explanation label | "General information — not from your documents" |
