@@ -38,7 +38,7 @@
                                                                          │ HTTPS · API key held only by the server
                                                               ┌──────────▼───────────┐
                                                               │  Google Gemini API   │
-                                                              │  gemini-3.8-flash    │
+                                                              │  gemini-2.5-flash    │
                                                               └──────────────────────┘
 ```
 
@@ -152,7 +152,7 @@ medivara/
 | Variable | Example | Purpose |
 |---|---|---|
 | `GEMINI_API_KEY` | (secret) | Server-side only |
-| `GEMINI_MODEL` | `gemini-3.8-flash` | Primary model |
+| `GEMINI_MODEL` | `gemini-2.5-flash` | Primary model |
 | `GEMINI_FALLBACK_MODEL` | `gemini-3.5-flash-lite` (empty = disabled) | Optional quota fallback |
 | `GEMINI_THINKING_LEVEL` | `low` | Latency control |
 | `AI_MODE` | `live` · `cache_only` · `off` | Failure drills |

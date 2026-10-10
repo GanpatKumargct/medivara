@@ -1,0 +1,99 @@
+{
+  "document": {
+    "id": "doc_meera_lab_2026_05",
+    "patient_id": "pat_meera",
+    "title": "Lab report · Sunrise Diagnostics · 04 May 2026",
+    "document_type": "lab_report",
+    "document_date": "2026-05-04",
+    "date_ambiguous": true,
+    "facility_name": "Sunrise Diagnostics",
+    "clinician_name": null,
+    "status": "needs_review",
+    "stage": "done",
+    "failure_code": null,
+    "failure_message": null,
+    "flags": ["date_ambiguous", "sample"],
+    "is_sample": true,
+    "extraction_source": "live",
+    "page_count": 1,
+    "fact_counts": { "total": 5, "unverified": 5, "low_confidence": 0 },
+    "created_at": "2026-10-24T04:40:00Z",
+    "processed_at": "2026-10-24T04:40:21Z",
+    "original_filename": "lab_sunrise_may2026.pdf",
+    "mime_type": "application/pdf",
+    "size_bytes": 48211,
+    "header_sources": {
+      "document_type": { "line_ids": ["p1-l1"], "text": "SUNRISE DIAGNOSTICS — LABORATORY REPORT — SYNTHETIC DEMO DOCUMENT" },
+      "document_date": { "line_ids": ["p1-l3"], "text": "Sample collected: 04/05/2026   Report date: 04/05/2026" },
+      "facility_name": { "line_ids": ["p1-l1"], "text": "SUNRISE DIAGNOSTICS — LABORATORY REPORT — SYNTHETIC DEMO DOCUMENT" },
+      "clinician_name": null
+    },
+    "flags_detail": [
+      { "flag": "date_ambiguous", "text": "The date 04/05/2026 was read as 04 May 2026 (day first). Please check it." }
+    ],
+    "pages": [
+      {
+        "page": 1,
+        "lines": [
+          { "line_id": "p1-l1", "text": "SUNRISE DIAGNOSTICS — LABORATORY REPORT — SYNTHETIC DEMO DOCUMENT" },
+          { "line_id": "p1-l6", "text": "HbA1c (Glycated haemoglobin)   7.6   %   4.0 - 5.6   H" },
+          { "line_id": "p1-l10", "text": "Haemoglobin   12.1   g/dL" }
+        ]
+      }
+    ]
+  },
+  "facts": [
+    {
+      "id": "fct_meera_lab_2026_05_01",
+      "document_id": "doc_meera_lab_2026_05",
+      "fact_type": "lab_result",
+      "display_text": "HbA1c (Glycated haemoglobin): 7.6 % (ref 4.0 - 5.6) H",
+      "fields": {
+        "name": "HbA1c (Glycated haemoglobin)",
+        "value": "7.6",
+        "unit": "%",
+        "reference_range": "4.0 - 5.6",
+        "abnormal_flag_as_written": "H",
+        "event_date_text": null
+      },
+      "event_date": "2026-05-04",
+      "source": {
+        "page": 1,
+        "line_ids": ["p1-l6"],
+        "lines": [{ "line_id": "p1-l6", "text": "HbA1c (Glycated haemoglobin)   7.6   %   4.0 - 5.6   H" }]
+      },
+      "confidence": "medium",
+      "uncertainty_reasons": ["date_ambiguous"],
+      "status": "unverified",
+      "corrected_fields": null,
+      "extraction_note": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "fct_meera_lab_2026_05_05",
+      "document_id": "doc_meera_lab_2026_05",
+      "fact_type": "lab_result",
+      "display_text": "Haemoglobin: 12.1 g/dL",
+      "fields": {
+        "name": "Haemoglobin",
+        "value": "12.1",
+        "unit": "g/dL",
+        "reference_range": null,
+        "abnormal_flag_as_written": null,
+        "event_date_text": null
+      },
+      "event_date": "2026-05-04",
+      "source": {
+        "page": 1,
+        "line_ids": ["p1-l10"],
+        "lines": [{ "line_id": "p1-l10", "text": "Haemoglobin   12.1   g/dL" }]
+      },
+      "confidence": "medium",
+      "uncertainty_reasons": ["missing_reference_range", "date_ambiguous"],
+      "status": "unverified",
+      "corrected_fields": null,
+      "extraction_note": null,
+      "reviewed_at": null
+    }
+  ]
+}

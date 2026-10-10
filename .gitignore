@@ -1,0 +1,22 @@
+# Secrets
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Private files, database and demo snapshots (never commit)
+backend/storage/
+*.db
+*.db-wal
+*.db-shm
+snapshot-*/
+backend/snapshots/
+
+# PM2 process logs
+logs/
+
+# Node
+node_modules/

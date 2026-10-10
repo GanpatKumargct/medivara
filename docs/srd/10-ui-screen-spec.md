@@ -412,7 +412,7 @@ The header display menu ("Aa") and sign-out are P0 and live in the header (FE-2.
 **Layout:**
 - **Display:** text size, contrast, reduced motion, read-aloud voice and speed.
 - **Consents:** current consents from API-04, each with "Withdraw" (API-05 with `granted: false`) and its consequence explained: "Withdrawing AI processing stops new documents being read; existing information stays".
-- **Privacy:** what is sent to Gemini (page text of one document at a time; the profile's document lines when you ask a question); `store=false`; synthetic data only; Chrome speech is a cloud service.
+- **Privacy:** what is sent to the AI model through OpenRouter (page text of one document at a time; the profile's document lines when you ask a question); only providers that don't store or train on requests (`data_collection: deny`); synthetic data only; Chrome speech is a cloud service.
 - **Data:** link to delete documents (P1, from SCR-06).
 - **About:** COPY-01, version, contract version.
 
@@ -456,7 +456,7 @@ Use these strings verbatim. Placeholders appear in `{braces}`. Strings that also
 | COPY-01 | Onboarding step 1, About | "MediVara helps you organise your medical documents, see your history on a timeline, and prepare questions for your doctor. It shows where every piece of information came from. MediVara does not diagnose, treat or give medical advice, and it can make mistakes. Always check important information with a qualified healthcare professional. In an emergency, call 112." |
 | COPY-02 | Footer, answers, brief | "MediVara organises what your documents say. It is not medical advice. Check important information with your doctor." |
 | COPY-03 | Login, upload, onboarding | "This is a hackathon prototype. Use only the synthetic sample documents provided by the team. Do not upload real medical records — yours or anyone else's." |
-| COPY-04 | Onboarding consent | "To read your documents, MediVara sends the text of each document to Google's Gemini AI service. When you ask a question, the text of this profile's documents is sent too. MediVara asks Google not to store these requests, but Google's terms may allow limited logging to prevent abuse. Use synthetic documents only. You can withdraw this consent in Settings." |
+| COPY-04 | Onboarding consent | "To read your documents, MediVara sends the text of each document to an AI model (Google Gemini) through the OpenRouter service. When you ask a question, the text of this profile's documents is sent too. MediVara asks OpenRouter to use only AI providers that don't store or train on these requests, but their terms may allow limited logging to prevent abuse. Use synthetic documents only. You can withdraw this consent in Settings." |
 | COPY-05 | Ask emergency | "If you or someone else may be in danger or need urgent medical help, call 112 (emergency) or 108 (ambulance) now, or go to the nearest emergency department. If you are thinking about harming yourself, call Tele-MANAS on 14416 (free, 24×7). MediVara cannot help in an emergency." |
 | COPY-06 | Ask advice redirect | "I can't advise you to start, stop or change any medicine or dose. Only your doctor can decide that with you. Here is what your documents say, so you can discuss it with them." |
 | COPY-07 | Ask not found | "I couldn't find this in your documents. If you have a report that mentions it, you can upload it, or ask your doctor." |

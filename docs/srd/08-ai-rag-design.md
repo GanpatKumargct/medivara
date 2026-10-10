@@ -370,9 +370,9 @@ Suggestions use **documented conditions only** (condition facts that are not rej
 | API style | Interactions API (generally available since June 2026, recommended for new projects). The older generateContent API remains supported as a fallback if an SDK issue appears. | Current guidance |
 | `store` | `false` on every call | Interactions are stored by default: 55 days on paid tiers, 1 day on free |
 | `background`, `previous_interaction_id` | Never used | Both require storage; MediVara calls are stateless |
-| Primary model | `gemini-3.8-flash` (configuration `GEMINI_MODEL`) | Current stable Flash model |
+| Primary model | `google/gemini-2.5-flash` through OpenRouter (configuration `OPENROUTER_MODEL`; `GEMINI_MODEL` = `gemini-2.5-flash` for the direct provider) | DEC-25 |
 | Optional fallback model | `gemini-3.5-flash-lite` (configuration `GEMINI_FALLBACK_MODEL`), disabled by default; enabled at a gate only if quota is a problem, and only for Ask and narrative | Quota resilience without lowering extraction quality |
-| Models to avoid | Preview models (for example `gemini-3.1-pro-preview`) and the 2.5 family (restricted access) | Demo reliability |
+| Models to avoid | Preview models (for example `gemini-3.1-pro-preview`) | Demo reliability |
 | Structured output | JSON-schema response format with the flat schemas in §5 and §8; always validated by MediVara | Reliability |
 | Sampling (temperature, top_p, top_k) | Left at defaults | Google's Gemini 3 guidance recommends not changing them |
 | `thinking_level` | Start at `low` for all three calls; raise to `medium` only if the evaluation set fails; never `high` in the demo | Latency and cost |

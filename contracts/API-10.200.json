@@ -1,0 +1,49 @@
+{
+  "items": [
+    {
+      "id": "doc_meera_lab_2026_05",
+      "patient_id": "pat_meera",
+      "title": "Lab report · Sunrise Diagnostics · 04 May 2026",
+      "document_type": "lab_report",
+      "document_date": "2026-05-04",
+      "date_ambiguous": true,
+      "facility_name": "Sunrise Diagnostics",
+      "clinician_name": null,
+      "status": "needs_review",
+      "stage": "done",
+      "failure_code": null,
+      "failure_message": null,
+      "flags": ["date_ambiguous", "sample"],
+      "is_sample": true,
+      "extraction_source": "live",
+      "page_count": 1,
+      "fact_counts": { "total": 5, "unverified": 5, "low_confidence": 0 },
+      "created_at": "2026-10-24T04:40:00Z",
+      "processed_at": "2026-10-24T04:40:21Z"
+    },
+    {
+      "id": "doc_meera_scan_2026_06",
+      "patient_id": "pat_meera",
+      "title": "Sample · scanned_prescription.pdf",
+      "document_type": "unknown",
+      "document_date": null,
+      "date_ambiguous": false,
+      "facility_name": null,
+      "clinician_name": null,
+      "status": "failed",
+      "stage": "no_text_layer",
+      "failure_code": "NO_TEXT_LAYER",
+      "failure_message": "This looks like a scanned image. Reading scanned documents isn't available in this prototype yet.",
+      "flags": ["sample"],
+      "is_sample": true,
+      "extraction_source": "none",
+      "page_count": 1,
+      "fact_counts": { "total": 0, "unverified": 0, "low_confidence": 0 },
+      "created_at": "2026-10-24T04:40:00Z",
+      "processed_at": "2026-10-24T04:40:03Z"
+    }
+  ],
+  "total": 2,
+  "limit": 50,
+  "offset": 0
+}

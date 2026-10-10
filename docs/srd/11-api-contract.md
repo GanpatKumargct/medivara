@@ -162,7 +162,7 @@ Fixture: `contracts/API-01.200.json`
   "ai": {
     "mode": "live",
     "available": true,
-    "model": "gemini-3.8-flash"
+    "model": "google/gemini-2.5-flash"
   },
   "time": "2026-10-24T04:30:00Z"
 }
@@ -535,7 +535,7 @@ Fixture: `contracts/API-10.200.json`
 
 ### API-11 `GET /patients/{patient_id}/documents/{document_id}` — P0
 
-Returns the document, header sources and all facts, including rejected ones so the user can undo. Facts are ordered by type (medication, lab_result, condition, allergy, procedure, vital_sign, follow_up, instruction), then by first source line. This is also the polling endpoint during processing.
+Returns the document, header sources, the extracted page lines (`document.pages`, added in 1.1.0) and all facts, including rejected ones so the user can undo. Facts are ordered by type (medication, lab_result, condition, allergy, procedure, vital_sign, follow_up, instruction), then by first source line. This is also the polling endpoint during processing.
 
 Fixture: `contracts/API-11.200.needs-review.json`
 ```json
@@ -571,6 +571,16 @@ Fixture: `contracts/API-11.200.needs-review.json`
     },
     "flags_detail": [
       { "flag": "date_ambiguous", "text": "The date 04/05/2026 was read as 04 May 2026 (day first). Please check it." }
+    ],
+    "pages": [
+      {
+        "page": 1,
+        "lines": [
+          { "line_id": "p1-l1", "text": "SUNRISE DIAGNOSTICS — LABORATORY REPORT — SYNTHETIC DEMO DOCUMENT" },
+          { "line_id": "p1-l6", "text": "HbA1c (Glycated haemoglobin)   7.6   %   4.0 - 5.6   H" },
+          { "line_id": "p1-l10", "text": "Haemoglobin   12.1   g/dL" }
+        ]
+      }
     ]
   },
   "facts": [
@@ -1498,5 +1508,6 @@ Returns `{ items: [appointment…], total, limit, offset }`, using the same obje
 | Version | Date | Change | Type | Approved by |
 |---|---|---|---|---|
 | 1.0.0 | Pre-event | Initial contract: API-01…33 | n/a | B (owner), A (ack), C (review) |
+| 1.1.0 | 2026-10-10 | API-11 adds `document.pages` (`[{ page, lines: [{ line_id, text }] }]`) so SCR-06 can show the document text and highlight source lines. Clients ignore unknown fields. | Additive | B (owner); A to acknowledge |
 
 Rules for entries are in [../hackathon/integration-plan.md](../hackathon/integration-plan.md) §5. Additive changes increase the minor version (1.1.0). Breaking changes increase the major version and need Person A's acknowledgement.

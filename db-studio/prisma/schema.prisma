@@ -1,0 +1,367 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ai_output {
+  id                   String          @id @db.VarChar
+  patient_id           String          @db.VarChar
+  requested_by_user_id String          @db.VarChar
+  output_type          String          @db.VarChar
+  input_mode           String?         @db.VarChar
+  question_text        String?         @db.VarChar
+  status               String          @db.VarChar
+  statements           Json            @db.Json
+  evidence             Json            @db.Json
+  questions_for_doctor Json            @db.Json
+  notices              Json            @db.Json
+  validation_report    Json            @db.Json
+  model_id             String?         @db.VarChar
+  prompt_version       String?         @db.VarChar
+  thinking_level       String?         @db.VarChar
+  latency_ms           Int
+  created_at           DateTime        @db.Timestamptz(6)
+  patient_profile      patient_profile @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                 user            @relation(fields: [requested_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([patient_id], map: "ix_ai_output_patient_id")
+}
+
+model audit_event {
+  id            String       @id @db.VarChar
+  at            DateTime     @db.Timestamptz(6)
+  actor_user_id String?      @db.VarChar
+  patient_id    String?      @db.VarChar
+  action        String       @db.VarChar
+  resource_type String?      @db.VarChar
+  resource_id   String?      @db.VarChar
+  outcome       auditoutcome
+  request_id    String?      @db.VarChar
+  metadata      Json         @db.Json
+
+  @@index([at], map: "ix_audit_event_at")
+  @@index([patient_id], map: "ix_audit_event_patient_id")
+}
+
+model consent_record {
+  id              String           @id @db.VarChar
+  user_id         String           @db.VarChar
+  patient_id      String?          @db.VarChar
+  consent_type    consenttype
+  granted         Boolean
+  policy_version  String           @db.VarChar
+  created_at      DateTime         @db.Timestamptz(6)
+  context         Json             @db.Json
+  patient_profile patient_profile? @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user            user             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "ix_consent_record_user_id")
+}
+
+model consultation_brief {
+  id                  String          @id @db.VarChar
+  patient_id          String          @db.VarChar
+  created_by_user_id  String          @db.VarChar
+  created_at          DateTime        @db.Timestamptz(6)
+  include_unverified  Boolean
+  visit_reason        String?         @db.VarChar
+  sections            Json            @db.Json
+  evidence            Json            @db.Json
+  fingerprint         String          @db.VarChar
+  narrative_output_id String?         @db.VarChar
+  user                user            @relation(fields: [created_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  patient_profile     patient_profile @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([created_at], map: "ix_consultation_brief_created_at")
+  @@index([patient_id], map: "ix_consultation_brief_patient_id")
+}
+
+model document_page {
+  id               String           @id @db.VarChar
+  document_id      String           @db.VarChar
+  page_number      Int
+  width            Float
+  height           Float
+  text_source      String           @db.VarChar
+  lines            Json             @db.Json
+  char_count       Int
+  medical_document medical_document @relation(fields: [document_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([document_id], map: "ix_document_page_document_id")
+}
+
+model extracted_fact {
+  id                       String           @id @db.VarChar
+  patient_id               String           @db.VarChar
+  document_id              String           @db.VarChar
+  fact_type                facttype
+  name                     String?          @db.VarChar
+  value                    String?          @db.VarChar
+  unit                     String?          @db.VarChar
+  reference_range          String?          @db.VarChar
+  abnormal_flag_as_written String?          @db.VarChar
+  strength                 String?          @db.VarChar
+  dose                     String?          @db.VarChar
+  frequency                String?          @db.VarChar
+  route                    String?          @db.VarChar
+  duration                 String?          @db.VarChar
+  timing                   String?          @db.VarChar
+  qualifier                String?          @db.VarChar
+  reaction                 String?          @db.VarChar
+  due_text                 String?          @db.VarChar
+  event_date_text          String?          @db.VarChar
+  event_date               DateTime?        @db.Date
+  source_line_ids          Json             @db.Json
+  source_page              Int
+  confidence               confidence
+  uncertainty_reasons      Json             @db.Json
+  extraction_note          String?          @db.VarChar
+  status                   factstatus
+  corrected_fields         Json?            @db.Json
+  history                  Json             @db.Json
+  reviewed_by_user_id      String?          @db.VarChar
+  reviewed_at              DateTime?        @db.Timestamptz(6)
+  created_at               DateTime         @db.Timestamptz(6)
+  updated_at               DateTime         @db.Timestamptz(6)
+  medical_document         medical_document @relation(fields: [document_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  patient_profile          patient_profile  @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([document_id], map: "ix_extracted_fact_document_id")
+  @@index([patient_id], map: "ix_extracted_fact_patient_id")
+}
+
+model medical_document {
+  id                   String           @id @db.VarChar
+  patient_id           String           @db.VarChar
+  uploaded_by_user_id  String           @db.VarChar
+  original_filename    String           @db.VarChar
+  mime_type            String           @db.VarChar
+  size_bytes           Int
+  sha256               String           @db.VarChar
+  storage_key          String           @db.VarChar
+  page_count           Int
+  title                String           @db.VarChar
+  document_type        documenttype
+  document_type_source String?          @db.VarChar
+  document_type_hint   String?          @db.VarChar
+  document_date        DateTime?        @db.Date
+  document_date_text   String?          @db.VarChar
+  document_date_source String?          @db.VarChar
+  date_ambiguous       Boolean
+  facility_name        String?          @db.VarChar
+  clinician_name       String?          @db.VarChar
+  status               documentstatus
+  stage                documentstage
+  failure_code         failurecode?
+  failure_message      String?          @db.VarChar
+  flags                Json             @db.Json
+  flags_detail         Json             @db.Json
+  header_sources       Json             @db.Json
+  user_edited_fields   Json             @db.Json
+  is_sample            Boolean
+  extraction_source    String           @db.VarChar
+  model_id             String?          @db.VarChar
+  prompt_version       String?          @db.VarChar
+  discarded_fact_count Int
+  created_at           DateTime         @db.Timestamptz(6)
+  updated_at           DateTime         @db.Timestamptz(6)
+  processed_at         DateTime?        @db.Timestamptz(6)
+  document_page        document_page[]
+  extracted_fact       extracted_fact[]
+  patient_profile      patient_profile  @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                 user             @relation(fields: [uploaded_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([patient_id], map: "ix_medical_document_patient_id")
+  @@index([sha256], map: "ix_medical_document_sha256")
+}
+
+model patient_access_grant {
+  id                                                 String          @id @db.VarChar
+  patient_id                                         String          @db.VarChar
+  grantee_user_id                                    String          @db.VarChar
+  role                                               role
+  scopes                                             Json            @db.Json
+  status                                             grantstatus
+  granted_by_user_id                                 String          @db.VarChar
+  consent_record_id                                  String?         @db.VarChar
+  created_at                                         DateTime        @db.Timestamptz(6)
+  revoked_at                                         DateTime?       @db.Timestamptz(6)
+  revoked_by_user_id                                 String?         @db.VarChar
+  user_patient_access_grant_granted_by_user_idTouser user            @relation("patient_access_grant_granted_by_user_idTouser", fields: [granted_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_patient_access_grant_grantee_user_idTouser    user            @relation("patient_access_grant_grantee_user_idTouser", fields: [grantee_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  patient_profile                                    patient_profile @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([grantee_user_id], map: "ix_patient_access_grant_grantee_user_id")
+  @@index([patient_id], map: "ix_patient_access_grant_patient_id")
+}
+
+model patient_profile {
+  id                   String                 @id @db.VarChar
+  owner_user_id        String                 @db.VarChar
+  display_name         String                 @db.VarChar
+  age_years            Int?
+  is_synthetic         Boolean
+  created_at           DateTime               @db.Timestamptz(6)
+  ai_output            ai_output[]
+  consent_record       consent_record[]
+  consultation_brief   consultation_brief[]
+  extracted_fact       extracted_fact[]
+  medical_document     medical_document[]
+  patient_access_grant patient_access_grant[]
+  user                 user                   @relation(fields: [owner_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reminder             reminder[]
+
+  @@index([owner_user_id], map: "ix_patient_profile_owner_user_id")
+}
+
+model reminder {
+  id                           String          @id @db.VarChar
+  patient_id                   String          @db.VarChar
+  created_by_user_id           String          @db.VarChar
+  type                         remindertype
+  title                        String          @db.VarChar
+  notes                        String?         @db.VarChar
+  schedule_kind                String          @db.VarChar
+  schedule                     Json            @db.Json
+  timezone                     String          @db.VarChar
+  next_due_at                  DateTime?       @db.Timestamptz(6)
+  last_completed_at            DateTime?       @db.Timestamptz(6)
+  status                       reminderstatus
+  source_fact_id               String?         @db.VarChar
+  medication_schedule_attested Boolean
+  created_at                   DateTime        @db.Timestamptz(6)
+  updated_at                   DateTime        @db.Timestamptz(6)
+  user                         user            @relation(fields: [created_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  patient_profile              patient_profile @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([patient_id], map: "ix_reminder_patient_id")
+}
+
+model session {
+  id         String    @id @db.VarChar
+  user_id    String    @db.VarChar
+  token_hash String    @unique(map: "ix_session_token_hash") @db.VarChar
+  created_at DateTime  @db.Timestamptz(6)
+  expires_at DateTime  @db.Timestamptz(6)
+  revoked_at DateTime? @db.Timestamptz(6)
+  user       user      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "ix_session_user_id")
+}
+
+model user {
+  id                                                                 String                 @id @db.VarChar
+  email                                                              String                 @unique(map: "ix_user_email") @db.VarChar
+  password_hash                                                      String                 @db.VarChar
+  display_name                                                       String                 @db.VarChar
+  is_demo                                                            Boolean
+  created_at                                                         DateTime               @db.Timestamptz(6)
+  last_login_at                                                      DateTime?              @db.Timestamptz(6)
+  ai_output                                                          ai_output[]
+  consent_record                                                     consent_record[]
+  consultation_brief                                                 consultation_brief[]
+  medical_document                                                   medical_document[]
+  patient_access_grant_patient_access_grant_granted_by_user_idTouser patient_access_grant[] @relation("patient_access_grant_granted_by_user_idTouser")
+  patient_access_grant_patient_access_grant_grantee_user_idTouser    patient_access_grant[] @relation("patient_access_grant_grantee_user_idTouser")
+  patient_profile                                                    patient_profile[]
+  reminder                                                           reminder[]
+  session                                                            session[]
+}
+
+enum auditoutcome {
+  success
+  denied
+  error
+}
+
+enum confidence {
+  high
+  medium
+  low
+}
+
+enum consenttype {
+  terms_and_disclaimer
+  ai_processing
+  sharing
+  voice_input
+  notifications
+}
+
+enum documentstage {
+  queued
+  reading_text
+  screening
+  extracting
+  validating
+  done
+  no_text_layer
+}
+
+enum documentstatus {
+  queued
+  processing
+  needs_review
+  ready
+  failed
+}
+
+enum documenttype {
+  prescription
+  lab_report
+  discharge_summary
+  consultation_note
+  other
+  unknown
+}
+
+enum factstatus {
+  unverified
+  confirmed
+  corrected
+  rejected
+}
+
+enum facttype {
+  medication
+  lab_result
+  condition
+  allergy
+  procedure
+  vital_sign
+  follow_up
+  instruction
+}
+
+enum failurecode {
+  UNREADABLE_PDF
+  NO_TEXT_LAYER
+  AI_UNAVAILABLE
+  AI_BLOCKED
+  AI_INVALID_OUTPUT
+  AI_TIMEOUT
+  INTERNAL_ERROR
+}
+
+enum grantstatus {
+  active
+  revoked
+}
+
+enum reminderstatus {
+  active
+  completed
+  dismissed
+}
+
+enum remindertype {
+  appointment
+  medication
+  follow_up
+  other
+}
+
+enum role {
+  owner
+  caregiver
+}

@@ -5,7 +5,6 @@ import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Reminder, ReminderType } from '../api/types'
 import * as api from '../api/endpoints'
-import { reminderSuggestions } from '../api/endpoints'
 import { useToast } from '../context/ToastContext'
 import { Alert, Badge, Button, Card, CardBody, Checkbox, Field, Input } from '../components/ui'
 import { EmptyState, ErrorBanner, LoadingRows } from '../components/states'
@@ -22,7 +21,8 @@ export default function Reminders() {
   const canManage = patientQ.data ? patientQ.data.my_role === 'owner' || patientQ.data.scopes.includes('manage_reminders') : false
 
   const q = useQuery({ queryKey: ['reminders', patientId], queryFn: () => api.listReminders(patientId) })
-  const suggestions = reminderSuggestions(patientId)
+  const suggestionsQ = useQuery({ queryKey: ['reminders', patientId, 'suggestions'], queryFn: () => api.getReminderSuggestions(patientId) })
+  const suggestions = suggestionsQ.data ?? []
 
   const complete = useMutation({
     mutationFn: (id: string) => api.completeReminder(patientId, id),

@@ -1,0 +1,64 @@
+{
+  "groups": [
+    {
+      "date": "2026-09-15",
+      "events": [
+        {
+          "id": "evt_doc_doc_meera_rx_2026_09",
+          "date": "2026-09-15",
+          "event_type": "document",
+          "title": "Prescription · Lakeview Family Clinic",
+          "summary": "Dr. Arun Kumar · 3 medicines · follow-up advice",
+          "document_id": "doc_meera_rx_2026_09",
+          "fact_id": null,
+          "status": null,
+          "confidence": null,
+          "change": null,
+          "source": { "page": 1, "line_ids": ["p1-l1", "p1-l3"] }
+        },
+        {
+          "id": "evt_fct_fct_meera_rx_2026_09_01",
+          "date": "2026-09-15",
+          "event_type": "medication",
+          "title": "Metformin 1000 mg",
+          "summary": "1 tablet · twice daily · after meals · 90 days",
+          "document_id": "doc_meera_rx_2026_09",
+          "fact_id": "fct_meera_rx_2026_09_01",
+          "status": "confirmed",
+          "confidence": "high",
+          "change": {
+            "kind": "dose_change",
+            "previous": { "strength": "500 mg", "document_id": "doc_meera_rx_2025_03", "date": "2025-03-21" },
+            "current": { "strength": "1000 mg", "document_id": "doc_meera_rx_2026_09", "date": "2026-09-15" }
+          },
+          "source": { "page": 1, "line_ids": ["p1-l8"] }
+        }
+      ]
+    },
+    {
+      "date": "2026-05-04",
+      "events": [
+        {
+          "id": "evt_fct_fct_meera_lab_2026_05_01",
+          "date": "2026-05-04",
+          "event_type": "lab_result",
+          "title": "HbA1c (Glycated haemoglobin) 7.6 %",
+          "summary": "Reference 4.0 - 5.6 · marked H on the report",
+          "document_id": "doc_meera_lab_2026_05",
+          "fact_id": "fct_meera_lab_2026_05_01",
+          "status": "unverified",
+          "confidence": "medium",
+          "change": {
+            "kind": "value_change",
+            "previous": { "value": "8.4", "unit": "%", "document_id": "doc_meera_lab_2025_03", "date": "2025-03-18" },
+            "current": { "value": "7.6", "unit": "%", "document_id": "doc_meera_lab_2026_05", "date": "2026-05-04" }
+          },
+          "source": { "page": 1, "line_ids": ["p1-l6"] }
+        }
+      ]
+    }
+  ],
+  "undated": [],
+  "counts": { "events": 3, "documents": 2, "unverified": 1 },
+  "generated_at": "2026-10-24T05:02:00Z"
+}

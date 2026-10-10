@@ -1,0 +1,13 @@
+{
+  "answer_id": "aio_3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f",
+  "status": "emergency",
+  "statements": [
+    { "id": "S1", "kind": "safety_notice", "text": "If you or someone else may be in danger or need urgent medical help, call 112 (emergency) or 108 (ambulance) now, or go to the nearest emergency department. If you are thinking about harming yourself, call Tele-MANAS on 14416 (free, 24×7). MediVara cannot help in an emergency.", "evidence_ids": [] }
+  ],
+  "evidence": [],
+  "questions_for_doctor": [],
+  "notices": [],
+  "disclaimer": "MediVara organises what your documents say. It is not medical advice. Check important information with your doctor.",
+  "generated_at": "2026-10-24T05:06:40Z",
+  "latency_ms": 12
+}

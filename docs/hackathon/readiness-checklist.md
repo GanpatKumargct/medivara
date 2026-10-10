@@ -13,7 +13,7 @@
 **Person B**
 - [ ] Gemini **dev** and **demo** projects created, each with its own key.
 - [ ] **Paid Tier-1 billing** enabled with a budget alert; rate limits checked in AI Studio.
-- [ ] Model IDs confirmed (`gemini-3.8-flash`; optionally `gemini-3.5-flash-lite`); SDK version pinned.
+- [ ] Model IDs confirmed (`gemini-2.5-flash`; optionally `gemini-3.5-flash-lite`); SDK version pinned.
 - [ ] Test call made with `store=false` and a JSON-schema response.
 - [ ] Contract API-01 to 21 re-read; open questions resolved with A and C.
 

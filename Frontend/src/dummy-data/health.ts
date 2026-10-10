@@ -10,7 +10,7 @@ export const health: HealthResponse = {
   ai: {
     mode: 'live',
     available: true,
-    model: 'gemini-3.8-flash',
+    model: 'google/gemini-2.5-flash',
   },
   time: new Date().toISOString(),
 }
@@ -18,5 +18,5 @@ export const health: HealthResponse = {
 export function setAiMode(mode: HealthResponse['ai']['mode']) {
   health.ai.mode = mode
   health.ai.available = mode === 'live'
-  health.ai.model = mode === 'off' ? null : 'gemini-3.8-flash'
+  health.ai.model = mode === 'off' ? null : 'google/gemini-2.5-flash'
 }

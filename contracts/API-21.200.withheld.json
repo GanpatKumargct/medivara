@@ -1,0 +1,45 @@
+{
+  "answer_id": "aio_6f7a8b9c-0d1e-4f2a-3b4c-5d6e7f8a9b0c",
+  "status": "withheld",
+  "statements": [],
+  "evidence": [
+    {
+      "evidence_id": "E1",
+      "document_id": "doc_meera_lab_2026_05",
+      "document_title": "Lab report · Sunrise Diagnostics · 04 May 2026",
+      "document_type": "lab_report",
+      "document_date": "2026-05-04",
+      "page": 1,
+      "line_ids": [
+        "p1-l6"
+      ],
+      "text": "HbA1c (Glycated haemoglobin)   7.6   %   4.0 - 5.6   H",
+      "fact_status": "unverified",
+      "is_user_correction": false
+    },
+    {
+      "evidence_id": "E2",
+      "document_id": "doc_meera_lab_2025_03",
+      "document_title": "Lab report · Sunrise Diagnostics · 18 Mar 2025",
+      "document_type": "lab_report",
+      "document_date": "2025-03-18",
+      "page": 1,
+      "line_ids": [
+        "p1-l6"
+      ],
+      "text": "HbA1c (Glycated haemoglobin)   8.4   %   4.0 - 5.6   H",
+      "fact_status": "confirmed",
+      "is_user_correction": false
+    }
+  ],
+  "questions_for_doctor": [],
+  "notices": [
+    {
+      "code": "withheld",
+      "text": "MediVara couldn't check an answer against your documents, so here are the most relevant lines instead."
+    }
+  ],
+  "disclaimer": "MediVara organises what your documents say. It is not medical advice. Check important information with your doctor.",
+  "generated_at": "2026-10-24T05:08:00Z",
+  "latency_ms": 7420
+}

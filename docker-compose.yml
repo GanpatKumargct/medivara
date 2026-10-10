@@ -1,0 +1,30 @@
+# MediVara local database: PostgreSQL 16, bound to this machine only (127.0.0.1:5433).
+# Port 5433 so it never collides with another project's Postgres on 5432.
+#
+#   docker compose up -d          # start (data survives restarts in the medivara-pgdata volume)
+#   docker compose stop           # stop
+#   docker compose down -v        # remove container AND data (synthetic demo data only)
+#
+# Credentials are for local development; set MEDIVARA_PG_PASSWORD to override.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: medivara-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: medivara
+      POSTGRES_USER: medivara
+      POSTGRES_PASSWORD: ${MEDIVARA_PG_PASSWORD:-medivara_local_dev}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - medivara-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medivara -d medivara"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  medivara-pgdata:
+    name: medivara-pgdata

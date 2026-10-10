@@ -1,0 +1,22 @@
+{
+  "grants": [
+    {
+      "id": "grt_meera_owner",
+      "grantee": { "user_id": "usr_meera", "display_name": "Meera Raman", "email": "meera.demo@medivara.test" },
+      "role": "owner",
+      "scopes": ["view_records", "upload_documents", "manage_reminders"],
+      "status": "active",
+      "granted_at": "2026-10-24T03:00:00Z",
+      "revoked_at": null
+    },
+    {
+      "id": "grt_karthik_meera",
+      "grantee": { "user_id": "usr_karthik", "display_name": "Karthik Raman", "email": "karthik.demo@medivara.test" },
+      "role": "caregiver",
+      "scopes": ["view_records", "manage_reminders"],
+      "status": "active",
+      "granted_at": "2026-10-24T03:00:00Z",
+      "revoked_at": null
+    }
+  ]
+}

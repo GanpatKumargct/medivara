@@ -1,0 +1,41 @@
+{
+  "items": [
+    {
+      "id": "pat_karthik",
+      "display_name": "Karthik Raman",
+      "age_years": 32,
+      "is_synthetic": true,
+      "my_role": "owner",
+      "scopes": ["view_records", "upload_documents", "manage_reminders"],
+      "owner_display_name": "Karthik Raman",
+      "stats": {
+        "documents_total": 1,
+        "documents_needs_review": 0,
+        "documents_processing": 0,
+        "documents_failed": 0,
+        "upcoming_reminders": 0,
+        "latest_brief_at": null
+      }
+    },
+    {
+      "id": "pat_meera",
+      "display_name": "Meera Raman",
+      "age_years": 58,
+      "is_synthetic": true,
+      "my_role": "caregiver",
+      "scopes": ["view_records", "manage_reminders"],
+      "owner_display_name": "Meera Raman",
+      "stats": {
+        "documents_total": 6,
+        "documents_needs_review": 1,
+        "documents_processing": 0,
+        "documents_failed": 1,
+        "upcoming_reminders": 1,
+        "latest_brief_at": "2026-10-24T05:02:41Z"
+      }
+    }
+  ],
+  "total": 2,
+  "limit": 50,
+  "offset": 0
+}

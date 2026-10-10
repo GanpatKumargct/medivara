@@ -1,40 +1,37 @@
 # Dummy data
 
-All synthetic sample data the MediVara frontend runs on **before the real backend
-exists**. It is deliberately isolated in this one folder so it can be deleted or
-swapped out in a single place.
+Synthetic sample data for running the MediVara frontend **without the backend**. The app
+uses the real backend by default; this folder is only used when `VITE_API_MODE=dummy`.
 
 > Everything here is **fictional**. Names, clinics, doctors and values are invented
 > (from `docs/hackathon/synthetic-demo-data-pack.md`). Never replace these with real
 > medical records.
 
-## How it is wired
+## Modes
+
+| Mode | How | Data comes from |
+|---|---|---|
+| Real (default) | `npm run dev` (or PM2, see `../../../ecosystem.config.cjs`) | FastAPI backend at `/api/v1`, via the Vite proxy to `localhost:8000` |
+| Dummy | `VITE_API_MODE=dummy npm run dev` | This folder, in the browser; a "MOCK DATA" badge shows on every page |
 
 ```
-dummy-data/            ← you are here (the "separate folder" the brief asked for)
-  accounts.ts          users, patient profiles, access grants, consents
-  documents.ts         per-patient document lists + full detail (facts, source lines)
-  timeline.ts          deterministic timeline per patient
-  briefs.ts            Consultation Brief snapshots + validated narrative
-  ask.ts               canned Ask answers keyed by question intent (incl. safety states)
-  reminders.ts         reminders + "suggested from documents"
-  access.ts            grants + audit log
-  glossary.ts          ISL health-term glossary (static content)
-  health.ts            service + AI status
-  db.ts                a tiny in-memory mutable store seeded from the above
-  index.ts             re-exports
-
-../api/                ← thin async layer that reads this folder with simulated latency
+../api/endpoints.ts        picks the implementation (screens import only this)
+../api/real-endpoints.ts   fetch calls to /api/v1 (contract API-01…30)
+../api/http.ts             bearer token, error envelope → ApiError, 401 → sign-out
+../api/dummy-endpoints.ts  reads this folder with simulated latency
+dummy-data/                ← you are here
 ```
 
-The `../api/endpoints.ts` layer returns objects shaped exactly like the responses in
-`docs/srd/11-api-contract.md` (API-01…33). To move to the real backend, replace the
-bodies in `../api/endpoints.ts` with `fetch('/api/v1/...')` calls — screens and
-components do not change.
+Both implementations have identical signatures and return contract-shaped objects
+(`docs/srd/11-api-contract.md`), so screens and components don't change between modes.
+Static content that is part of the product itself is used in both modes: the ISL glossary
+(`glossary.ts`), the demo account cards on the login screen (`accounts.ts`) and the Ask
+example questions (`ask.ts`).
 
-## Changing the demo
+## Folder contents
 
-- Edit `accounts.ts` to change who can sign in (passwords are all `MediVara-Demo-2026`).
-- Edit `documents.ts` to change what each patient has on file.
-- `db.ts` holds the mutable session state (uploads, fact reviews, reminders created
-  during a session). It resets on page reload — there is no persistence.
+- `accounts.ts` — users, patient profiles, access grants, consents (passwords: `MediVara-Demo-2026`)
+- `documents.ts`, `timeline.ts`, `briefs.ts`, `ask.ts`, `reminders.ts`, `access.ts` — per-feature sample responses
+- `glossary.ts` — ISL health-term glossary (static content)
+- `health.ts` — service and AI status
+- `db.ts` — in-memory mutable store; resets on page reload

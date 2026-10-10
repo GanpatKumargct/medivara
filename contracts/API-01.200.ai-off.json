@@ -1,0 +1,12 @@
+{
+  "status": "ok",
+  "service": "medivara-api",
+  "contract_version": "1.0.0",
+  "demo_mode": true,
+  "ai": {
+    "mode": "off",
+    "available": false,
+    "model": null
+  },
+  "time": "2026-10-24T04:31:00Z"
+}

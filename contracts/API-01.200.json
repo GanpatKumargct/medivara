@@ -1,0 +1,12 @@
+{
+  "status": "ok",
+  "service": "medivara-api",
+  "contract_version": "1.0.0",
+  "demo_mode": true,
+  "ai": {
+    "mode": "live",
+    "available": true,
+    "model": "google/gemini-2.5-flash"
+  },
+  "time": "2026-10-24T04:30:00Z"
+}

@@ -17,7 +17,7 @@ You own the MediVara backend and AI workflow: the API contract and fixtures, aut
 
 - [ ] Google AI Studio: create two projects, **dev** and **demo**, each with an API key.
 - [ ] Enable **paid Tier-1 billing** with a budget alert. Check the rate limits in AI Studio.
-- [ ] Confirm the current model IDs (`gemini-3.8-flash`, `gemini-3.5-flash-lite`) and the SDK version; pin it.
+- [ ] Confirm the current model IDs (`gemini-2.5-flash`, `gemini-3.5-flash-lite`) and the SDK version; pin it.
 - [ ] Make one test call with `store=false` and a JSON schema response.
 - [ ] Python 3.11+ ready; confirm PyMuPDF installs on your OS.
 - [ ] Re-read API-01 to API-21 and fix any contract problem **now** (with Person A and Person C).

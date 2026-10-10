@@ -1,0 +1,18 @@
+{
+  "answer_id": "aio_2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+  "status": "advice_redirect",
+  "statements": [
+    { "id": "S1", "kind": "safety_notice", "text": "I can't advise you to start, stop or change any medicine or dose. Only your doctor can decide that with you. Here is what your documents say, so you can discuss it with them.", "evidence_ids": [] }
+  ],
+  "evidence": [
+    { "evidence_id": "E1", "document_id": "doc_meera_rx_2026_09", "document_title": "Prescription · Lakeview Family Clinic · 15 Sep 2026", "document_type": "prescription", "document_date": "2026-09-15", "page": 1, "line_ids": ["p1-l8"], "text": "1. Tab. Metformin 1000 mg — 1 tablet twice daily after meals — 90 days", "fact_status": "confirmed", "is_user_correction": false },
+    { "evidence_id": "E2", "document_id": "doc_meera_rx_2025_03", "document_title": "Prescription · Lakeview Family Clinic · 21 Mar 2025", "document_type": "prescription", "document_date": "2025-03-21", "page": 1, "line_ids": ["p1-l8"], "text": "1. Tab. Metformin 500 mg — 1 tablet twice daily after meals — 90 days", "fact_status": "confirmed", "is_user_correction": false }
+  ],
+  "questions_for_doctor": [
+    "Is my current dose of Metformin still right for me?"
+  ],
+  "notices": [],
+  "disclaimer": "MediVara organises what your documents say. It is not medical advice. Check important information with your doctor.",
+  "generated_at": "2026-10-24T05:06:02Z",
+  "latency_ms": 41
+}

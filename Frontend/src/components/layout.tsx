@@ -218,6 +218,12 @@ function Footer() {
   return (
     <footer className="no-print border-t border-line bg-surface px-4 py-4 text-center md:py-5">
       <p className="mx-auto max-w-2xl text-xs text-ink-subtle">{COPY['COPY-02']}</p>
+      {api.API_MODE === 'dummy' && (
+        // G-6: never demo mocks by accident.
+        <p role="status" className="fixed bottom-3 right-3 z-50 rounded-md bg-amber-500 px-2 py-1 text-xs font-semibold text-black shadow">
+          {COPY['COPY-32']}
+        </p>
+      )}
     </footer>
   )
 }
