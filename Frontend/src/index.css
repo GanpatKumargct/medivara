@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --mv-text-scale: 1; /* 1 = 100%, 1.25, 1.5 (FR-051) */
+}
+
+html {
+  font-size: calc(16px * var(--mv-text-scale));
+}
+
+body {
+  @apply bg-surface-muted text-ink font-sans antialiased;
+}
+
+/* Visible focus ring on every interactive element (NFR-A11Y, SCR §1). */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid theme('colors.brand.500');
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* High-contrast variant (FR-051). Applied when data-contrast="high" on <html>. */
+[data-contrast='high'] {
+  --hc-ink: #000000;
+  --hc-surface: #ffffff;
+}
+[data-contrast='high'] body {
+  background: #ffffff;
+  color: #000000;
+}
+[data-contrast='high'] .mv-card,
+[data-contrast='high'] .mv-surface {
+  background: #ffffff !important;
+  border-color: #000000 !important;
+}
+[data-contrast='high'] .text-ink-muted,
+[data-contrast='high'] .text-ink-subtle {
+  color: #1a1a1a !important;
+}
+
+/* Reduced motion (FR-051, NFR-A11Y-06). */
+[data-reduced-motion='true'] *,
+[data-reduced-motion='true'] *::before,
+[data-reduced-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Skip link (SCR §1). */
+.skip-link {
+  @apply sr-only;
+}
+.skip-link:focus {
+  @apply not-sr-only fixed left-3 top-3 z-50 rounded-md bg-brand-700 px-4 py-2 text-white shadow-pop;
+}
+
+@layer utilities {
+  .mv-focusable {
+    @apply focus:outline-none focus-visible:outline-none;
+  }
+}
+
+/* Print layout (brief, Visit Card) — FR-033, FR-060, FE-4.6. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .print-page {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  a[href]::after {
+    content: '';
+  }
+}
