@@ -122,6 +122,10 @@ export default function Brief() {
   )
 }
 
+function plural(n: number, word: string) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`
+}
+
 function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoading: boolean }) {
   const s = brief.sections
   return (
@@ -133,8 +137,8 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
         <CardBody>
           <h2 className="text-lg font-semibold text-ink">{brief.header.patient_display_name}, {brief.header.age_years ?? '—'}</h2>
           <p className="text-sm text-ink-muted">
-            {brief.header.documents_count} documents from {brief.header.providers_count} providers ·{' '}
-            {formatDate(brief.header.date_range.from)} – {formatDate(brief.header.date_range.to)}
+            {plural(brief.header.documents_count, 'document')} from {plural(brief.header.providers_count, 'provider')}
+            {brief.header.date_range && <> · {formatDate(brief.header.date_range.from)} – {formatDate(brief.header.date_range.to)}</>}
           </p>
           <p className="text-xs text-ink-subtle">
             Created {formatTimestampDate(brief.created_at)}
@@ -182,6 +186,7 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
 
       {/* Medicines */}
       <Section title={s.medications_from ? `Medicines in your most recent prescription (${s.medications_from.title})` : 'Medicines'}>
+        {s.medications.length === 0 && <p className="text-sm text-ink-muted">No medicines found in your reviewed documents.</p>}
         <ul className="space-y-1.5">
           {s.medications.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center gap-2 text-sm text-ink">
@@ -315,6 +320,7 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
 
       {/* Sources */}
       <Section title="Sources">
+        {brief.sources.length === 0 && <p className="text-sm text-ink-muted">No reviewed documents yet.</p>}
         <ul className="space-y-1 text-sm text-ink-muted">
           {brief.sources.map((src) => <li key={src.document_id}>{src.title}</li>)}
         </ul>

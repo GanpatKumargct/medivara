@@ -452,7 +452,7 @@ function emptyBrief(patientId: string): Brief {
     include_unverified: true,
     visit_reason: null,
     stale: false,
-    header: { patient_display_name: PATIENTS[patientId]?.display_name ?? '', age_years: null, documents_count: 0, providers_count: 0, date_range: { from: '', to: '' }, unverified_items_count: 0 },
+    header: { patient_display_name: PATIENTS[patientId]?.display_name ?? '', age_years: null, documents_count: 0, providers_count: 0, date_range: null, unverified_items_count: 0 },
     overview: { templated_text: 'No documents yet.', narrative_status: 'not_requested', narrative: null },
     sections: { medications_from: null, medications: [], other_medications_mentioned: [], conditions: [], results_over_time: [], allergies: { status: 'not_documented', items: [] }, points_to_clarify: [], missing_information: [], questions_for_doctor: [] },
     evidence: [],

@@ -353,7 +353,7 @@ export interface Brief {
     age_years: number | null
     documents_count: number
     providers_count: number
-    date_range: { from: string; to: string }
+    date_range: { from: string; to: string } | null // null until a confirmed fact has a date
     unverified_items_count: number
   }
   overview: {

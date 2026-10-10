@@ -79,6 +79,7 @@ export const COPY = {
   'COPY-27':
     'This profile hasn’t been shared with you, or access was removed. Ask the profile owner to share it with you.',
   'COPY-28': 'The date {as_written} was read as {parsed} (day first). Please check it.',
+  'COPY-30a': 'None of your documents mention allergies.',
   'COPY-31':
     'Your documents changed after this brief was created. Create a new brief to include the changes.',
   'COPY-32': 'MOCK DATA — not connected to the server',
