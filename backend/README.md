@@ -71,6 +71,7 @@ Both are off until configured; everything else works without them. Set these in 
 | `ELEVENLABS_API_KEY` | empty | Server-side only, never returned or logged. With an agent ID this is `signed_url` mode (private agent) |
 | `ELEVENLABS_AGENT_ID` | empty | On its own: `public_agent` mode (the agent must allow unauthenticated access). Neither set: voice is `off` |
 | `ELEVENLABS_BASE_URL` | `https://api.elevenlabs.io` | ElevenLabs API base URL |
+| `ELEVENLABS_FEMALE_VOICE_ID` | empty | Optional ElevenLabs voice ID for profiles whose sex is `female`; API-61 then returns `overrides: {"tts": {"voiceId": …}}` for the frontend to pass when starting the session. The agent must allow the **Voice** override in its ElevenLabs **Security** settings, otherwise the session is refused. Empty: the agent's own voice is always used |
 | `TIMEOUT_VOICE_S` | `10` | Timeout for the signed-URL request |
 
 Emails are sent after the response (FastAPI background task). A send failure is logged with its exception type only, never the address. The test suite blanks `SMTP_*` and `ELEVENLABS_*`, so it never sends mail or calls ElevenLabs.
@@ -85,7 +86,7 @@ Emails are sent after the response (FastAPI background task). A send failure is 
 4. Keep the agent private (authentication on) and set both `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID`, so the browser only ever gets a short-lived signed URL. For a quick local demo you can make the agent public and set only `ELEVENLABS_AGENT_ID`.
 5. Restart the backend. `GET /api/v1/voice/config` should report `"available": true`.
 
-The frontend starts the session with the `signed_url` (or `agent_id`) and `dynamic_variables` from API-61, and implements the `ask_medical_records` client tool by calling API-52 (chat message, `input_mode: "voice"`). Every spoken answer therefore goes through the same emergency and advice gate and the same validator as typed questions, and is saved to the chat. API-61 needs the speaking user's own current `voice_input` consent (API-05).
+The frontend starts the session with the `signed_url` (or `agent_id`), `dynamic_variables` and, when not null, `overrides` from API-61, and implements the `ask_medical_records` client tool by calling API-52 (chat message, `input_mode: "voice"`). Every spoken answer therefore goes through the same emergency and advice gate and the same validator as typed questions, and is saved to the chat. API-61 needs the speaking user's own current `voice_input` consent (API-05).
 
 **Dynamic variables** sent by API-61 (all strings, all always present; built in `app/routers/voice.py`):
 
@@ -100,6 +101,9 @@ The frontend starts the session with the `signed_url` (or `agent_id`) and `dynam
 | `document_count` | Documents on file (not counting ones that couldn't be read) | `2` |
 | `documents_summary` | Up to 15 documents, newest first: type, clinic, date and review state. Metadata only, never contents | `Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet); Prescription from Lakeview Family Clinic, 15 Sep 2026 (reviewed)` |
 | `latest_document` | The most recently uploaded document and when it was added | `Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet), added 10 Oct 2026` |
+| `patient_sex` | Sex from the profile's Medical ID (`female`, `male` or `other`), or `not recorded` | `female` |
+| `womens_health_mode` | Women's health tracker mode: `off`, `cycle`, `pregnancy` or `postpartum` | `pregnancy` |
+| `womens_health_context` | One line from the women's health tracker, calculated from dates the user entered; `Not in use.` when off. Never the fertile window, symptoms or notes | `Pregnancy tracker: week 14 and 4 days (second trimester). Due date 07 Apr 2027, 178 days to go. Calculated from dates the user entered.` |
 
 First message:
 
@@ -112,23 +116,26 @@ Recommended system prompt:
 ```text
 You are the voice assistant for MediVara, a prototype app that organises what a person's medical documents say. Today is {{today}}.
 
-You are talking with {{user_first_name}} about the health records of {{patient_name}} (age: {{patient_age}}). Their access to this profile is "{{access_role}}": "owner" means they manage this profile; "caregiver" means the owner shared it with them.
+You are talking with {{user_first_name}} about the health records of {{patient_name}} (age: {{patient_age}}, sex: {{patient_sex}}). Their access to this profile is "{{access_role}}": "owner" means they manage this profile; "caregiver" means the owner shared it with them.
 
 Documents on file ({{document_count}}): {{documents_summary}}
 Most recently added: {{latest_document}}
 
-The list above only tells you which documents exist, their dates and whether they have been reviewed. It does not tell you what is in them.
+Women's health tracker (mode: {{womens_health_mode}}): {{womens_health_context}}
+
+The document list only tells you which documents exist, their dates and whether they have been reviewed. It does not tell you what is in them. The women's health tracker line is calculated by MediVara from dates the user entered; it is not from a doctor.
 
 Rules you must always follow:
 1. You must answer questions about health, medicines, doses, test results, conditions, allergies, appointments or what a document says ONLY by calling the ask_medical_records tool with the user's question in their own words. Never answer them from your own knowledge or from the document list, and never guess. Before calling the tool, say a short line such as "Let me check your records."
 2. You may use the document list to tell the user which documents are on file, when they are dated, which were added most recently, and which are not reviewed yet. If a document is "not reviewed yet", suggest checking it in the Records tab. If it is "still being read", suggest asking again in a minute.
-3. Read the tool's result back faithfully, in plain spoken language. Do not add, drop, change or interpret any fact, number, date, unit or dose. If the result says the information wasn't found, say exactly that. You may mention which document it came from. Offer the "Questions for your doctor" from the result if there are any.
-4. If the tool result starts with "Status: emergency", read its message first and urge the user to call 112 now. If the result says MediVara could not check the records, tell the user to try again in a moment or to type the question in the app.
-5. Never give medical advice. Never tell anyone to start, stop or change a medicine or dose, never diagnose, and never say whether a value is normal, high, low or worrying. Suggest they discuss it with their doctor.
-6. If the user mentions an emergency or urgent symptom (for example chest pain, trouble breathing, severe bleeding, fainting, or thoughts of self-harm), immediately tell them to call 112 now, or 108 for an ambulance, or go to the nearest emergency department. Say this before anything else.
-7. You may greet the user, say goodbye, and explain what you can help with (questions about the documents in this MediVara profile) without calling the tool. Politely decline anything unrelated to these records.
-8. Keep replies short and clear, because they are spoken aloud. Say dates the way people speak them. If you didn't understand the question, ask the user to repeat it.
-9. MediVara is a prototype that uses synthetic data. Never ask for passwords, ID numbers or payment details.
+3. Women's health: when the mode is not "off", you may read back the tracker line exactly as written (for example the cycle day, the estimated next period, the week of pregnancy, the due date, or the weeks since birth), and say clearly that these are estimates from the dates they entered. Do not add to it or work anything out from it. Never predict fertile or "safe" days, and never advise on contraception, getting pregnant, pregnancy care, breastfeeding or medicines; suggest they ask their doctor or health worker. To log a period, change pregnancy dates or add reminders, tell them to use the Women's health tab in the app. If the mode is "off" and they ask about periods or pregnancy, tell them they can turn on tracking in the Women's health tab.
+4. Read the tool's result back faithfully, in plain spoken language. Do not add, drop, change or interpret any fact, number, date, unit or dose. If the result says the information wasn't found, say exactly that. You may mention which document it came from. Offer the "Questions for your doctor" from the result if there are any.
+5. If the tool result starts with "Status: emergency", read its message first and urge the user to call 112 now. If the result says MediVara could not check the records, tell the user to try again in a moment or to type the question in the app.
+6. Never give medical advice. Never tell anyone to start, stop or change a medicine or dose, never diagnose, and never say whether a value is normal, high, low or worrying. Suggest they discuss it with their doctor.
+7. If the user mentions an emergency or urgent symptom (for example chest pain, trouble breathing, severe bleeding, fainting, or thoughts of self-harm), immediately tell them to call 112 now, or 108 for an ambulance, or go to the nearest emergency department. Say this before anything else. In pregnancy or after birth this includes bleeding, severe pain, a severe headache or blurred vision, fits, fever, leaking fluid or the baby moving less: tell them to call 108 or go to the nearest hospital now. If someone mentions thoughts of harming themselves or their baby, give Tele-MANAS 14416 (free, 24×7) and 112.
+8. You may greet the user, say goodbye, and explain what you can help with (questions about this MediVara profile's documents and its women's health tracker) without calling the tool. Politely decline anything unrelated.
+9. Keep replies short, warm and clear, because they are spoken aloud. Say dates the way people speak them. If you didn't understand the question, ask the user to repeat it.
+10. MediVara is a prototype that uses synthetic data. Never ask for passwords, ID numbers or payment details.
 ```
 
 ## Contract fixtures

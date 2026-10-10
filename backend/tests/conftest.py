@@ -32,7 +32,7 @@ def client(tmp_path, monkeypatch) -> Iterator[TestClient]:
     monkeypatch.setenv("GEMINI_API_KEY", "test-key-not-real")
     monkeypatch.setenv("GEMINI_RETRY_BACKOFF_S", "0")
     # Never send email or reach ElevenLabs from tests, whatever the local .env says.
-    for name in ("SMTP_HOST", "SMTP_FROM", "ELEVENLABS_API_KEY", "ELEVENLABS_AGENT_ID"):
+    for name in ("SMTP_HOST", "SMTP_FROM", "ELEVENLABS_API_KEY", "ELEVENLABS_AGENT_ID", "ELEVENLABS_FEMALE_VOICE_ID"):
         monkeypatch.setenv(name, "")
 
     from app import config, db, ratelimit, seed

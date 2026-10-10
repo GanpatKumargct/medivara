@@ -22,15 +22,20 @@ import type {
   MyInvitation,
   OwnerInvitation,
   PatientSummary,
+  Period,
+  PeriodInput,
   ProfileDetails,
   ProfileDetailsInput,
   Relationship,
   Scope,
+  Sex,
   Vital,
   VitalInput,
   VitalKind,
   VoiceConfig,
   VoiceSession,
+  WomensHealth,
+  WomensHealthSettingsInput,
 } from './types'
 import { GRANTS, PATIENTS, USERS, answerQuestion, db, degradedAnswer, health, newId } from '../dummy-data'
 
@@ -38,7 +43,7 @@ const now = () => new Date().toISOString()
 
 // --- Accounts and family profiles -------------------------------------------
 
-export async function register(email: string, password: string, displayName: string): Promise<LoginResponse> {
+export async function register(email: string, password: string, displayName: string, sex: Sex | null = null): Promise<LoginResponse> {
   await delay(400)
   const clean = email.trim().toLowerCase()
   if (USERS.some((u) => u.email === clean)) {
@@ -55,7 +60,7 @@ export async function register(email: string, password: string, displayName: str
     owned_patient_id: patientId,
     onboarding_required: true,
   })
-  addOwnedProfile(userId, patientId, displayName.trim(), null, 'self')
+  addOwnedProfile(userId, patientId, displayName.trim(), null, 'self', sex)
   const token = `mvs_${newRequestId()}`
   setSession(token, userId)
   return {
@@ -66,7 +71,7 @@ export async function register(email: string, password: string, displayName: str
   }
 }
 
-function addOwnedProfile(userId: string, patientId: string, name: string, age: number | null, relationship: Relationship) {
+function addOwnedProfile(userId: string, patientId: string, name: string, age: number | null, relationship: Relationship, sex: Sex | null = null) {
   const owner = USERS.find((u) => u.id === userId)
   PATIENTS[patientId] = {
     id: patientId,
@@ -97,20 +102,21 @@ function addOwnedProfile(userId: string, patientId: string, name: string, age: n
       revoked_at: null,
     },
   ]
-  details[patientId] = { ...emptyDetails(patientId), relationship }
+  details[patientId] = { ...emptyDetails(patientId), relationship, sex }
 }
 
 export async function createPatient(input: {
   display_name: string
   age_years: number | null
   relationship: Relationship
+  sex?: Sex | null
 }): Promise<PatientSummary> {
   await delay(300)
   const userId = requireAuth()
   const owned = GRANTS.filter((g) => g.grantee_user_id === userId && g.role === 'owner').length
   if (owned >= 10) throw apiError(409, 'PROFILE_LIMIT', 'You can manage up to 10 profiles.')
   const patientId = newId('pat')
-  addOwnedProfile(userId, patientId, input.display_name.trim(), input.age_years, input.relationship)
+  addOwnedProfile(userId, patientId, input.display_name.trim(), input.age_years, input.relationship, input.sex ?? null)
   return { ...PATIENTS[patientId], my_role: 'owner', scopes: ['view_records', 'upload_documents', 'manage_reminders'] }
 }
 
@@ -446,6 +452,175 @@ export async function declineInvitation(invitationId: string): Promise<void> {
 export async function getVoiceConfig(): Promise<VoiceConfig> {
   await delay(50)
   return { available: false, mode: 'off' }
+}
+
+// --- Women's health (same rules as backend app/womens_health.py) --------------
+
+const whSettings: Record<string, WomensHealthSettingsInput & { updated_at: string | null }> = {}
+const periods: Record<string, Period[]> = {}
+const DAY = 86_400_000
+
+function isoDay(d: Date) {
+  return d.toISOString().slice(0, 10)
+}
+function parseDay(s: string) {
+  return new Date(`${s}T00:00:00Z`)
+}
+function todayDay() {
+  const now = new Date(Date.now() + 5.5 * 3600_000) // IST
+  return parseDay(now.toISOString().slice(0, 10))
+}
+function addDays(s: string, n: number) {
+  return isoDay(new Date(parseDay(s).getTime() + n * DAY))
+}
+function diffDays(a: string, b: Date) {
+  return Math.round((parseDay(a).getTime() - b.getTime()) / DAY)
+}
+const human = (s: string) => {
+  const d = parseDay(s)
+  return `${String(d.getUTCDate()).padStart(2, '0')} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getUTCMonth()]} ${d.getUTCFullYear()}`
+}
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
+
+function summarise(patientId: string): WomensHealth {
+  const st = whSettings[patientId] ?? {
+    mode: 'off', cycle_length_days: null, period_length_days: null, lmp_date: null, due_date: null, delivery_date: null, updated_at: null,
+  }
+  const today = todayDay()
+  const logs = [...(periods[patientId] ?? [])].sort((a, b) => a.start_date.localeCompare(b.start_date))
+  const gaps = logs.slice(1).map((l, i) => diffDays(l.start_date, parseDay(logs[i].start_date))).filter((g) => g >= 15 && g <= 60).slice(-6)
+  const lengths = logs.filter((l) => l.end_date).map((l) => diffDays(l.end_date!, parseDay(l.start_date)) + 1).slice(-6)
+  const mean = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length)
+  const last = logs.length ? logs[logs.length - 1].start_date : null
+  const avgCycle = last ? (gaps.length ? mean(gaps) : st.cycle_length_days) : null
+  const avgPeriod = last ? (lengths.length ? mean(lengths) : st.period_length_days) : null
+  const next = last && avgCycle ? addDays(last, avgCycle) : null
+  const ovulation = next ? addDays(next, -14) : null
+  const cycle = {
+    last_period_start: last,
+    cycle_day: last ? -diffDays(last, today) + 1 : null,
+    average_cycle_days: avgCycle,
+    average_period_days: avgPeriod,
+    next_period_estimate: next,
+    next_period_end_estimate: next && avgPeriod ? addDays(next, avgPeriod - 1) : null,
+    days_until_next_period: next ? diffDays(next, today) : null,
+    fertile_window_start: ovulation ? addDays(ovulation, -5) : null,
+    fertile_window_end: ovulation ? addDays(ovulation, 1) : null,
+    logged_periods: logs.length,
+  }
+  let pregnancy: WomensHealth['summary']['pregnancy'] = null
+  if (st.mode === 'pregnancy' && (st.lmp_date || st.due_date)) {
+    const due = st.due_date ?? addDays(st.lmp_date!, 280)
+    const lmp = st.lmp_date ?? addDays(due, -280)
+    const ga = Math.max(0, -diffDays(lmp, today))
+    const weeks = Math.floor(ga / 7)
+    pregnancy = { due_date: due, lmp_date: lmp, weeks, days: ga % 7, trimester: weeks < 13 ? 1 : weeks < 27 ? 2 : 3, days_to_go: diffDays(due, today) }
+  }
+  let postpartum: WomensHealth['summary']['postpartum'] = null
+  if (st.mode === 'postpartum' && st.delivery_date) {
+    const since = Math.max(0, -diffDays(st.delivery_date, today))
+    postpartum = { delivery_date: st.delivery_date, days_since_delivery: since, weeks_since_delivery: Math.floor(since / 7) }
+  }
+  let voice = 'Not in use.'
+  if (st.mode === 'cycle') {
+    if (!last) voice = 'Period tracker is on, but no periods have been logged yet.'
+    else if (!next) voice = `Period tracker: cycle day ${cycle.cycle_day}. Last period started ${human(last)}. There isn't enough information yet to estimate the next period.`
+    else {
+      const d = cycle.days_until_next_period!
+      const when = d > 0 ? `in ${plural(d, 'day')}` : d === 0 ? 'today' : `${plural(-d, 'day')} late`
+      voice = `Period tracker: cycle day ${cycle.cycle_day}. Last period started ${human(last)}. Next period estimated around ${human(next)} (${when}). Average cycle ${avgCycle} days. These are estimates from dates the user entered, not medical advice.`
+    }
+  } else if (pregnancy) {
+    const tri = ['first', 'second', 'third'][pregnancy.trimester - 1]
+    const due = pregnancy.days_to_go >= 0 ? `Due date ${human(pregnancy.due_date)}, ${plural(pregnancy.days_to_go, 'day')} to go.` : `Due date ${human(pregnancy.due_date)} has passed.`
+    voice = `Pregnancy tracker: week ${pregnancy.weeks} and ${plural(pregnancy.days, 'day')} (${tri} trimester). ${due} Calculated from dates the user entered.`
+  } else if (postpartum) {
+    voice = `After-birth tracker: ${plural(postpartum.weeks_since_delivery, 'week')} since delivery on ${human(postpartum.delivery_date)}.`
+  }
+  return { ...st, patient_id: patientId, summary: { cycle, pregnancy, postpartum, voice_context: voice } }
+}
+
+export async function getWomensHealth(patientId: string): Promise<WomensHealth> {
+  await delay(120)
+  requireScope(requireAccess(patientId), 'view_records')
+  return summarise(patientId)
+}
+
+export async function updateWomensHealth(patientId: string, input: WomensHealthSettingsInput): Promise<WomensHealth> {
+  await delay(180)
+  requireScope(requireAccess(patientId), 'upload_documents')
+  if (input.mode === 'pregnancy' && !input.lmp_date && !input.due_date) {
+    throw apiError(422, 'VALIDATION_ERROR', 'Some fields need attention.', { fields: [{ field: 'lmp_date', issue: 'pregnancy mode needs lmp_date or due_date' }] })
+  }
+  if (input.mode === 'postpartum' && !input.delivery_date) {
+    throw apiError(422, 'VALIDATION_ERROR', 'Some fields need attention.', { fields: [{ field: 'delivery_date', issue: 'postpartum mode needs delivery_date' }] })
+  }
+  whSettings[patientId] = { ...input, updated_at: now() }
+  return summarise(patientId)
+}
+
+function periodOut(p: Period): Period {
+  return { ...p, length_days: p.end_date ? diffDays(p.end_date, parseDay(p.start_date)) + 1 : null }
+}
+
+function overlaps(patientId: string, start: string, end: string | null, except?: string) {
+  const s = parseDay(start).getTime()
+  const e = parseDay(end ?? addDays(start, 6)).getTime()
+  return (periods[patientId] ?? []).some((p) => {
+    if (p.id === except) return false
+    const ps = parseDay(p.start_date).getTime()
+    const pe = parseDay(p.end_date ?? addDays(p.start_date, 6)).getTime()
+    return s <= pe && ps <= e
+  })
+}
+
+export async function listPeriods(patientId: string): Promise<{ items: Period[]; total: number }> {
+  await delay(100)
+  requireScope(requireAccess(patientId), 'view_records')
+  const items = [...(periods[patientId] ?? [])].sort((a, b) => b.start_date.localeCompare(a.start_date)).map(periodOut)
+  return { items, total: items.length }
+}
+
+export async function createPeriod(patientId: string, input: PeriodInput): Promise<Period> {
+  await delay(150)
+  const ctx = requireAccess(patientId)
+  requireScope(ctx, 'upload_documents')
+  if (overlaps(patientId, input.start_date, input.end_date ?? null)) {
+    throw apiError(409, 'PERIOD_OVERLAP', 'This overlaps a period you’ve already logged.')
+  }
+  const period: Period = {
+    id: newId('per'),
+    start_date: input.start_date,
+    end_date: input.end_date ?? null,
+    length_days: null,
+    flow: input.flow ?? null,
+    symptoms: input.symptoms ?? [],
+    notes: input.notes ?? null,
+    created_by: { user_id: ctx.userId, display_name: currentUser()?.display_name ?? '' },
+    created_at: now(),
+    updated_at: now(),
+  }
+  periods[patientId] = [...(periods[patientId] ?? []), period]
+  return periodOut(period)
+}
+
+export async function updatePeriod(patientId: string, periodId: string, patch: Partial<PeriodInput>): Promise<Period> {
+  await delay(120)
+  requireScope(requireAccess(patientId), 'upload_documents')
+  const p = (periods[patientId] ?? []).find((x) => x.id === periodId)
+  if (!p) throw apiError(404, 'NOT_FOUND', 'We couldn’t find that.')
+  const next = { ...p, ...patch, symptoms: patch.symptoms ?? p.symptoms, updated_at: now() } as Period
+  if (overlaps(patientId, next.start_date, next.end_date, p.id)) {
+    throw apiError(409, 'PERIOD_OVERLAP', 'This overlaps a period you’ve already logged.')
+  }
+  Object.assign(p, next)
+  return periodOut(p)
+}
+
+export async function deletePeriod(patientId: string, periodId: string): Promise<void> {
+  await delay(100)
+  requireScope(requireAccess(patientId), 'upload_documents')
+  periods[patientId] = (periods[patientId] ?? []).filter((p) => p.id !== periodId)
 }
 
 export async function startVoiceSession(patientId: string): Promise<VoiceSession> {

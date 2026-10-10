@@ -578,6 +578,80 @@ export interface VoiceSession {
   signed_url: string | null
   agent_id: string | null
   dynamic_variables: Record<string, string>
+  /** ElevenLabs session overrides, e.g. a different voice for female profiles; null when none. */
+  overrides: { tts?: { voiceId?: string } } | null
+}
+
+export type Sex = 'female' | 'male' | 'other'
+
+// Women's health (contract §5b, API-62 to API-67) -----------------------------
+
+export type WomensHealthMode = 'off' | 'cycle' | 'pregnancy' | 'postpartum'
+
+export interface WomensHealthSettingsInput {
+  mode: WomensHealthMode
+  cycle_length_days: number | null
+  period_length_days: number | null
+  lmp_date: string | null
+  due_date: string | null
+  delivery_date: string | null
+}
+
+export interface CycleSummary {
+  last_period_start: string | null
+  cycle_day: number | null
+  average_cycle_days: number | null
+  average_period_days: number | null
+  next_period_estimate: string | null
+  next_period_end_estimate: string | null
+  days_until_next_period: number | null
+  fertile_window_start: string | null
+  fertile_window_end: string | null
+  logged_periods: number
+}
+
+export interface WomensHealth extends WomensHealthSettingsInput {
+  patient_id: string
+  updated_at: string | null
+  summary: {
+    cycle: CycleSummary
+    pregnancy: { due_date: string; lmp_date: string; weeks: number; days: number; trimester: 1 | 2 | 3; days_to_go: number } | null
+    postpartum: { delivery_date: string; days_since_delivery: number; weeks_since_delivery: number } | null
+    voice_context: string
+  }
+}
+
+export type PeriodFlow = 'light' | 'medium' | 'heavy'
+export type PeriodSymptom =
+  | 'cramps'
+  | 'headache'
+  | 'bloating'
+  | 'mood_changes'
+  | 'fatigue'
+  | 'acne'
+  | 'back_pain'
+  | 'tender_breasts'
+  | 'nausea'
+
+export interface Period {
+  id: string
+  start_date: string
+  end_date: string | null
+  length_days: number | null
+  flow: PeriodFlow | null
+  symptoms: PeriodSymptom[]
+  notes: string | null
+  created_by: { user_id: string; display_name: string }
+  created_at: string
+  updated_at: string
+}
+
+export interface PeriodInput {
+  start_date: string
+  end_date?: string | null
+  flow?: PeriodFlow | null
+  symptoms?: PeriodSymptom[]
+  notes?: string | null
 }
 
 // ISL glossary (static frontend content) -----------------------------------

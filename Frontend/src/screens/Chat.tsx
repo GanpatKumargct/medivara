@@ -8,7 +8,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import * as api from '../api/endpoints'
 import { ApiError } from '../api/types'
-import type { ChatMessage } from '../api/types'
+import type { ChatMessage, WomensHealth } from '../api/types'
 import { ASK_EXAMPLE_QUESTIONS } from '../dummy-data/ask'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -18,7 +18,7 @@ import { LogoMark } from '../components/brand'
 import { Composer } from '../components/chat/Composer'
 import { AssistantAnswer, AttachmentCard, ThinkingRow, UserBubble } from '../components/chat/Messages'
 import { Button, Skeleton, Spinner } from '../components/ui'
-import { IconArrowUp, IconBrief, IconHeartPulse, IconPaperclip, IconPill, IconUpload, IconWaveform } from '../components/icons'
+import { IconArrowUp, IconBrief, IconFlower, IconHeartPulse, IconPaperclip, IconPill, IconUpload, IconWaveform } from '../components/icons'
 
 const VoiceMode = lazy(() => import('../components/chat/VoiceMode'))
 
@@ -50,6 +50,8 @@ export default function Chat() {
   const endRef = useRef<HTMLDivElement>(null)
 
   const patientQ = useQuery({ queryKey: ['patient', patientId], queryFn: () => api.getPatient(patientId) })
+  const detailsQ = useQuery({ queryKey: ['details', patientId], queryFn: () => api.getProfileDetails(patientId), enabled: !!patientQ.data })
+  const womensQ = useQuery({ queryKey: ['womens-health', patientId], queryFn: () => api.getWomensHealth(patientId), enabled: !!patientQ.data })
   const chatQ = useQuery({
     queryKey: chatKey(patientId, chatId ?? ''),
     queryFn: () => api.getChat(patientId, chatId!),
@@ -225,7 +227,11 @@ export default function Chat() {
               )}
               <ActionTile icon={<IconWaveform />} tint="bg-violet-bg text-violet-fg" title="Talk by voice" caption="Ask hands-free" onClick={() => setVoiceOpen(true)} />
               <ActionTile icon={<IconBrief />} tint="bg-teal-bg text-teal-fg" title="Prepare for a visit" caption="One-page doctor brief" to={`/p/${patientId}/brief`} />
-              <ActionTile icon={<IconHeartPulse />} tint="bg-cyan-bg text-cyan-fg" title="Track vitals" caption="BP, sugar, weight" to={`/p/${patientId}/vitals`} />
+              {detailsQ.data?.sex === 'female' || (womensQ.data && womensQ.data.mode !== 'off') ? (
+                <ActionTile icon={<IconFlower />} tint="bg-cyan-bg text-cyan-fg" title="Women’s health" caption={womensCaption(womensQ.data)} to={`/p/${patientId}/womens-health`} />
+              ) : (
+                <ActionTile icon={<IconHeartPulse />} tint="bg-cyan-bg text-cyan-fg" title="Track vitals" caption="BP, sugar, weight" to={`/p/${patientId}/vitals`} />
+              )}
             </nav>
             <input
               ref={fileRef}
@@ -307,6 +313,17 @@ export default function Chat() {
       )}
     </div>
   )
+}
+
+/** One-line status for the Women's health tile, from the backend's own calculation. */
+function womensCaption(wh: WomensHealth | undefined): string {
+  const s = wh?.summary
+  if (!wh || wh.mode === 'off') return 'Periods, pregnancy, after birth'
+  if (wh.mode === 'pregnancy' && s?.pregnancy) return `Week ${s.pregnancy.weeks} of pregnancy`
+  if (wh.mode === 'postpartum' && s?.postpartum) return `${s.postpartum.weeks_since_delivery} weeks since birth`
+  const d = s?.cycle.days_until_next_period
+  if (d === null || d === undefined) return 'Log your period'
+  return d > 0 ? `Next period in ~${d} day${d === 1 ? '' : 's'}` : d === 0 ? 'Period expected today' : `Period ${-d} day${d === -1 ? '' : 's'} late`
 }
 
 function ActionTile({

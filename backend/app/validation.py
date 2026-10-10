@@ -7,6 +7,8 @@ from app.errors import ApiError
 RELATIONSHIPS = ("self", "spouse", "parent", "child", "sibling", "grandparent", "other")
 Relationship = Literal["self", "spouse", "parent", "child", "sibling", "grandparent", "other"]
 SCOPE_ORDER = ("view_records", "upload_documents", "manage_reminders")
+SEXES = ("female", "male", "other")
+SEX_ISSUE = f"must be one of: {', '.join(SEXES)}"
 
 
 def validation_error(fields: list[tuple[str, str]]) -> ApiError:
@@ -35,6 +37,12 @@ def email_issue(email: str) -> str | None:
     if not local or "." not in domain or domain.startswith(".") or domain.endswith(".") or ".." in domain:
         return "must be a valid email address"
     return None
+
+
+def clean_sex(raw: str | None) -> str | None:
+    """Trimmed and lowercased; an empty string counts as null. Check the result against SEXES."""
+    value = (raw or "").strip().lower()
+    return value or None
 
 
 def clean_name(raw: str) -> str:

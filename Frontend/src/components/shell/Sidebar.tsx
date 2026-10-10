@@ -22,6 +22,7 @@ import {
   IconChevronDown,
   IconDoc,
   IconDots,
+  IconFlower,
   IconGrid,
   IconHand,
   IconHeartPulse,
@@ -50,6 +51,8 @@ interface NavItem {
   icon: ReactNode
   ownerOnly?: boolean
   more?: boolean
+  /** Shown for female profiles, or when women's health tracking is on. */
+  womens?: boolean
 }
 
 function navItems(base: string): NavItem[] {
@@ -60,6 +63,7 @@ function navItems(base: string): NavItem[] {
     { key: 'timeline', to: `${base}/timeline`, label: 'Timeline', icon: <IconTimeline /> },
     { key: 'vitals', to: `${base}/vitals`, label: 'Vitals', icon: <IconHeartPulse /> },
     { key: 'medicines', to: `${base}/medicines`, label: 'Medicines', icon: <IconPill /> },
+    { key: 'womens-health', to: `${base}/womens-health`, label: 'Women’s health', icon: <IconFlower />, womens: true },
     { key: 'reminders', to: `${base}/reminders`, label: 'Reminders', icon: <IconBell />, more: true },
     { key: 'brief', to: `${base}/brief`, label: 'Doctor visit brief', icon: <IconBrief />, more: true },
     { key: 'visit-assist', to: `${base}/visit-assist`, label: 'Visit Assist (ISL)', icon: <IconHand />, more: true },
@@ -118,7 +122,12 @@ export function Sidebar({
   const side = prefs.sidebarSide
   const [showMore, setShowMore] = useState(readMore)
 
-  const items = navItems(base).filter((i) => !i.ownerOnly || patient?.my_role === 'owner')
+  const detailsQ = useQuery({ queryKey: ['details', patientId], queryFn: () => api.getProfileDetails(patientId), enabled: !!patient })
+  const womensQ = useQuery({ queryKey: ['womens-health', patientId], queryFn: () => api.getWomensHealth(patientId), enabled: !!patient })
+  const showWomens = detailsQ.data?.sex === 'female' || (womensQ.data?.mode ?? 'off') !== 'off'
+  const items = navItems(base).filter(
+    (i) => (!i.ownerOnly || patient?.my_role === 'owner') && (!i.womens || showWomens || location.pathname.startsWith(i.to)),
+  )
   const isActive = (item: NavItem) =>
     item.key === 'chat'
       ? location.pathname === base || location.pathname.startsWith(`${base}/chat/`)

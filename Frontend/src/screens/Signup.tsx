@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ApiError } from '../api/types'
+import type { Sex } from '../api/types'
 import { Button, Card, CardBody, Field, Input } from '../components/ui'
 import { SyntheticWarning } from '../components/common'
 import { LogoFull } from '../components/brand'
@@ -18,6 +19,7 @@ export default function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [sex, setSex] = useState<Sex | ''>('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -35,7 +37,7 @@ export default function Signup() {
     setBusy(true)
     setError(null)
     try {
-      const me = await signUp(email.trim(), password, name.trim())
+      const me = await signUp(email.trim(), password, name.trim(), sex || null)
       navigate(me.onboarding_required ? '/onboarding' : from ?? '/profiles', { replace: true })
     } catch (e) {
       if (e instanceof ApiError && e.code === 'EMAIL_TAKEN') setError('An account already uses this email. Sign in instead.')
@@ -66,6 +68,14 @@ export default function Signup() {
             >
               <Field label="Your name" htmlFor="su-name">
                 <Input id="su-name" autoComplete="name" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+              </Field>
+              <Field label="Sex (optional)" htmlFor="su-sex" hint="Used for health tools such as Women’s health, and the app’s colour theme.">
+                <select id="su-sex" value={sex} onChange={(e) => setSex(e.target.value as Sex | '')} className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink">
+                  <option value="">Prefer not to say</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="other">Other</option>
+                </select>
               </Field>
               <Field label="Email" htmlFor="su-email" error={email && !emailValid ? 'Enter a valid email address' : undefined}>
                 <Input id="su-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />

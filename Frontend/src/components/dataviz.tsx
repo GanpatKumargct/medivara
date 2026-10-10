@@ -35,17 +35,17 @@ export function Sparkline({
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className={className} aria-hidden="true">
       <defs>
         <linearGradient id={`spk-${id}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#0284F7" />
-          <stop offset="100%" stopColor="#10B981" />
+          <stop offset="0%" style={{ stopColor: 'var(--mv-logo-1)' }} />
+          <stop offset="100%" style={{ stopColor: 'var(--mv-logo-3)' }} />
         </linearGradient>
         <linearGradient id={`spkf-${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0284F7" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#0284F7" stopOpacity="0" />
+          <stop offset="0%" stopOpacity="0.18" style={{ stopColor: 'var(--mv-logo-1)' }} />
+          <stop offset="100%" stopOpacity="0" style={{ stopColor: 'var(--mv-logo-1)' }} />
         </linearGradient>
       </defs>
       <path d={area} fill={`url(#spkf-${id})`} />
       <path d={line} fill="none" stroke={`url(#spk-${id})`} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={last[0]} cy={last[1]} r={strokeWidth + 1} fill="#10B981" />
+      <circle cx={last[0]} cy={last[1]} r={strokeWidth + 1} style={{ fill: 'var(--mv-logo-3)' }} />
     </svg>
   )
 }
@@ -74,8 +74,8 @@ export function ProgressRing({
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
         <defs>
           <linearGradient id={`ring-${id}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#0284F7" />
-            <stop offset="100%" stopColor="#10B981" />
+            <stop offset="0%" style={{ stopColor: 'var(--mv-logo-1)' }} />
+            <stop offset="100%" style={{ stopColor: 'var(--mv-logo-3)' }} />
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E2E8F0" strokeWidth={stroke} />

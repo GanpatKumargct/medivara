@@ -7,9 +7,9 @@ export function Splash({ label = 'Loading your records…' }: { label?: string }
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-hero-fade">
       {/* floating brand orbs */}
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="mv-orb" style={{ width: 320, height: 320, top: -70, left: -50, background: '#0284F7' }} />
-        <div className="mv-orb" style={{ width: 300, height: 300, bottom: -80, right: -40, background: '#10B981', animationDelay: '-5s' }} />
-        <div className="mv-orb" style={{ width: 200, height: 200, top: '55%', left: '15%', background: '#06B6D4', animationDelay: '-9s' }} />
+        <div className="mv-orb" style={{ width: 320, height: 320, top: -70, left: -50, background: 'var(--mv-logo-1)' }} />
+        <div className="mv-orb" style={{ width: 300, height: 300, bottom: -80, right: -40, background: 'var(--mv-logo-3)', animationDelay: '-5s' }} />
+        <div className="mv-orb" style={{ width: 200, height: 200, top: '55%', left: '15%', background: 'var(--mv-logo-2)', animationDelay: '-9s' }} />
       </div>
 
       <div className="relative flex flex-col items-center" role="status" aria-live="polite">
@@ -18,7 +18,7 @@ export function Splash({ label = 'Loading your records…' }: { label?: string }
           <div className="mv-splash-glow absolute inset-0 rounded-[28px] bg-brand-gradient blur-2xl" aria-hidden="true" />
           <div
             className="mv-splash-ring absolute inset-0 rounded-[26px]"
-            style={{ background: 'conic-gradient(from 0deg, #0284F7, #06B6D4, #10B981, #34D399, #0284F7)' }}
+            style={{ background: 'conic-gradient(from 0deg, var(--mv-logo-1), var(--mv-logo-2), var(--mv-logo-3), var(--mv-grad-soft-to), var(--mv-logo-1))' }}
             aria-hidden="true"
           />
           <div className="absolute inset-[5px] rounded-[22px] bg-white" aria-hidden="true" />

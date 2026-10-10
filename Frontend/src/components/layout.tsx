@@ -31,6 +31,15 @@ export function PatientLayout() {
     queryKey: ['patient', patientId],
     queryFn: () => api.getPatient(patientId),
   })
+  // "Gender mode": the open profile's sex (from its Medical ID) drives the automatic theme.
+  const { data: details } = useQuery({
+    queryKey: ['details', patientId],
+    queryFn: () => api.getProfileDetails(patientId),
+    enabled: !!patient,
+  })
+  const { setProfileSex } = prefs
+  useEffect(() => setProfileSex(details?.sex ?? null), [details?.sex, setProfileSex])
+  useEffect(() => () => setProfileSex(null), [setProfileSex])
 
   useEffect(() => setDrawerOpen(false), [location.pathname])
 

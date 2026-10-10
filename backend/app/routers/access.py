@@ -194,6 +194,10 @@ _LABELS = {
     "invitation.accepted": "Accepted an invitation",
     "invitation.declined": "Declined an invitation",
     "voice.session_started": "Started a voice conversation",
+    "womens_health.updated": "Updated women's health settings",
+    "period.logged": "Logged a period",
+    "period.updated": "Changed a period entry",
+    "period.deleted": "Deleted a period entry",
 }
 
 

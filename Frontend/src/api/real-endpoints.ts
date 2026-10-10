@@ -20,6 +20,11 @@ import type {
   MyInvitation,
   OwnerInvitation,
   PatientSummary,
+  Period,
+  PeriodInput,
+  Sex,
+  WomensHealth,
+  WomensHealthSettingsInput,
   ProfileDetails,
   ProfileDetailsInput,
   Relationship,
@@ -53,9 +58,9 @@ export async function login(email: string, password: string): Promise<LoginRespo
   return res
 }
 
-export async function register(email: string, password: string, displayName: string): Promise<LoginResponse> {
+export async function register(email: string, password: string, displayName: string, sex: Sex | null = null): Promise<LoginResponse> {
   const res = await request<LoginResponse>('POST', '/auth/register', {
-    json: { email, password, display_name: displayName },
+    json: { email, password, display_name: displayName, sex },
     allowUnauthenticated: true,
   })
   setSession(res.token, res.user.id)
@@ -289,6 +294,7 @@ export async function createPatient(input: {
   display_name: string
   age_years: number | null
   relationship: Relationship
+  sex?: Sex | null
 }): Promise<PatientSummary> {
   return (await request<{ patient: PatientSummary }>('POST', '/patients', { json: input })).patient
 }
@@ -390,4 +396,30 @@ export function getVoiceConfig(): Promise<VoiceConfig> {
 
 export function startVoiceSession(patientId: string): Promise<VoiceSession> {
   return request('POST', `${p(patientId)}/voice/session`)
+}
+
+// --- Women's health (API-62 to API-67) ---------------------------------------
+
+export async function getWomensHealth(patientId: string): Promise<WomensHealth> {
+  return (await request<{ womens_health: WomensHealth }>('GET', `${p(patientId)}/womens-health`)).womens_health
+}
+
+export async function updateWomensHealth(patientId: string, input: WomensHealthSettingsInput): Promise<WomensHealth> {
+  return (await request<{ womens_health: WomensHealth }>('PUT', `${p(patientId)}/womens-health`, { json: input })).womens_health
+}
+
+export function listPeriods(patientId: string): Promise<{ items: Period[]; total: number }> {
+  return request('GET', `${p(patientId)}/periods`, { query: { limit: 60 } })
+}
+
+export async function createPeriod(patientId: string, input: PeriodInput): Promise<Period> {
+  return (await request<{ period: Period }>('POST', `${p(patientId)}/periods`, { json: input })).period
+}
+
+export async function updatePeriod(patientId: string, periodId: string, patch: Partial<PeriodInput>): Promise<Period> {
+  return (await request<{ period: Period }>('PATCH', `${p(patientId)}/periods/${encodeURIComponent(periodId)}`, { json: patch })).period
+}
+
+export function deletePeriod(patientId: string, periodId: string): Promise<void> {
+  return request('DELETE', `${p(patientId)}/periods/${encodeURIComponent(periodId)}`)
 }

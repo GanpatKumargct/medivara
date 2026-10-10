@@ -9,14 +9,14 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import * as api from '../api/endpoints'
 import { clearSession, getCurrentUserId } from '../api/client'
-import type { MeResponse, UserSummary } from '../api/types'
+import type { MeResponse, Sex, UserSummary } from '../api/types'
 
 interface AuthContextValue {
   user: UserSummary | null
   me: MeResponse | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<MeResponse>
-  signUp: (email: string, password: string, displayName: string) => Promise<MeResponse>
+  signUp: (email: string, password: string, displayName: string, sex?: Sex | null) => Promise<MeResponse>
   signOut: () => Promise<void>
   refreshMe: () => Promise<MeResponse | null>
 }
@@ -77,8 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data
   }
 
-  const signUp = async (email: string, password: string, displayName: string) => {
-    await api.register(email, password, displayName)
+  const signUp = async (email: string, password: string, displayName: string, sex: Sex | null = null) => {
+    await api.register(email, password, displayName, sex)
     qc.clear()
     const data = await api.getMe()
     setUser(data.user)

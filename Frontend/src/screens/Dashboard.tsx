@@ -53,9 +53,9 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B3B8C] via-[#0C57B0] to-[#0E8F6E] p-6 text-white shadow-pop sm:p-8">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-[color:var(--mv-grad-to)] p-6 text-white shadow-pop sm:p-8">
         <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
-        <div className="pointer-events-none absolute -bottom-20 right-24 h-48 w-48 rounded-full bg-[#34D399]/20 blur-3xl" aria-hidden="true" />
+        <div className="pointer-events-none absolute -bottom-20 right-24 h-48 w-48 rounded-full bg-[color:var(--mv-grad-soft-to)] opacity-20 blur-3xl" aria-hidden="true" />
         <div className="relative">
           <p className="text-sm font-medium text-brand-100/90">{greeting()}</p>
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{p.display_name}</h1>

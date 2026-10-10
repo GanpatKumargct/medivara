@@ -58,6 +58,24 @@ export default function Settings() {
               <input type="checkbox" checked={prefs.reducedMotion} onChange={(e) => prefs.setReducedMotion(e.target.checked)} className="h-5 w-5" />
             </label>
             <div>
+              <p className="mb-1 text-sm text-ink">Colour theme</p>
+              <div className="flex gap-2" role="radiogroup" aria-label="Colour theme">
+                {([['auto', 'Automatic'], ['rose', 'Rose'], ['blue', 'Blue']] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    role="radio"
+                    aria-checked={prefs.themePreference === id}
+                    onClick={() => prefs.setThemePreference(id)}
+                    className={cn('flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm', prefs.themePreference === id ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-ink-muted')}
+                  >
+                    {id !== 'auto' && <span className={cn('h-3 w-3 rounded-full', id === 'rose' ? 'bg-[#E14B82]' : 'bg-[#0284F7]')} aria-hidden="true" />}
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-ink-subtle">Automatic uses rose for profiles whose Medical ID says female, and blue for others.</p>
+            </div>
+            <div>
               <p className="mb-1 text-sm text-ink">Sidebar position</p>
               <div className="flex gap-2">
                 {(['left', 'right'] as const).map((side) => (

@@ -836,7 +836,11 @@ def test_voice_public_agent_mode(client, monkeypatch):
             "document_count": "0",
             "documents_summary": "No documents yet.",
             "latest_document": "No documents yet.",
+            "patient_sex": "not recorded",
+            "womens_health_mode": "off",
+            "womens_health_context": "Not in use.",
         },
+        "overrides": None,
     }
     events = audit_rows("voice.session_started")
     assert len(events) == 1 and events[0].meta == {"mode": "public_agent"} and events[0].actor_user_id == "usr_karthik"
@@ -901,6 +905,7 @@ def test_voice_signed_url_mode_never_reveals_the_key(client, monkeypatch, caplog
         variables = body["dynamic_variables"]
         assert variables["user_first_name"] == variables["patient_first_name"] == "Meera"
         assert variables["access_role"] == "owner"
+        assert body["overrides"] is None
         assert calls == [{
             "url": "https://api.elevenlabs.io/v1/convai/conversation/get-signed-url",
             "params": {"agent_id": "agent_private_1"},

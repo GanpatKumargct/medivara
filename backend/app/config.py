@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = ""
     elevenlabs_agent_id: str = ""
     elevenlabs_base_url: str = "https://api.elevenlabs.io"
+    # Optional voice for female profiles, sent as an API-61 TTS override. The agent must allow
+    # the "Voice" override in its ElevenLabs Security settings, otherwise the session is refused.
+    elevenlabs_female_voice_id: str = ""
     timeout_voice_s: int = 10
 
     @field_validator("storage_dir", "database_path", "golden_cache_dir", "sample_manifest", "snapshot_dir")

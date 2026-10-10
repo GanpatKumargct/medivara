@@ -12,9 +12,14 @@ Modes:
 The API key is never returned or logged.
 
 The session also returns `dynamic_variables` for the agent's prompt: first names, the profile's
-age, the speaker's role, today's date (IST) and a list of the profile's documents described by
-metadata only (type, facility, date, review state). Document contents never go in them; facts
-reach the agent only as checked answers from the tool.
+age and sex, the speaker's role, today's date (IST), a list of the profile's documents described
+by metadata only (type, facility, date, review state) and a one-line women's health summary
+computed by app.womens_health from dates the user entered (never the fertile window, symptoms or
+notes). Document contents never go in them; facts reach the agent only as checked answers from
+the tool.
+
+`overrides` asks ElevenLabs for ELEVENLABS_FEMALE_VOICE_ID when it is set and the profile's sex is
+"female"; otherwise it is null and the agent's own voice is used.
 """
 
 import logging
@@ -26,13 +31,23 @@ from fastapi import APIRouter, Depends, Request
 from sqlmodel import Session, select
 
 from app import audit
+from app import womens_health as wh
 from app.access import PatientAccess, require_access
 from app.auth import CurrentUser, current_user
 from app.config import Settings, get_settings
 from app.consents import has_current_consent
 from app.db import get_session
 from app.errors import ApiError
-from app.models import ConsentType, DocumentStatus, MedicalDocument, PatientProfile, Role, User, as_utc
+from app.models import (
+    ConsentType,
+    DocumentStatus,
+    MedicalDocument,
+    PatientProfile,
+    ProfileDetails,
+    Role,
+    User,
+    as_utc,
+)
 from app.routers import API_PREFIX
 
 router = APIRouter(prefix=API_PREFIX, tags=["voice"])
@@ -83,6 +98,19 @@ def describe_document(doc: MedicalDocument) -> str:
     return f"{kind}{source}, {_day(doc.document_date)} ({_STATE_LABELS[doc.status]})"
 
 
+def patient_sex(session: Session, patient_id: str) -> str | None:
+    """The sex recorded in the profile's Medical ID (API-40/41/43), or None."""
+    details = session.get(ProfileDetails, patient_id)
+    return details.sex if details else None
+
+
+def voice_overrides(settings: Settings, sex: str | None) -> dict | None:
+    """ElevenLabs conversation overrides: a female voice for female profiles, when configured."""
+    if settings.elevenlabs_female_voice_id and sex == "female":
+        return {"tts": {"voiceId": settings.elevenlabs_female_voice_id}}
+    return None
+
+
 def voice_variables(session: Session, patient: PatientProfile, user: User, role: Role) -> dict[str, str]:
     """Dynamic variables for the agent's prompt. All values are strings (contract §5b, API-61)."""
     docs = session.exec(
@@ -97,6 +125,7 @@ def voice_variables(session: Session, patient: PatientProfile, user: User, role:
     if len(on_file) > MAX_LISTED_DOCUMENTS:
         summary += f"; and {len(on_file) - MAX_LISTED_DOCUMENTS} more"
     latest = docs[0] if docs else None
+    womens_health = wh.state(session, patient.id)
     return {
         "user_first_name": _first_word(user.display_name),
         "patient_first_name": _first_word(patient.display_name),
@@ -111,6 +140,9 @@ def voice_variables(session: Session, patient: PatientProfile, user: User, role:
             if latest
             else "No documents yet."
         ),
+        "patient_sex": patient_sex(session, patient.id) or "not recorded",
+        "womens_health_mode": womens_health["mode"],
+        "womens_health_context": womens_health["summary"]["voice_context"],
     }
 
 
@@ -179,4 +211,5 @@ def start_voice_session(
         "signed_url": signed_url,
         "agent_id": settings.elevenlabs_agent_id if mode == "public_agent" else None,
         "dynamic_variables": voice_variables(session, access.patient, user, access.role),
+        "overrides": voice_overrides(settings, patient_sex(session, access.patient.id)),
     }

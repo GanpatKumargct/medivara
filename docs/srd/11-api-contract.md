@@ -1505,9 +1505,9 @@ Returns `{ items: [appointment…], total, limit, offset }`, using the same obje
 
 ---
 
-## 5b. Redesign extensions (API-40 to API-62)
+## 5b. Redesign extensions (API-40 to API-67)
 
-> Added in contract 1.2.0 for the frontend redesign. **Additive only**: no existing route or response shape changes (one API-04 behaviour note below). 22 endpoints, API-40 to API-61; API-62 is not assigned. Every path is under `/api/v1`, uses the §2 error envelope and follows §1 (UTC `Z` timestamps, `YYYY-MM-DD` dates, documented keys never omitted). Data lives in new tables only (`profile_details`, `vital_reading`, `chat_session`, `chat_message`, `invitation`), so existing databases need no migration. Every route except API-40 needs a bearer token (401 `UNAUTHENTICATED` otherwise).
+> Added in contract 1.2.0 for the frontend redesign (API-40 to API-61); contract 1.4.0 adds women's health, API-62 to API-67. **Additive only**: no existing route or response shape changes (one API-04 behaviour note below). 28 endpoints, API-40 to API-67. Every path is under `/api/v1`, uses the §2 error envelope and follows §1 (UTC `Z` timestamps, `YYYY-MM-DD` dates, documented keys never omitted). Data lives in new tables only (`profile_details`, `vital_reading`, `chat_session`, `chat_message`, `invitation`, `womens_health_settings`, `period_log`), so existing databases need no migration. Every route except API-40 needs a bearer token (401 `UNAUTHENTICATED` otherwise).
 
 **API-04 behaviour note.** `owned_patient_id` is the user's **first-created** owned profile (by `created_at`, then `id`), so family profiles from API-41 never replace it.
 
@@ -1521,6 +1521,7 @@ New error codes. `RATE_LIMITED` also applies to API-40; `GRANT_EXISTS` and `INVA
 | 403 | `CONSENT_REQUIRED` | API-61: the **current user** has no current `voice_input` consent; `details.consent_type: "voice_input"` |
 | 503 | `VOICE_UNAVAILABLE` | API-61: voice isn't configured on this server |
 | 502 | `VOICE_UNAVAILABLE` | API-61: ElevenLabs didn't answer or refused |
+| 409 | `PERIOD_OVERLAP` | API-65/66: the period overlaps another period logged for this profile ("This overlaps a period you've already logged.") |
 
 Shared objects (every key always present, `null` when empty):
 
@@ -1533,6 +1534,8 @@ Shared objects (every key always present, `null` when empty):
 | `ChatMessage` | `id` (`msg_…`), `chat_id`, `role` (`user` · `assistant`), `kind` (`question` · `answer` · `attachment`), `text` (questions only), `input_mode` (questions only), `answer` (answers only: the full API-21 response object), `document` (attachments only: `{ id, title, status, document_type, document_date }` looked up live, `null` once the document is gone), `created_at` |
 | `OwnerInvitation` | `id` (`inv_…`), `email`, `relationship`, `scopes`, `status` (`pending` · `accepted` · `declined` · `cancelled` · `expired`), `created_at`, `expires_at`, `responded_at`, `invite_url` |
 | `MyInvitation` | `id`, `patient` `{ id, display_name }`, `invited_by` `{ display_name }`, `relationship`, `scopes`, `created_at`, `expires_at` |
+| `WomensHealth` | `patient_id`, `mode` (`off` · `cycle` · `pregnancy` · `postpartum`), `cycle_length_days`, `period_length_days`, `lmp_date`, `due_date`, `delivery_date`, `updated_at`, `summary` `{ cycle, pregnancy, postpartum, voice_context }` (API-62) |
+| `Period` | `id` (`per_…`), `start_date`, `end_date`, `length_days` (end − start + 1, or `null` without an end), `flow` (`light` · `medium` · `heavy`), `symptoms` (array, canonical order), `notes`, `created_by` `{ user_id, display_name }`, `created_at`, `updated_at` |
 
 | ID | Method and route | Auth / scope |
 |---|---|---|
@@ -1558,18 +1561,24 @@ Shared objects (every key always present, `null` when empty):
 | API-59 | `POST /me/invitations/{invitation_id}/decline` | Bearer (invitee) |
 | API-60 | `GET /voice/config` | Bearer |
 | API-61 | `POST /patients/{patient_id}/voice/session` | `view_records` + own `voice_input` consent |
+| API-62 | `GET /patients/{patient_id}/womens-health` | `view_records` |
+| API-63 | `PUT /patients/{patient_id}/womens-health` | `upload_documents` |
+| API-64 | `GET /patients/{patient_id}/periods` | `view_records` |
+| API-65 | `POST /patients/{patient_id}/periods` | `upload_documents` |
+| API-66 | `PATCH /patients/{patient_id}/periods/{period_id}` | `upload_documents` |
+| API-67 | `DELETE /patients/{patient_id}/periods/{period_id}` | `upload_documents` |
 
 ### API-40 `POST /auth/register`
 
-Public. Request `{ "email": "asha@example.com", "password": "correct-horse-battery", "display_name": "Asha Iyer" }`. The email is trimmed and lowercased and needs one `@`, a dot in the domain and at most 254 characters. Password 10–128 characters. The display name is trimmed (inner whitespace collapsed), 1–80 characters.
+Public. Request `{ "email": "asha@example.com", "password": "correct-horse-battery", "display_name": "Asha Iyer", "sex": "female" }`. The email is trimmed and lowercased and needs one `@`, a dot in the domain and at most 254 characters. Password 10–128 characters. The display name is trimmed (inner whitespace collapsed), 1–80 characters. `sex` (since 1.4.0) is optional: `female` · `male` · `other` · `null`, trimmed and lowercased; an empty string counts as `null`, anything else is 422 field `sex`.
 
-Creates the account, its own profile (`is_synthetic: true`) with the owner grant and a Medical ID with `relationship: "self"`, then signs in. **201** with exactly the API-02 body (`token`, `token_type`, `expires_at`, `user`). New accounts have no consents, so API-04 returns `onboarding_required: true` and the existing onboarding flow applies.
+Creates the account, its own profile (`is_synthetic: true`) with the owner grant and a Medical ID with `relationship: "self"` and the given `sex`, then signs in. **201** with exactly the API-02 body (`token`, `token_type`, `expires_at`, `user`). New accounts have no consents, so API-04 returns `onboarding_required: true` and the existing onboarding flow applies.
 
 Errors: 409 `EMAIL_TAKEN` ("An account already uses this email. Sign in instead.") · 422 · 429 `RATE_LIMITED` (more than 10 registration attempts that pass validation from one IP in 15 minutes; `details.retry_after_s` and `Retry-After`). Audit `auth.registered`.
 
 ### API-41 `POST /patients`
 
-Bearer. A family member's profile, owned and managed by the current user. Request `{ "display_name": "Lakshmi Raman", "age_years": 82, "relationship": "parent" }`: display name 1–80 (trimmed), `age_years` 0–130 or `null`, `relationship` from the enum (stored in the Medical ID).
+Bearer. A family member's profile, owned and managed by the current user. Request `{ "display_name": "Lakshmi Raman", "age_years": 82, "relationship": "parent", "sex": "female" }`: display name 1–80 (trimmed), `age_years` 0–130 or `null`, `relationship` from the enum, optional `sex` (since 1.4.0, same rule as API-40). `relationship` and `sex` are stored in the Medical ID (API-42); the response shape is unchanged.
 
 **201** `{ "patient": { …PatientSummary, "created_at": "2026-10-24T05:20:00Z" } }`, the same object as API-07. The profile then appears in API-06 with `my_role: "owner"`. Errors: 409 `PROFILE_LIMIT` (10 owned profiles per user, the user's own included) · 422. Audit `patient.created`.
 
@@ -1788,14 +1797,148 @@ Bearer. **200** `{ "available": true, "mode": "signed_url" }`. `mode` is `signed
     "today": "11 Oct 2026",
     "document_count": "2",
     "documents_summary": "Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet); Prescription from Lakeview Family Clinic, 15 Sep 2026 (reviewed)",
-    "latest_document": "Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet), added 10 Oct 2026"
-  }
+    "latest_document": "Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet), added 10 Oct 2026",
+    "patient_sex": "female",
+    "womens_health_mode": "pregnancy",
+    "womens_health_context": "Pregnancy tracker: week 14 and 4 days (second trimester). Due date 07 Apr 2027, 178 days to go. Calculated from dates the user entered."
+  },
+  "overrides": { "tts": { "voiceId": "21m00Tcm4TlvDq8ikWAM" } }
 }
 ```
 
 Every `dynamic_variables` value is a string, and every key is always present. `patient_age` is `"not recorded"` when unknown; `access_role` is `"owner"` or `"caregiver"`; `today` is the IST date (`DD Mon YYYY`). `document_count` and `documents_summary` cover documents that weren't `failed`: up to 15, newest document date first (undated last), each `"{Type}[ from {facility}], {date or "date unknown"} ({reviewed | not reviewed yet | still being read})"`, then `"; and N more"`. `latest_document` is the most recently uploaded document, failed ones included (`"could not be read"`), plus `", added {IST date}"`. With no documents both are `"No documents yet."`. The variables carry document **metadata only**, never contents: facts reach the agent only through the `ask_medical_records` tool.
 
-`signed_url` is set only in `signed_url` mode (short-lived; fetch a new one per conversation) and `agent_id` only in `public_agent` mode. Start the ElevenLabs conversation with whichever is set plus `dynamic_variables`, and implement the agent's client tool `ask_medical_records({ question })` with API-52 (`input_mode: "voice"`) or API-21, returning the answer text, so spoken answers go through the same gate and validator. The API key is never returned. Errors: 403 `CONSENT_REQUIRED` · 503 `VOICE_UNAVAILABLE` ("Voice conversation isn't set up on this server.") · 502 `VOICE_UNAVAILABLE` ("The voice service didn't respond. Try again, or type your question."). Audit `voice.session_started`.
+Since 1.4.0: `patient_sex` is the profile's Medical ID `sex` (`female` · `male` · `other`) or `"not recorded"`; `womens_health_mode` is the API-62 `mode` (`"off"` by default); `womens_health_context` is API-62 `summary.voice_context` (`"Not in use."` when off), which never contains the fertile window, symptoms or notes. `overrides` is always present: `{ "tts": { "voiceId": "<id>" } }` when the server sets `ELEVENLABS_FEMALE_VOICE_ID` **and** the profile's `sex` is `"female"`, otherwise `null`. When it isn't `null`, pass it as the session's `overrides` (the agent must allow the Voice override in its ElevenLabs Security settings, otherwise ElevenLabs refuses the session).
+
+`signed_url` is set only in `signed_url` mode (short-lived; fetch a new one per conversation) and `agent_id` only in `public_agent` mode. Start the ElevenLabs conversation with whichever is set plus `dynamic_variables` (and `overrides` when not `null`), and implement the agent's client tool `ask_medical_records({ question })` with API-52 (`input_mode: "voice"`) or API-21, returning the answer text, so spoken answers go through the same gate and validator. The API key is never returned. Errors: 403 `CONSENT_REQUIRED` · 503 `VOICE_UNAVAILABLE` ("Voice conversation isn't set up on this server.") · 502 `VOICE_UNAVAILABLE` ("The voice service didn't respond. Try again, or type your question."). Audit `voice.session_started`.
+
+### API-62 to API-67 Women's health
+
+Added in 1.4.0. A period tracker, a pregnancy tracker and an after-birth tracker, from dates the user enters. Every number is **date arithmetic, an estimate, never medical advice**; nothing is labelled normal or abnormal. "Today" is the IST date. Audit metadata holds the mode or the period ID only, never dates, symptoms or notes.
+
+### API-62 `GET /patients/{patient_id}/womens-health`
+
+`view_records`. **200** `{ "womens_health": WomensHealth }`. A profile with no saved settings returns `mode: "off"` with `null` settings and `updated_at: null`, never 404. Example for today = 11 Oct 2026:
+```json
+{
+  "womens_health": {
+    "patient_id": "pat_meera",
+    "mode": "cycle",
+    "cycle_length_days": 28,
+    "period_length_days": 5,
+    "lmp_date": null,
+    "due_date": null,
+    "delivery_date": null,
+    "updated_at": "2026-10-11T04:30:00Z",
+    "summary": {
+      "cycle": {
+        "last_period_start": "2026-10-01",
+        "cycle_day": 11,
+        "average_cycle_days": 29,
+        "average_period_days": 5,
+        "next_period_estimate": "2026-10-30",
+        "next_period_end_estimate": "2026-11-03",
+        "days_until_next_period": 19,
+        "fertile_window_start": "2026-10-11",
+        "fertile_window_end": "2026-10-17",
+        "logged_periods": 3
+      },
+      "pregnancy": null,
+      "postpartum": null,
+      "voice_context": "Period tracker: cycle day 11. Last period started 01 Oct 2026. Next period estimated around 30 Oct 2026 (in 19 days). Average cycle 29 days. These are estimates from dates the user entered, not medical advice."
+    }
+  }
+}
+```
+
+In `pregnancy` mode `summary.pregnancy` is, for example, `{ "due_date": "2027-04-07", "lmp_date": "2026-07-01", "weeks": 14, "days": 4, "trimester": 2, "days_to_go": 178 }`; in `postpartum` mode `summary.postpartum` is, for example, `{ "delivery_date": "2026-08-26", "days_since_delivery": 46, "weeks_since_delivery": 6 }`. Otherwise both are `null`.
+
+Calculation rules (dates are `YYYY-MM-DD`; numbers are integers):
+
+- **cycle**, always computed from the period log whatever the mode. Logs sorted by `start_date`; `last_period_start` is the latest start; `logged_periods` is the number of logs. Gaps are the days between consecutive starts; gaps outside 15–60 are ignored and the **last 6** kept gaps are averaged: `average_cycle_days` = round(mean) (half to even), else the `cycle_length_days` setting, else `null`. `average_period_days` = round(mean of end − start + 1) over the last 6 logs that have an `end_date`, else the `period_length_days` setting, else `null`. `cycle_day` = today − last start + 1. With a last start and an average cycle: `next_period_estimate` = last start + average cycle; `days_until_next_period` = next − today (negative means late); ovulation = next − 14 days; `fertile_window_start` = ovulation − 5 days; `fertile_window_end` = ovulation + 1 day; `next_period_end_estimate` = next + (average period − 1), or `null` without an average period. Otherwise those are `null`. **With no logs every field is `null` except `logged_periods: 0`, even when settings exist.**
+- **pregnancy**, only in `pregnancy` mode. `due_date` = the setting, else `lmp_date` + 280 days; `lmp_date` = the setting, else due − 280 days. Gestation = max(0, today − LMP) days: `weeks` = gestation ÷ 7 (whole), `days` = the remainder; `trimester` 1 below week 13, 2 below week 27, else 3; `days_to_go` = due − today (negative once passed).
+- **postpartum**, only in `postpartum` mode. `days_since_delivery` = max(0, today − delivery); `weeks_since_delivery` = that ÷ 7 (whole).
+- **voice_context**, one plain-English line for the voice agent (API-61 `womens_health_context`). Dates as `DD Mon YYYY`, singular and plural forms correct ("1 day", "1 week"). Never the fertile window, symptoms or notes.
+
+| Situation | `voice_context` |
+|---|---|
+| `off` | `Not in use.` |
+| `cycle`, no logs | `Period tracker is on, but no periods have been logged yet.` |
+| `cycle`, no average | `Period tracker: cycle day 3. Last period started 09 Oct 2026. There isn't enough information yet to estimate the next period.` |
+| `cycle`, with an estimate | `Period tracker: cycle day 11. Last period started 01 Oct 2026. Next period estimated around 30 Oct 2026 (in 19 days). Average cycle 29 days. These are estimates from dates the user entered, not medical advice.` The bracket is `in N days`, `today` or `N days late`. |
+| `pregnancy` | `Pregnancy tracker: week 14 and 4 days (second trimester). Due date 07 Apr 2027, 178 days to go. Calculated from dates the user entered.` Once the due date has passed: `… (third trimester). Due date 08 Oct 2026 has passed. Calculated from dates the user entered.` |
+| `postpartum` | `After-birth tracker: 6 weeks since delivery on 26 Aug 2026.` |
+
+### API-63 `PUT /patients/{patient_id}/womens-health`
+
+`upload_documents` (a caregiver without it gets 403 `SCOPE_REQUIRED`). Every key is optional and **a PUT replaces every field**: a missing key is saved as `null`, a missing `mode` as `"off"`.
+
+| Field | Rule |
+|---|---|
+| mode | `off` · `cycle` · `pregnancy` · `postpartum` |
+| cycle_length_days | 21–45 |
+| period_length_days | 2–10 |
+| lmp_date | from today − 300 days to today |
+| due_date | from today − 30 days to today + 300 days |
+| delivery_date | from today − 730 days to today |
+| `pregnancy` mode | needs `lmp_date` or `due_date` (422 field `lmp_date`, issue "pregnancy mode needs lmp_date or due_date") |
+| `postpartum` mode | needs `delivery_date` (422 field `delivery_date`) |
+
+```json
+{ "mode": "pregnancy", "cycle_length_days": null, "period_length_days": null, "lmp_date": "2026-07-01", "due_date": null, "delivery_date": null }
+```
+
+**200** `{ "womens_health": WomensHealth }` as saved, with its summary. Errors: 403 `SCOPE_REQUIRED` · 422 (every failing field at once). Audit `womens_health.updated` (meta `{ mode }` only).
+
+### API-64 `GET /patients/{patient_id}/periods`
+
+`view_records`. Query `limit` 1–200 (default 24). **200** `{ "items": [Period], "total": 3 }`, newest `start_date` first; `total` counts every log.
+
+### API-65 `POST /patients/{patient_id}/periods`
+
+`upload_documents`. Request `{ start_date (required), end_date?, flow?, symptoms?, notes? }`:
+
+| Field | Rule |
+|---|---|
+| start_date | not after today |
+| end_date | `null`, or from `start_date` to `start_date` + 14 days, and not after today |
+| flow | `light` · `medium` · `heavy` · `null` |
+| symptoms | array of `cramps` `headache` `bloating` `mood_changes` `fatigue` `acne` `back_pain` `tender_breasts` `nausea`; stored deduplicated in that order |
+| notes | at most 200 characters (trimmed; empty is `null`) |
+
+A period may not overlap another log of the same profile; a log without an `end_date` counts as `start_date` + 6 days for this check. Otherwise 409 `PERIOD_OVERLAP` ("This overlaps a period you've already logged.").
+
+```json
+{ "start_date": "2026-10-01", "end_date": "2026-10-05", "flow": "medium", "symptoms": ["cramps", "fatigue"], "notes": "Better by day 3" }
+```
+
+**201**:
+```json
+{
+  "period": {
+    "id": "per_5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-05",
+    "length_days": 5,
+    "flow": "medium",
+    "symptoms": ["cramps", "fatigue"],
+    "notes": "Better by day 3",
+    "created_by": { "user_id": "usr_meera", "display_name": "Meera Raman" },
+    "created_at": "2026-10-11T04:35:00Z",
+    "updated_at": "2026-10-11T04:35:00Z"
+  }
+}
+```
+
+Errors: 403 `SCOPE_REQUIRED` · 409 `PERIOD_OVERLAP` · 422 (fields `start_date`, `end_date`, `flow`, `symptoms`, `notes`). Audit `period.logged` (meta: the period ID only).
+
+### API-66 `PATCH /patients/{patient_id}/periods/{period_id}`
+
+`upload_documents`. Any of `start_date`, `end_date`, `flow`, `symptoms`, `notes`; only the keys sent change. An explicit `null` clears `end_date`, `flow` or `notes`; `symptoms: null` stores `[]`; `start_date: null` is 422. The resulting record is checked with the API-65 rules, and for overlaps against the profile's other logs. **200** `{ "period": Period }`. Errors: 403 `SCOPE_REQUIRED` · 404 `NOT_FOUND` (not this profile's period) · 409 `PERIOD_OVERLAP` · 422. Audit `period.updated`.
+
+### API-67 `DELETE /patients/{patient_id}/periods/{period_id}`
+
+`upload_documents`. **204**. 404 `NOT_FOUND` when the period isn't this profile's. Audit `period.deleted`.
 
 
 ---
@@ -1808,5 +1951,6 @@ Every `dynamic_variables` value is a string, and every key is always present. `p
 | 1.1.0 | 2026-10-10 | API-11 adds `document.pages` (`[{ page, lines: [{ line_id, text }] }]`) so SCR-06 can show the document text and highlight source lines. Clients ignore unknown fields. | Additive | B (owner); A to acknowledge |
 | 1.2.0 | 2026-10-10 | §5b redesign extensions, API-40 to API-61: registration, family profiles, Medical ID, vitals, saved chats, email invitations and voice sessions. New codes `EMAIL_TAKEN`, `PROFILE_LIMIT`, `INVITATION_EXISTS`, `VOICE_UNAVAILABLE`. API-04 `owned_patient_id` is now the first-created owned profile. No existing response shape changes. | Additive | B (owner); A to acknowledge |
 | 1.3.0 | 2026-10-11 | API-61 `dynamic_variables` gains `patient_name`, `patient_age`, `access_role`, `today`, `document_count`, `documents_summary` and `latest_document` (document metadata only). | Additive | B (owner); A to acknowledge |
+| 1.4.0 | 2026-10-11 | Women's health, API-62 to API-67: tracker settings with a calculated summary, and a period log. API-40 and API-41 accept an optional `sex` (stored in the Medical ID). API-61 `dynamic_variables` gains `patient_sex`, `womens_health_mode` and `womens_health_context`, and the response gains `overrides` (a TTS voice for female profiles when `ELEVENLABS_FEMALE_VOICE_ID` is set, else `null`). New code `PERIOD_OVERLAP`. New tables `womens_health_settings`, `period_log`. | Additive | B (owner); A to acknowledge |
 
 Rules for entries are in [../hackathon/integration-plan.md](../hackathon/integration-plan.md) §5. Additive changes increase the minor version (1.1.0). Breaking changes increase the major version and need Person A's acknowledgement.

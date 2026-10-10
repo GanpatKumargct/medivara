@@ -28,7 +28,7 @@ from app.models import (
     utcnow,
 )
 from app.routers import API_PREFIX
-from app.validation import clean_name, email_issue, normalise_email, validation_error
+from app.validation import SEX_ISSUE, SEXES, clean_name, clean_sex, email_issue, normalise_email, validation_error
 
 router = APIRouter(prefix=API_PREFIX, tags=["auth"])
 
@@ -90,6 +90,8 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     display_name: str
+    # Stored in the new profile's Medical ID; optional.
+    sex: str | None = None
 
 
 @router.post("/auth/register", status_code=201)
@@ -105,6 +107,7 @@ def register(body: RegisterRequest, request: Request, session: Session = Depends
 
     email = normalise_email(body.email)
     display_name = clean_name(body.display_name)
+    sex = clean_sex(body.sex)
     problems: list[tuple[str, str]] = []
     if issue := email_issue(email):
         problems.append(("email", issue))
@@ -112,6 +115,8 @@ def register(body: RegisterRequest, request: Request, session: Session = Depends
         problems.append(("password", "must be between 10 and 128 characters"))
     if not 1 <= len(display_name) <= 80:
         problems.append(("display_name", "must be between 1 and 80 characters"))
+    if sex is not None and sex not in SEXES:
+        problems.append(("sex", SEX_ISSUE))
     if problems:
         raise validation_error(problems)
 
@@ -138,7 +143,7 @@ def register(body: RegisterRequest, request: Request, session: Session = Depends
             granted_by_user_id=user.id,
         )
     )
-    session.add(ProfileDetails(patient_id=patient.id, relationship="self", updated_by_user_id=user.id))
+    session.add(ProfileDetails(patient_id=patient.id, relationship="self", sex=sex, updated_by_user_id=user.id))
     token, row = issue_session(session, user)
     user.last_login_at = row.created_at
     session.add(user)

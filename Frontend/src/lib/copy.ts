@@ -112,6 +112,14 @@ export const COPY = {
     'Voice conversation isn’t set up on this server yet. An administrator needs to add the ElevenLabs agent settings (see the backend README). You can still dictate with the microphone button and use Read aloud.',
   'COPY-41':
     'Readings you enter yourself. MediVara doesn’t judge whether a value is normal — discuss your readings with your doctor.',
+  'COPY-43':
+    'Predictions are estimates from the dates you log. They aren’t medical advice and must not be used as contraception or to plan a pregnancy — talk to your doctor.',
+  'COPY-44':
+    'If you have bleeding, severe pain, a severe headache or blurred vision, fits, a fever, leaking fluid, or your baby is moving less than usual, call 108 or go to the nearest hospital now. MediVara doesn’t give pregnancy advice — follow the check-up schedule your doctor or health worker gives you.',
+  'COPY-45':
+    'Feeling low, anxious or overwhelmed for more than two weeks after birth is common and treatable — tell your doctor. If you have thoughts of harming yourself or your baby, call Tele-MANAS on 14416 (free, 24×7) or 112 now. For heavy bleeding, fever or severe pain, call 108.',
+  'COPY-46':
+    'This is sensitive information. Everyone you’ve shared this profile with can see it — manage who has access in Family & sharing.',
   'COPY-42':
     'Not available in this prototype. This service needs a partner integration, so nothing here books, orders or links anything for real.',
 } as const

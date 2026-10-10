@@ -20,9 +20,9 @@ export function LogoMark({ className, size = 32 }: { className?: string; size?: 
     >
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#0284F7" />
-          <stop offset="55%" stopColor="#06B6D4" />
-          <stop offset="100%" stopColor="#10B981" />
+          <stop offset="0%" style={{ stopColor: 'var(--mv-logo-1)' }} />
+          <stop offset="55%" style={{ stopColor: 'var(--mv-logo-2)' }} />
+          <stop offset="100%" style={{ stopColor: 'var(--mv-logo-3)' }} />
         </linearGradient>
       </defs>
       <rect x="0" y="0" width="48" height="48" rx="12" fill={`url(#${id})`} />

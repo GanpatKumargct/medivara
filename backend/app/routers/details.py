@@ -19,12 +19,11 @@ from app.db import get_session
 from app.models import ProfileDetails, iso_z, utcnow
 from app.reminders import today_ist
 from app.routers import API_PREFIX
-from app.validation import RELATIONSHIPS, validation_error
+from app.validation import RELATIONSHIPS, SEXES, validation_error
 
 router = APIRouter(prefix=API_PREFIX, tags=["details"])
 
 BLOOD_GROUPS = ("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-")
-SEXES = ("female", "male", "other")
 PHONE = re.compile(r"^[0-9+()\- ]+$")
 MAX_CONTACTS = 5
 MAX_NOTE = 500

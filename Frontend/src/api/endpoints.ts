@@ -60,4 +60,10 @@ export const {
   declineInvitation,
   getVoiceConfig,
   startVoiceSession,
+  getWomensHealth,
+  updateWomensHealth,
+  listPeriods,
+  createPeriod,
+  updatePeriod,
+  deletePeriod,
 } = impl

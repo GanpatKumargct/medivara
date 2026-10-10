@@ -488,3 +488,36 @@ class Invitation(SQLModel, table=True):
     expires_at: datetime
     responded_at: datetime | None = None
     accepted_user_id: str | None = None
+
+
+class WomensHealthSettings(SQLModel, table=True):
+    """Women's health tracker settings for one profile (API-62/63). One row per profile, created lazily."""
+
+    __tablename__ = "womens_health_settings"
+
+    patient_id: str = Field(foreign_key="patient_profile.id", primary_key=True)
+    mode: str = "off"  # off · cycle · pregnancy · postpartum
+    cycle_length_days: int | None = None
+    period_length_days: int | None = None
+    lmp_date: date | None = None
+    due_date: date | None = None
+    delivery_date: date | None = None
+    updated_at: datetime | None = None
+    updated_by_user_id: str | None = None
+
+
+class PeriodLog(SQLModel, table=True):
+    """A logged period (API-64 to 67). Dates are what the user entered; nothing is interpreted."""
+
+    __tablename__ = "period_log"
+
+    id: str = Field(default_factory=lambda: new_id("per"), primary_key=True)
+    patient_id: str = Field(foreign_key="patient_profile.id", index=True)
+    start_date: date
+    end_date: date | None = None
+    flow: str | None = None  # light · medium · heavy
+    symptoms: list[str] = _json_list()
+    notes: str | None = None
+    created_by_user_id: str = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)

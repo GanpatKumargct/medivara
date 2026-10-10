@@ -26,7 +26,7 @@ from app.models import (
     iso_z,
 )
 from app.routers import API_PREFIX
-from app.validation import Relationship, clean_name, validation_error
+from app.validation import SEX_ISSUE, SEXES, Relationship, clean_name, clean_sex, validation_error
 
 MAX_OWNED_PROFILES = 10
 
@@ -120,6 +120,8 @@ class PatientCreate(BaseModel):
     display_name: str
     age_years: int | None = Field(None, ge=0, le=130)
     relationship: Relationship
+    # Stored in the profile's Medical ID; optional.
+    sex: str | None = None
 
 
 @router.post("/patients", status_code=201)
@@ -131,8 +133,14 @@ def create_patient(
 ) -> dict:
     """API-41: a family member's profile, owned and managed by the current user."""
     display_name = clean_name(body.display_name)
+    sex = clean_sex(body.sex)
+    problems: list[tuple[str, str]] = []
     if not 1 <= len(display_name) <= 80:
-        raise validation_error([("display_name", "must be between 1 and 80 characters")])
+        problems.append(("display_name", "must be between 1 and 80 characters"))
+    if sex is not None and sex not in SEXES:
+        problems.append(("sex", SEX_ISSUE))
+    if problems:
+        raise validation_error(problems)
     user = current.user
     owned = session.exec(
         select(func.count()).select_from(PatientProfile).where(PatientProfile.owner_user_id == user.id)
@@ -152,7 +160,9 @@ def create_patient(
         granted_by_user_id=user.id,
     )
     session.add(grant)
-    session.add(ProfileDetails(patient_id=patient.id, relationship=body.relationship, updated_by_user_id=user.id))
+    session.add(
+        ProfileDetails(patient_id=patient.id, relationship=body.relationship, sex=sex, updated_by_user_id=user.id)
+    )
     session.commit()
     session.refresh(patient)
     session.refresh(grant)

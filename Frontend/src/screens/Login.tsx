@@ -44,9 +44,9 @@ export default function Login() {
     <div className="relative min-h-screen overflow-hidden bg-hero-fade">
       {/* Soft animated brand orbs (decorative). */}
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="mv-orb" style={{ width: 340, height: 340, top: -80, left: -60, background: '#0284F7', animationDelay: '0s' }} />
-        <div className="mv-orb" style={{ width: 300, height: 300, bottom: -70, right: -40, background: '#10B981', animationDelay: '-4s' }} />
-        <div className="mv-orb" style={{ width: 220, height: 220, top: '40%', right: '12%', background: '#06B6D4', animationDelay: '-8s' }} />
+        <div className="mv-orb" style={{ width: 340, height: 340, top: -80, left: -60, background: 'var(--mv-logo-1)', animationDelay: '0s' }} />
+        <div className="mv-orb" style={{ width: 300, height: 300, bottom: -70, right: -40, background: 'var(--mv-logo-3)', animationDelay: '-4s' }} />
+        <div className="mv-orb" style={{ width: 220, height: 220, top: '40%', right: '12%', background: 'var(--mv-logo-2)', animationDelay: '-8s' }} />
       </div>
     <div className="relative mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
       <div className="animate-fade-up mb-6 flex flex-col items-center text-center">

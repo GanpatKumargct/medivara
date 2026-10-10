@@ -187,3 +187,9 @@ export const IconCalculator = (p: SVGProps<SVGSVGElement>) => (
 export const IconCart = (p: SVGProps<SVGSVGElement>) => (
   <Icon {...p}><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6" /></Icon>
 )
+export const IconFlower = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><circle cx="12" cy="9" r="2.5" /><path d="M12 6.5C12 4 13.5 2.5 15 3s1.5 3-1 5M14.4 8.2c2.3-.9 4.4-.2 4.5 1.4s-2.4 2.3-4.6 1.3M13.9 11.2c1.5 2 1.4 4.2-.1 4.7s-2.6-1.7-1.8-4.1M10.3 11c-1.3 2.1-3.4 2.7-4.3 1.4s.6-3.3 3.1-3.5M9.6 8.1C7.5 6.8 7.1 4.6 8.5 3.9s3 .9 3.4 3.2M12 15v6M12 18c-1.5-1.5-3.5-1.8-5-1" /></Icon>
+)
+export const IconBaby = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><circle cx="12" cy="8" r="5" /><path d="M10 7.5h.01M14 7.5h.01M10.5 10a2 2 0 003 0M7 21v-3a5 5 0 0110 0v3" /></Icon>
+)

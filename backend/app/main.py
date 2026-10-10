@@ -24,6 +24,7 @@ from app.routers import (
     timeline,
     vitals,
     voice,
+    womens_health,
 )
 
 
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
         chats,
         invitations,
         voice,
+        womens_health,
     )
     for module in routers:
         app.include_router(module.router)

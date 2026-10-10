@@ -22,6 +22,7 @@ import Vitals from './screens/Vitals'
 import Medicines from './screens/Medicines'
 import MedicalId from './screens/MedicalId'
 import Services from './screens/Services'
+import WomensHealth from './screens/WomensHealth'
 
 export const router = createBrowserRouter([
   { path: '/', element: <RootRedirect /> },
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
       { path: 'medical-id', element: <MedicalId /> },
       { path: 'family', element: <Family /> },
       { path: 'services', element: <Services /> },
+      { path: 'womens-health', element: <WomensHealth /> },
       { path: 'settings', element: <Settings /> },
     ],
   },

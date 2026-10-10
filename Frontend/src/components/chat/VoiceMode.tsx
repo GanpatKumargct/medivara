@@ -144,10 +144,12 @@ function VoiceModeInner({ patientId, patientName, onClose, askRecords }: VoiceMo
       stream.getTracks().forEach((t) => t.stop())
       const session = await api.startVoiceSession(patientId)
       const dynamicVariables = session.dynamic_variables
+      // Only sent when the server configured one (the agent must allow that override).
+      const overrides = session.overrides?.tts?.voiceId ? { tts: { voiceId: session.overrides.tts.voiceId } } : undefined
       if (session.signed_url) {
-        conversation.startSession({ signedUrl: session.signed_url, connectionType: 'websocket', dynamicVariables })
+        conversation.startSession({ signedUrl: session.signed_url, connectionType: 'websocket', dynamicVariables, overrides })
       } else if (session.agent_id) {
-        conversation.startSession({ agentId: session.agent_id, connectionType: 'websocket', dynamicVariables })
+        conversation.startSession({ agentId: session.agent_id, connectionType: 'websocket', dynamicVariables, overrides })
       } else {
         throw new ApiError(503, { code: 'VOICE_UNAVAILABLE', message: COPY['COPY-40'], details: {}, request_id: '' })
       }
