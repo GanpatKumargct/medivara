@@ -20,12 +20,12 @@ export function PageHeader({
     <div className={cn('mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between', className)}>
       <div className="flex items-start gap-3">
         {icon && (
-          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-brand">
+          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-canvas-border bg-white text-brand-700 shadow-card">
             {icon}
           </span>
         )}
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-brand-900">{title}</h1>
+          <h1 className="font-serif text-[1.75rem] leading-tight tracking-tight text-ink">{title}</h1>
           {subtitle && <p className="mt-0.5 max-w-2xl text-sm text-ink-muted">{subtitle}</p>}
         </div>
       </div>

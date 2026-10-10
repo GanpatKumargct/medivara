@@ -56,6 +56,51 @@ Restart the backend with one variable changed; nothing else is needed:
 
 With the demo state loaded and the server running: `uv run python scripts/eval_run.py http://127.0.0.1:8000 eval-run.csv`. It runs Q-01–Q-15, S-01–S-10, I-01/I-02 (5 runs each) and X-01/X-02, checks statuses automatically and leaves `correct` and `false_rejection` for you to judge.
 
+## Email invitations and voice conversation (optional)
+
+Both are off until configured; everything else works without them. Set these in `.env` and never commit the values. Endpoints: API-54 to API-61 in `../docs/srd/11-api-contract.md` §5b.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `APP_BASE_URL` | `http://localhost:5173` | Frontend origin for invitation links: `{APP_BASE_URL}/invite/{invitation_id}` |
+| `SMTP_HOST` | empty | SMTP server. Invitation emails go out only when `SMTP_HOST` and `SMTP_FROM` are both set; otherwise API-54 returns `email_sent: false` and the owner shares `invite_url` themselves |
+| `SMTP_PORT` | `587` | `465` uses implicit TLS |
+| `SMTP_USERNAME`, `SMTP_PASSWORD` | empty | SMTP login, if the server needs one |
+| `SMTP_FROM` | empty | Sender, for example `MediVara <no-reply@example.com>` |
+| `SMTP_STARTTLS` | `true` | Use STARTTLS (ports other than 465) |
+| `ELEVENLABS_API_KEY` | empty | Server-side only, never returned or logged. With an agent ID this is `signed_url` mode (private agent) |
+| `ELEVENLABS_AGENT_ID` | empty | On its own: `public_agent` mode (the agent must allow unauthenticated access). Neither set: voice is `off` |
+| `ELEVENLABS_BASE_URL` | `https://api.elevenlabs.io` | ElevenLabs API base URL |
+| `TIMEOUT_VOICE_S` | `10` | Timeout for the signed-URL request |
+
+Emails are sent after the response (FastAPI background task). A send failure is logged with its exception type only, never the address. The test suite blanks `SMTP_*` and `ELEVENLABS_*`, so it never sends mail or calls ElevenLabs.
+
+### ElevenLabs agent setup
+
+1. In the ElevenLabs dashboard, create a Conversational AI agent (Agents → New agent → Blank template).
+2. Add a **client** tool named `ask_medical_records`, description "Looks up the answer in the user's MediVara health records", with one **required** string parameter `question` described as "The user's question, in their words". Turn on **Wait for response**.
+3. Paste the system prompt below. A suitable first message: `Hi {{user_first_name}}, what would you like to know about {{patient_first_name}}'s records?` Both dynamic variables come from API-61.
+4. Keep the agent private (authentication on) and set both `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID`, so the browser only ever gets a short-lived signed URL. For a quick local demo you can make the agent public and set only `ELEVENLABS_AGENT_ID`.
+5. Restart the backend. `GET /api/v1/voice/config` should report `"available": true`.
+
+The frontend starts the session with the `signed_url` (or `agent_id`) and `dynamic_variables` from API-61, and implements the `ask_medical_records` client tool by calling API-52 (chat message, `input_mode: "voice"`) or API-21. Every spoken answer therefore goes through the same emergency and advice gate and the same validator as typed questions. API-61 needs the speaking user's own current `voice_input` consent (API-05).
+
+Recommended system prompt:
+
+```text
+You are the voice assistant for MediVara, a prototype app that organises what a person's medical documents say. You are talking with {{user_first_name}} about the health records of {{patient_first_name}}.
+
+Rules you must always follow:
+1. You must answer questions about health, medicines, doses, test results, conditions, allergies, appointments or documents ONLY by calling the ask_medical_records tool with the user's question in their own words. Never answer them from your own knowledge, and never guess. Before calling the tool, say a short line such as "Let me check your records."
+2. Read the tool's result back faithfully, in plain spoken language. Do not add, drop, change or interpret any fact, number, date, unit or dose. If the result says the information wasn't found, say exactly that. You may mention which document it came from. Offer the "Questions for your doctor" from the result if there are any.
+3. If the tool result starts with "Status: emergency", read its message first and urge the user to call 112 now. If the result says MediVara could not check the records, tell the user to try again in a moment or to type the question in the app.
+4. Never give medical advice. Never tell anyone to start, stop or change a medicine or dose, never diagnose, and never say whether a value is normal, high, low or worrying. Suggest they discuss it with their doctor.
+5. If the user mentions an emergency or urgent symptom (for example chest pain, trouble breathing, severe bleeding, fainting, or thoughts of self-harm), immediately tell them to call 112 now, or 108 for an ambulance, or go to the nearest emergency department. Say this before anything else.
+6. You may greet the user, say goodbye, and explain what you can help with (questions about the documents in their MediVara records) without calling the tool. Politely decline anything unrelated to their records.
+7. Keep replies short and clear, because they are spoken aloud. If you didn't understand the question, ask the user to repeat it.
+8. MediVara is a prototype that uses synthetic data. Never ask for passwords, ID numbers or payment details.
+```
+
 ## Contract fixtures
 
 `python3 ../scripts/extract_fixtures.py` regenerates `../contracts/` from the API contract, and `python3 ../scripts/derive_fixtures.py` builds the 7 fixtures the contract describes only in prose. Only Person B edits fixtures, in the same commit as any contract change.

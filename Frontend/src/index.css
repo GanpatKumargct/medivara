@@ -18,12 +18,34 @@ html {
 
 body {
   @apply text-ink font-sans antialiased;
-  background-color: #f4f7fb;
-  background-image:
-    radial-gradient(1100px 440px at 85% -12%, rgba(2, 132, 247, 0.08), transparent 60%),
-    radial-gradient(820px 420px at -8% -4%, rgba(16, 185, 129, 0.07), transparent 55%);
-  background-attachment: fixed;
+  background-color: theme('colors.canvas.DEFAULT');
 }
+
+/* Assistant prose (chat answers, greeting): a reading serif, like Claude desktop. */
+.mv-prose {
+  font-family: theme('fontFamily.serif');
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: theme('colors.ink.DEFAULT');
+}
+
+/* Thin, unobtrusive scrollbars for the sidebar and chat. */
+.mv-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+}
+.mv-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.mv-scroll::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.3); border-radius: 999px; }
+.mv-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* Voice-mode orb: breathing glow behind the volume-driven core. */
+@keyframes mvBreath {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+.mv-orb-glow { animation: mvBreath 3.2s var(--mv-ease) infinite; }
+[data-reduced-motion='true'] .mv-orb-glow { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .mv-orb-glow { animation: none !important; } }
 
 /* Faint dot texture for large surfaces (used on the app canvas). */
 .mv-dotgrid {
@@ -46,6 +68,10 @@ body {
 [data-contrast='high'] body {
   background: #ffffff;
   color: #000000;
+}
+[data-contrast='high'] .mv-sidebar {
+  background: #ffffff !important;
+  border-color: #000000 !important;
 }
 [data-contrast='high'] .mv-card,
 [data-contrast='high'] .mv-surface {

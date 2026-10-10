@@ -629,3 +629,7 @@ export async function listAuditEvents(patientId: string): Promise<ListResponse<A
   const items = db.audit[patientId] ?? []
   return { items, total: items.length, limit: 50, offset: 0 }
 }
+
+// --- Redesign extensions (contract §5b) -------------------------------------
+
+export * from './dummy-extensions'

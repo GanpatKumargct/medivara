@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
-// Display preferences (FR-051): text size, high contrast, reduced motion.
+// Display preferences (FR-051): text size, high contrast, reduced motion, plus the
+// app layout (which side the sidebar sits on and whether it is collapsed).
 // Stored per device in localStorage and applied to <html> (DEC-09).
 
 type TextScale = 100 | 125 | 150
@@ -10,6 +11,8 @@ interface DisplayPrefs {
   highContrast: boolean
   reducedMotion: boolean
   readAloudSpeed: number
+  sidebarSide: 'left' | 'right'
+  sidebarCollapsed: boolean
 }
 
 interface DisplayPrefsContextValue extends DisplayPrefs {
@@ -17,6 +20,8 @@ interface DisplayPrefsContextValue extends DisplayPrefs {
   setHighContrast: (v: boolean) => void
   setReducedMotion: (v: boolean) => void
   setReadAloudSpeed: (v: number) => void
+  setSidebarSide: (v: 'left' | 'right') => void
+  setSidebarCollapsed: (v: boolean) => void
 }
 
 const DEFAULTS: DisplayPrefs = {
@@ -24,6 +29,8 @@ const DEFAULTS: DisplayPrefs = {
   highContrast: false,
   reducedMotion: false,
   readAloudSpeed: 1,
+  sidebarSide: 'right',
+  sidebarCollapsed: false,
 }
 
 const STORAGE_KEY = 'mv_display_prefs'
@@ -60,6 +67,8 @@ export function DisplayPrefsProvider({ children }: { children: ReactNode }) {
     setHighContrast: (highContrast) => setPrefs((p) => ({ ...p, highContrast })),
     setReducedMotion: (reducedMotion) => setPrefs((p) => ({ ...p, reducedMotion })),
     setReadAloudSpeed: (readAloudSpeed) => setPrefs((p) => ({ ...p, readAloudSpeed })),
+    setSidebarSide: (sidebarSide) => setPrefs((p) => ({ ...p, sidebarSide })),
+    setSidebarCollapsed: (sidebarCollapsed) => setPrefs((p) => ({ ...p, sidebarCollapsed })),
   }
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

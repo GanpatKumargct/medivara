@@ -183,6 +183,17 @@ _LABELS = {
     "reminder.updated": "Changed a reminder",
     "reminder.completed": "Completed a reminder",
     "appointment.simulated_booked": "Made a simulated booking",
+    "auth.registered": "Created the account",
+    "patient.created": "Created this profile",
+    "profile.details_updated": "Updated the Medical ID",
+    "vital.recorded": "Recorded a health reading",
+    "vital.deleted": "Deleted a health reading",
+    "chat.deleted": "Deleted a chat",
+    "invitation.created": "Sent an invitation",
+    "invitation.cancelled": "Cancelled an invitation",
+    "invitation.accepted": "Accepted an invitation",
+    "invitation.declined": "Declined an invitation",
+    "voice.session_started": "Started a voice conversation",
 }
 
 

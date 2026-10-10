@@ -49,7 +49,7 @@ def test_unknown_email_and_wrong_password_look_identical(client):
 
 # TC-AUTH-03
 def test_every_non_public_route_needs_a_token(client):
-    public = {f"{API}/health", f"{API}/auth/login"}
+    public = {f"{API}/health", f"{API}/auth/login", f"{API}/auth/register"}
     paths = client.get(f"{API}/openapi.json").json()["paths"]
     checked = 0
     for path, operations in paths.items():

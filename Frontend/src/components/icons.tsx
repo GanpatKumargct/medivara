@@ -112,3 +112,78 @@ export const IconKeyboard = (p: SVGProps<SVGSVGElement>) => (
 export const IconSend = (p: SVGProps<SVGSVGElement>) => (
   <Icon {...p}><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" /></Icon>
 )
+export const IconPlus = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M12 5v14M5 12h14" /></Icon>
+)
+export const IconPaperclip = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M21.4 11.1l-9.2 9.2a6 6 0 01-8.5-8.5l9.2-9.2a4 4 0 015.7 5.7l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5" /></Icon>
+)
+export const IconWaveform = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M3 10v4M7 7v10M11 4v16M15 8v8M19 6v12M23 11v2" /></Icon>
+)
+export const IconSidebar = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></Icon>
+)
+export const IconSidebarLeft = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></Icon>
+)
+export const IconPencil = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M17 3a2.8 2.8 0 014 4L7.5 20.5 2 22l1.5-5.5z" /></Icon>
+)
+export const IconTrash = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" /></Icon>
+)
+export const IconDots = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></Icon>
+)
+export const IconHeartPulse = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 000-7.8z" /><path d="M3.5 12h4l2-3 3 6 2-3h6" /></Icon>
+)
+export const IconPill = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M10.5 20.5a5 5 0 01-7-7l6-6a5 5 0 017 7z" /><path d="M8.5 8.5l7 7" /></Icon>
+)
+export const IconIdCard = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="8" cy="11" r="2" /><path d="M5 16a3 3 0 016 0M14 10h5M14 14h3" /></Icon>
+)
+export const IconGrid = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></Icon>
+)
+export const IconCopy = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></Icon>
+)
+export const IconArrowUp = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M12 19V5M5 12l7-7 7 7" /></Icon>
+)
+export const IconMicOff = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M2 2l20 20" /><path d="M9 9v2a3 3 0 005.1 2.1M15 9.3V6a3 3 0 00-5.9-.7" /><path d="M5 11a7 7 0 0011.9 4.9M19 11a7 7 0 01-.4 2.3M12 18v3" /></Icon>
+)
+export const IconPhoneOff = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M10.7 13.3a16 16 0 003.4 2.6l1.3-1.3a2 2 0 012.1-.4c.8.3 1.7.5 2.6.6a2 2 0 011.7 2v3a2 2 0 01-2.2 2A19.8 19.8 0 013 4.2 2 2 0 015 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.6a2 2 0 01-.4 2.1L8.9 9.7" /><path d="M22 2L2 22" /></Icon>
+)
+export const IconCalendar = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></Icon>
+)
+export const IconMail = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 7l-10 6L2 7" /></Icon>
+)
+export const IconUserPlus = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></Icon>
+)
+export const IconChevronDown = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M6 9l6 6 6-6" /></Icon>
+)
+export const IconLink = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7" /><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7" /></Icon>
+)
+export const IconStethoscope = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M5 3v6a5 5 0 0010 0V3" /><path d="M10 14v2a5 5 0 0010 0v-2" /><circle cx="20" cy="12" r="2" /></Icon>
+)
+export const IconFlask = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 006.2 21.5h11.6a2 2 0 001.7-3L14 9V3" /><path d="M7 15h10" /></Icon>
+)
+export const IconCalculator = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01M16 19h.01" /></Icon>
+)
+export const IconCart = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6" /></Icon>
+)

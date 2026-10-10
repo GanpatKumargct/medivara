@@ -394,3 +394,97 @@ class Reminder(SQLModel, table=True):
     medication_schedule_attested: bool = False
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+# --- Redesign extensions (API contract §5b). New tables only: existing tables are never altered,
+# because create_all() does not add columns to tables that already exist in a team database.
+
+
+class ProfileDetails(SQLModel, table=True):
+    """Medical ID for one profile (API-42/43). One row per profile, created lazily."""
+
+    __tablename__ = "profile_details"
+
+    patient_id: str = Field(foreign_key="patient_profile.id", primary_key=True)
+    relationship: str | None = None  # self · spouse · parent · child · sibling · grandparent · other
+    date_of_birth: date | None = None
+    sex: str | None = None
+    blood_group: str | None = None
+    height_cm: float | None = None
+    # [{name, phone, relation}]
+    emergency_contacts: list[dict[str, Any]] = _json_list()
+    allergies_note: str | None = None
+    conditions_note: str | None = None
+    medications_note: str | None = None
+    organ_donor: bool | None = None
+    updated_at: datetime = Field(default_factory=utcnow)
+    updated_by_user_id: str | None = None
+
+
+class VitalReading(SQLModel, table=True):
+    """A self-recorded reading (API-44 to 46). Values are never labelled normal or abnormal."""
+
+    __tablename__ = "vital_reading"
+    __table_args__ = (Index("ix_vital_reading_patient_kind_time", "patient_id", "kind", "measured_at"),)
+
+    id: str = Field(default_factory=lambda: new_id("vit"), primary_key=True)
+    patient_id: str = Field(foreign_key="patient_profile.id", index=True)
+    kind: str
+    value: float
+    value2: float | None = None
+    unit: str
+    context: str | None = None
+    notes: str | None = None
+    measured_at: datetime
+    created_by_user_id: str = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class ChatSession(SQLModel, table=True):
+    """A saved Ask conversation (API-47 to 53). Private to the user who created it."""
+
+    __tablename__ = "chat_session"
+
+    id: str = Field(default_factory=lambda: new_id("cht"), primary_key=True)
+    patient_id: str = Field(foreign_key="patient_profile.id", index=True)
+    user_id: str = Field(foreign_key="user.id", index=True)
+    title: str = "New chat"
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class ChatMessage(SQLModel, table=True):
+    __tablename__ = "chat_message"
+
+    id: str = Field(default_factory=lambda: new_id("msg"), primary_key=True)
+    chat_id: str = Field(foreign_key="chat_session.id", index=True)
+    role: str  # user · assistant
+    kind: str  # question · answer · attachment
+    # Question text. Stored like AIOutput.question_text; never logged or audited.
+    text: str | None = None
+    input_mode: str | None = None
+    # No foreign key: the document may be deleted later, and the message then shows it as gone.
+    document_id: str | None = None
+    # The API-21 response for answers; {} otherwise.
+    payload: dict[str, Any] = _json_dict()
+    ai_output_id: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class Invitation(SQLModel, table=True):
+    """An emailed invitation to become a caregiver (API-54 to 59). The ID is the secret in the link."""
+
+    __tablename__ = "invitation"
+
+    id: str = Field(default_factory=lambda: new_id("inv"), primary_key=True)
+    patient_id: str = Field(foreign_key="patient_profile.id", index=True)
+    email: str = Field(index=True)  # lowercased
+    relationship: str
+    scopes: list[str] = _json_list()
+    status: str = "pending"  # pending · accepted · declined · cancelled ("expired" is computed)
+    invited_by_user_id: str = Field(foreign_key="user.id")
+    consent_record_id: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+    expires_at: datetime
+    responded_at: datetime | None = None
+    accepted_user_id: str | None = None

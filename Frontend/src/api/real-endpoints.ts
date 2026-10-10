@@ -6,6 +6,9 @@ import type {
   AskResponse,
   AuditEvent,
   Brief,
+  Chat,
+  ChatDetail,
+  ChatMessage,
   DocumentDetailResponse,
   DocumentSummary,
   Fact,
@@ -14,9 +17,19 @@ import type {
   ListResponse,
   LoginResponse,
   MeResponse,
+  MyInvitation,
+  OwnerInvitation,
   PatientSummary,
+  ProfileDetails,
+  ProfileDetailsInput,
+  Relationship,
   Reminder,
   TimelineResponse,
+  Vital,
+  VitalInput,
+  VitalKind,
+  VoiceConfig,
+  VoiceSession,
 } from './types'
 import type { ReminderSuggestion } from '../dummy-data/reminders'
 
@@ -34,6 +47,15 @@ async function currentPolicyVersion(): Promise<string> {
 export async function login(email: string, password: string): Promise<LoginResponse> {
   const res = await request<LoginResponse>('POST', '/auth/login', {
     json: { email, password },
+    allowUnauthenticated: true,
+  })
+  setSession(res.token, res.user.id)
+  return res
+}
+
+export async function register(email: string, password: string, displayName: string): Promise<LoginResponse> {
+  const res = await request<LoginResponse>('POST', '/auth/register', {
+    json: { email, password, display_name: displayName },
     allowUnauthenticated: true,
   })
   setSession(res.token, res.user.id)
@@ -259,4 +281,113 @@ export function revokeGrant(patientId: string, grantId: string): Promise<void> {
 
 export function listAuditEvents(patientId: string): Promise<ListResponse<AuditEvent>> {
   return request('GET', `${p(patientId)}/audit-events`)
+}
+
+// --- Redesign extensions (contract §5b) -------------------------------------
+
+export async function createPatient(input: {
+  display_name: string
+  age_years: number | null
+  relationship: Relationship
+}): Promise<PatientSummary> {
+  return (await request<{ patient: PatientSummary }>('POST', '/patients', { json: input })).patient
+}
+
+export async function getProfileDetails(patientId: string): Promise<ProfileDetails> {
+  return (await request<{ details: ProfileDetails }>('GET', `${p(patientId)}/details`)).details
+}
+
+export async function updateProfileDetails(patientId: string, input: ProfileDetailsInput): Promise<ProfileDetails> {
+  return (await request<{ details: ProfileDetails }>('PUT', `${p(patientId)}/details`, { json: input })).details
+}
+
+export function listVitals(patientId: string, kind?: VitalKind): Promise<{ items: Vital[]; total: number }> {
+  return request('GET', `${p(patientId)}/vitals`, { query: { kind, limit: 500 } })
+}
+
+export async function createVital(patientId: string, input: VitalInput): Promise<Vital> {
+  return (await request<{ vital: Vital }>('POST', `${p(patientId)}/vitals`, { json: input })).vital
+}
+
+export function deleteVital(patientId: string, vitalId: string): Promise<void> {
+  return request('DELETE', `${p(patientId)}/vitals/${encodeURIComponent(vitalId)}`)
+}
+
+export function listChats(patientId: string): Promise<ListResponse<Chat>> {
+  return request('GET', `${p(patientId)}/chats`, { query: { limit: 100 } })
+}
+
+export async function createChat(patientId: string, title?: string): Promise<Chat> {
+  return (await request<{ chat: Chat }>('POST', `${p(patientId)}/chats`, { json: title ? { title } : {} })).chat
+}
+
+export function getChat(patientId: string, chatId: string): Promise<ChatDetail> {
+  return request('GET', `${p(patientId)}/chats/${encodeURIComponent(chatId)}`)
+}
+
+export async function renameChat(patientId: string, chatId: string, title: string): Promise<Chat> {
+  return (await request<{ chat: Chat }>('PATCH', `${p(patientId)}/chats/${encodeURIComponent(chatId)}`, { json: { title } })).chat
+}
+
+export function deleteChat(patientId: string, chatId: string): Promise<void> {
+  return request('DELETE', `${p(patientId)}/chats/${encodeURIComponent(chatId)}`)
+}
+
+export function sendChatMessage(
+  patientId: string,
+  chatId: string,
+  question: string,
+  inputMode: 'text' | 'voice' = 'text',
+): Promise<{ user_message: ChatMessage; assistant_message: ChatMessage; chat: Chat }> {
+  return request('POST', `${p(patientId)}/chats/${encodeURIComponent(chatId)}/messages`, {
+    json: { question, input_mode: inputMode },
+  })
+}
+
+export function attachDocumentToChat(
+  patientId: string,
+  chatId: string,
+  documentId: string,
+): Promise<{ message: ChatMessage; chat: Chat }> {
+  return request('POST', `${p(patientId)}/chats/${encodeURIComponent(chatId)}/attachments`, {
+    json: { document_id: documentId },
+  })
+}
+
+export async function createInvitation(
+  patientId: string,
+  input: { email: string; scopes: string[]; relationship: Relationship },
+): Promise<{ invitation: OwnerInvitation; invite_url: string; email_sent: boolean }> {
+  return request('POST', `${p(patientId)}/invitations`, {
+    // The screen only calls this once the owner has ticked the COPY-25 consent.
+    json: { ...input, consent_confirmed: true, policy_version: await currentPolicyVersion() },
+  })
+}
+
+export async function listInvitations(patientId: string): Promise<OwnerInvitation[]> {
+  return (await request<{ invitations: OwnerInvitation[] }>('GET', `${p(patientId)}/invitations`)).invitations
+}
+
+export function cancelInvitation(patientId: string, invitationId: string): Promise<void> {
+  return request('DELETE', `${p(patientId)}/invitations/${encodeURIComponent(invitationId)}`)
+}
+
+export async function listMyInvitations(): Promise<MyInvitation[]> {
+  return (await request<{ invitations: MyInvitation[] }>('GET', '/me/invitations')).invitations
+}
+
+export function acceptInvitation(invitationId: string): Promise<{ patient_id: string }> {
+  return request('POST', `/me/invitations/${encodeURIComponent(invitationId)}/accept`)
+}
+
+export function declineInvitation(invitationId: string): Promise<void> {
+  return request('POST', `/me/invitations/${encodeURIComponent(invitationId)}/decline`)
+}
+
+export function getVoiceConfig(): Promise<VoiceConfig> {
+  return request('GET', '/voice/config')
+}
+
+export function startVoiceSession(patientId: string): Promise<VoiceSession> {
+  return request('POST', `${p(patientId)}/voice/session`)
 }

@@ -457,6 +457,129 @@ export interface AuditEvent {
   outcome: 'success' | 'denied' | 'error'
 }
 
+// Redesign extensions (contract §5b, API-40 to API-62) ----------------------
+
+export type Relationship = 'self' | 'spouse' | 'parent' | 'child' | 'sibling' | 'grandparent' | 'other'
+
+export interface EmergencyContact {
+  name: string
+  phone: string
+  relation: string
+}
+
+export interface ProfileDetails {
+  patient_id: string
+  relationship: Relationship | null
+  date_of_birth: string | null
+  sex: 'female' | 'male' | 'other' | null
+  blood_group: string | null
+  height_cm: number | null
+  emergency_contacts: EmergencyContact[]
+  allergies_note: string | null
+  conditions_note: string | null
+  medications_note: string | null
+  organ_donor: boolean | null
+  updated_at: string | null
+}
+
+export type ProfileDetailsInput = Omit<ProfileDetails, 'patient_id' | 'updated_at'>
+
+export type VitalKind = 'blood_pressure' | 'blood_sugar' | 'weight' | 'heart_rate' | 'spo2' | 'temperature'
+
+export interface Vital {
+  id: string
+  kind: VitalKind
+  value: number
+  value2: number | null
+  unit: string
+  context: string | null
+  notes: string | null
+  measured_at: string
+  created_by: { user_id: string; display_name: string }
+  created_at: string
+}
+
+export interface VitalInput {
+  kind: VitalKind
+  value: number
+  value2?: number | null
+  unit: string
+  measured_at: string
+  context?: string | null
+  notes?: string | null
+}
+
+export interface Chat {
+  id: string
+  title: string
+  created_at: string
+  updated_at: string
+  message_count: number
+  last_message_preview: string | null
+}
+
+export interface ChatMessage {
+  id: string
+  chat_id: string
+  role: 'user' | 'assistant'
+  kind: 'question' | 'answer' | 'attachment'
+  text: string | null
+  input_mode: 'text' | 'voice' | null
+  answer: AskResponse | null
+  document: {
+    id: string
+    title: string
+    status: DocumentStatus
+    document_type: DocumentType
+    document_date: string | null
+  } | null
+  created_at: string
+  // Client-only (optimistic rows that the server hasn't confirmed yet).
+  pending?: boolean
+  failed?: boolean
+  file_name?: string
+}
+
+export interface ChatDetail {
+  chat: Chat
+  messages: ChatMessage[]
+}
+
+export type InvitationStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired'
+
+export interface OwnerInvitation {
+  id: string
+  email: string
+  relationship: Relationship
+  scopes: Scope[]
+  status: InvitationStatus
+  created_at: string
+  expires_at: string
+  responded_at: string | null
+  invite_url: string
+}
+
+export interface MyInvitation {
+  id: string
+  patient: { id: string; display_name: string }
+  invited_by: { display_name: string }
+  relationship: Relationship
+  scopes: Scope[]
+  created_at: string
+  expires_at: string
+}
+
+export interface VoiceConfig {
+  available: boolean
+  mode: 'signed_url' | 'public_agent' | 'off'
+}
+
+export interface VoiceSession {
+  signed_url: string | null
+  agent_id: string | null
+  dynamic_variables: Record<string, string>
+}
+
 // ISL glossary (static frontend content) -----------------------------------
 
 export interface GlossaryTerm {

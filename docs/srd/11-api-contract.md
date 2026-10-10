@@ -1505,11 +1505,295 @@ Returns `{ items: [appointment…], total, limit, offset }`, using the same obje
 
 ---
 
+## 5b. Redesign extensions (API-40 to API-62)
+
+> Added in contract 1.2.0 for the frontend redesign. **Additive only**: no existing route or response shape changes (one API-04 behaviour note below). 22 endpoints, API-40 to API-61; API-62 is not assigned. Every path is under `/api/v1`, uses the §2 error envelope and follows §1 (UTC `Z` timestamps, `YYYY-MM-DD` dates, documented keys never omitted). Data lives in new tables only (`profile_details`, `vital_reading`, `chat_session`, `chat_message`, `invitation`), so existing databases need no migration. Every route except API-40 needs a bearer token (401 `UNAUTHENTICATED` otherwise).
+
+**API-04 behaviour note.** `owned_patient_id` is the user's **first-created** owned profile (by `created_at`, then `id`), so family profiles from API-41 never replace it.
+
+New error codes. `RATE_LIMITED` also applies to API-40; `GRANT_EXISTS` and `INVALID_STATE` also apply to invitations. A 422 lists every failing field at once, with paths such as `emergency_contacts.0.phone`.
+
+| HTTP | Code | When |
+|---|---|---|
+| 409 | `EMAIL_TAKEN` | API-40: an account already uses this email |
+| 409 | `PROFILE_LIMIT` | API-41: the user already owns 10 profiles |
+| 409 | `INVITATION_EXISTS` | API-54: a pending, unexpired invitation for this email and profile already exists |
+| 403 | `CONSENT_REQUIRED` | API-61: the **current user** has no current `voice_input` consent; `details.consent_type: "voice_input"` |
+| 503 | `VOICE_UNAVAILABLE` | API-61: voice isn't configured on this server |
+| 502 | `VOICE_UNAVAILABLE` | API-61: ElevenLabs didn't answer or refused |
+
+Shared objects (every key always present, `null` when empty):
+
+| Object | Fields |
+|---|---|
+| `Relationship` | enum `self` · `spouse` · `parent` · `child` · `sibling` · `grandparent` · `other` |
+| `Details` | `patient_id`, `relationship`, `date_of_birth`, `sex` (`female` · `male` · `other`), `blood_group`, `height_cm`, `emergency_contacts` `[{ name, phone, relation }]`, `allergies_note`, `conditions_note`, `medications_note`, `organ_donor`, `updated_at` |
+| `Vital` | `id` (`vit_…`), `kind`, `value`, `value2`, `unit`, `context`, `notes`, `measured_at`, `created_by` `{ user_id, display_name }`, `created_at` |
+| `Chat` | `id` (`cht_…`), `title`, `created_at`, `updated_at`, `message_count`, `last_message_preview` (latest question, at most 120 chars, or `null`) |
+| `ChatMessage` | `id` (`msg_…`), `chat_id`, `role` (`user` · `assistant`), `kind` (`question` · `answer` · `attachment`), `text` (questions only), `input_mode` (questions only), `answer` (answers only: the full API-21 response object), `document` (attachments only: `{ id, title, status, document_type, document_date }` looked up live, `null` once the document is gone), `created_at` |
+| `OwnerInvitation` | `id` (`inv_…`), `email`, `relationship`, `scopes`, `status` (`pending` · `accepted` · `declined` · `cancelled` · `expired`), `created_at`, `expires_at`, `responded_at`, `invite_url` |
+| `MyInvitation` | `id`, `patient` `{ id, display_name }`, `invited_by` `{ display_name }`, `relationship`, `scopes`, `created_at`, `expires_at` |
+
+| ID | Method and route | Auth / scope |
+|---|---|---|
+| API-40 | `POST /auth/register` | Public |
+| API-41 | `POST /patients` | Bearer |
+| API-42 | `GET /patients/{patient_id}/details` | `view_records` |
+| API-43 | `PUT /patients/{patient_id}/details` | Owner |
+| API-44 | `GET /patients/{patient_id}/vitals` | `view_records` |
+| API-45 | `POST /patients/{patient_id}/vitals` | `upload_documents` |
+| API-46 | `DELETE /patients/{patient_id}/vitals/{vital_id}` | `upload_documents` |
+| API-47 | `GET /patients/{patient_id}/chats` | `view_records`, own chats only |
+| API-48 | `POST /patients/{patient_id}/chats` | `view_records` |
+| API-49 | `GET /patients/{patient_id}/chats/{chat_id}` | `view_records`, chat creator |
+| API-50 | `PATCH /patients/{patient_id}/chats/{chat_id}` | `view_records`, chat creator |
+| API-51 | `DELETE /patients/{patient_id}/chats/{chat_id}` | `view_records`, chat creator |
+| API-52 | `POST /patients/{patient_id}/chats/{chat_id}/messages` | `view_records`, chat creator |
+| API-53 | `POST /patients/{patient_id}/chats/{chat_id}/attachments` | `view_records`, chat creator |
+| API-54 | `POST /patients/{patient_id}/invitations` | Owner |
+| API-55 | `GET /patients/{patient_id}/invitations` | Owner |
+| API-56 | `DELETE /patients/{patient_id}/invitations/{invitation_id}` | Owner |
+| API-57 | `GET /me/invitations` | Bearer (invitee) |
+| API-58 | `POST /me/invitations/{invitation_id}/accept` | Bearer (invitee) |
+| API-59 | `POST /me/invitations/{invitation_id}/decline` | Bearer (invitee) |
+| API-60 | `GET /voice/config` | Bearer |
+| API-61 | `POST /patients/{patient_id}/voice/session` | `view_records` + own `voice_input` consent |
+
+### API-40 `POST /auth/register`
+
+Public. Request `{ "email": "asha@example.com", "password": "correct-horse-battery", "display_name": "Asha Iyer" }`. The email is trimmed and lowercased and needs one `@`, a dot in the domain and at most 254 characters. Password 10–128 characters. The display name is trimmed (inner whitespace collapsed), 1–80 characters.
+
+Creates the account, its own profile (`is_synthetic: true`) with the owner grant and a Medical ID with `relationship: "self"`, then signs in. **201** with exactly the API-02 body (`token`, `token_type`, `expires_at`, `user`). New accounts have no consents, so API-04 returns `onboarding_required: true` and the existing onboarding flow applies.
+
+Errors: 409 `EMAIL_TAKEN` ("An account already uses this email. Sign in instead.") · 422 · 429 `RATE_LIMITED` (more than 10 registration attempts that pass validation from one IP in 15 minutes; `details.retry_after_s` and `Retry-After`). Audit `auth.registered`.
+
+### API-41 `POST /patients`
+
+Bearer. A family member's profile, owned and managed by the current user. Request `{ "display_name": "Lakshmi Raman", "age_years": 82, "relationship": "parent" }`: display name 1–80 (trimmed), `age_years` 0–130 or `null`, `relationship` from the enum (stored in the Medical ID).
+
+**201** `{ "patient": { …PatientSummary, "created_at": "2026-10-24T05:20:00Z" } }`, the same object as API-07. The profile then appears in API-06 with `my_role: "owner"`. Errors: 409 `PROFILE_LIMIT` (10 owned profiles per user, the user's own included) · 422. Audit `patient.created`.
+
+### API-42 `GET /patients/{patient_id}/details`
+
+`view_records`. **200** `{ "details": Details }`. A profile with no saved Medical ID returns the same keys with `null` values, `emergency_contacts: []` and `updated_at: null`, never 404. `relationship` is only exposed here (API-06/07 are unchanged).
+
+### API-43 `PUT /patients/{patient_id}/details`
+
+Owner only (403 `OWNER_ONLY`). Self-reported; nothing is checked against documents or interpreted. Every `Details` field except `patient_id` and `updated_at` is optional and nullable, and **a PUT replaces the whole Medical ID**: a missing field is saved as `null` (contacts as `[]`). Empty strings count as `null`.
+
+| Field | Rule |
+|---|---|
+| relationship | `Relationship` enum |
+| date_of_birth | `YYYY-MM-DD`, not in the future (IST) |
+| sex | `female` · `male` · `other` |
+| blood_group | `A+` `A-` `B+` `B-` `AB+` `AB-` `O+` `O-` |
+| height_cm | 30–250 |
+| emergency_contacts | at most 5 of `{ name 1–80, phone 3–20 chars of digits, spaces and + - ( ), relation 0–40 }` |
+| allergies_note, conditions_note, medications_note | at most 500 characters each |
+| organ_donor | boolean or `null` |
+
+Example request:
+```json
+{
+  "relationship": "self",
+  "date_of_birth": "1968-04-12",
+  "sex": "female",
+  "blood_group": "B+",
+  "height_cm": 158.5,
+  "emergency_contacts": [{ "name": "Karthik Raman", "phone": "+91 98765 43210", "relation": "Son" }],
+  "allergies_note": "Sulfa drugs (rash)",
+  "conditions_note": null,
+  "medications_note": null,
+  "organ_donor": true
+}
+```
+
+**200** `{ "details": Details }` (as saved, `updated_at` set). Errors: 403 `OWNER_ONLY` · 422. Audit `profile.details_updated`.
+
+### API-44 `GET /patients/{patient_id}/vitals`
+
+`view_records`. Query: `kind` (optional, one of the kinds below), `limit` 1–500 (default 200). **200** `{ "items": [Vital], "total": 12 }`, newest `measured_at` first; `total` counts every matching reading, not just the returned page.
+
+### API-45 `POST /patients/{patient_id}/vitals`
+
+`upload_documents` (a caregiver without it gets 403 `SCOPE_REQUIRED`). Ranges are **plausibility checks against typing mistakes only**: MediVara never labels a reading as normal or abnormal.
+
+| kind | unit | value | value2 | context |
+|---|---|---|---|---|
+| `blood_pressure` | `mmHg` | systolic 50–260 | **required**, diastolic 30–160 | `null` |
+| `blood_sugar` | `mg/dL` | 20–600 | `null` | `fasting` · `post_meal` · `random` · `null` |
+| `weight` | `kg` | 1–300 | `null` | `null` |
+| `heart_rate` | `bpm` | 20–250 | `null` | `null` |
+| `spo2` | `%` | 50–100 | `null` | `null` |
+| `temperature` | `°C` or `°F` | 30–45 °C, 86–113 °F | `null` | `null` |
+
+`measured_at` is ISO 8601 with an offset or `Z`, at most 5 minutes in the future; it is returned in UTC. `notes` at most 200 characters.
+
+Example request and **201** response:
+```json
+{ "kind": "blood_pressure", "value": 128, "value2": 82, "unit": "mmHg", "measured_at": "2026-10-24T08:30:00+05:30", "context": null, "notes": "After a walk" }
+```
+```json
+{
+  "vital": {
+    "id": "vit_0c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f",
+    "kind": "blood_pressure",
+    "value": 128,
+    "value2": 82,
+    "unit": "mmHg",
+    "context": null,
+    "notes": "After a walk",
+    "measured_at": "2026-10-24T03:00:00Z",
+    "created_by": { "user_id": "usr_meera", "display_name": "Meera Raman" },
+    "created_at": "2026-10-24T05:25:00Z"
+  }
+}
+```
+
+Errors: 403 `SCOPE_REQUIRED` · 422 (fields `kind`, `unit`, `value`, `value2`, `context`, `notes`, `measured_at`). Audit `vital.recorded` (meta `{ kind }` only).
+
+### API-46 `DELETE /patients/{patient_id}/vitals/{vital_id}`
+
+`upload_documents`. **204**. 404 `NOT_FOUND` when the reading isn't this profile's. Audit `vital.deleted`.
+
+### API-47 to API-53 Chats
+
+Saved Ask conversations. A chat is **private to the user who created it**: a caregiver never sees the owner's chats and the owner never sees a caregiver's. Every chat route needs `view_records`, and a chat is found only by (chat ID, profile in the path, current user); anything else is 404 `NOT_FOUND`.
+
+- **API-47** `GET /patients/{patient_id}/chats?limit=50&offset=0` → **200** `{ "items": [Chat], "total", "limit", "offset" }`, most recently active (`updated_at`) first. `limit` max 100.
+- **API-48** `POST /patients/{patient_id}/chats` with `{ "title": "BP questions" }`, `{}` or no body → **201** `{ "chat": Chat }`. The title is trimmed, 1–80 characters, default `"New chat"`.
+- **API-49** `GET /patients/{patient_id}/chats/{chat_id}` → **200** `{ "chat": Chat, "messages": [ChatMessage] }`, oldest message first.
+- **API-50** `PATCH /patients/{patient_id}/chats/{chat_id}` with `{ "title": "Sugar log" }` (trimmed, 1–80) → **200** `{ "chat": Chat }`.
+- **API-51** `DELETE /patients/{patient_id}/chats/{chat_id}` → **204**; its messages are deleted too. Audit `chat.deleted`.
+- **API-52** `POST /patients/{patient_id}/chats/{chat_id}/messages` with `{ "question": "What was my most recent HbA1c?", "input_mode": "text" }` (question trimmed 1–500; `input_mode` `text` · `voice`, default `text`). Runs **exactly the API-21 pipeline** (emergency and advice gate, grounded context, validator), stores a `user`/`question` and an `assistant`/`answer` message, and moves the chat to the top. While the title is still `"New chat"` it becomes the question (first 60 characters, cut at a word boundary, plus "…" when cut). As in API-21, AI problems never become HTTP errors: the answer's `status` carries them. **201** `{ "user_message": ChatMessage, "assistant_message": ChatMessage, "chat": Chat }`. Audit `ask.answered` with meta `{ status, input_mode, chat_id }`.
+- **API-53** `POST /patients/{patient_id}/chats/{chat_id}/attachments` with `{ "document_id": "doc_…" }` → **201** `{ "message": ChatMessage, "chat": Chat }`. The document must belong to this profile (404 `NOT_FOUND` otherwise). While the title is still `"New chat"` it becomes `"Document: "` plus the document title (60 characters, "…" when cut). Attaching is a marker in the conversation; Ask always searches all of the profile's documents.
+
+API-52 **201** example (answer object shortened; it is the full API-21 response):
+```json
+{
+  "user_message": {
+    "id": "msg_1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+    "chat_id": "cht_9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
+    "role": "user",
+    "kind": "question",
+    "text": "What was my most recent HbA1c?",
+    "input_mode": "text",
+    "answer": null,
+    "document": null,
+    "created_at": "2026-10-24T05:30:00Z"
+  },
+  "assistant_message": {
+    "id": "msg_2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "chat_id": "cht_9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
+    "role": "assistant",
+    "kind": "answer",
+    "text": null,
+    "input_mode": null,
+    "answer": { "answer_id": "aio_…", "status": "answered", "statements": [], "evidence": [], "questions_for_doctor": [], "notices": [], "disclaimer": "…", "generated_at": "2026-10-24T05:30:02Z", "latency_ms": 1840 },
+    "document": null,
+    "created_at": "2026-10-24T05:30:02Z"
+  },
+  "chat": {
+    "id": "cht_9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
+    "title": "What was my most recent HbA1c?",
+    "created_at": "2026-10-24T05:29:40Z",
+    "updated_at": "2026-10-24T05:30:02Z",
+    "message_count": 2,
+    "last_message_preview": "What was my most recent HbA1c?"
+  }
+}
+```
+
+### API-54 `POST /patients/{patient_id}/invitations`
+
+Owner only. Invites a caregiver by email, whether or not an account exists for it; the answer never reveals which. Same rules as API-24 (`scopes` must include `view_records`, `consent_confirmed: true`, current `policy_version`), plus a valid email that isn't the owner's own (422 field `email`) and a `Relationship`. Records a `sharing` consent whose context holds the invitation ID. The invitation expires after 14 days. The ID (`inv_` + UUID v4) is the secret in the link; accepting also requires signing in with the invited email.
+
+```json
+{ "email": "ravi.demo@medivara.test", "scopes": ["view_records"], "relationship": "sibling", "consent_confirmed": true, "policy_version": "2026-10-demo-1" }
+```
+
+**201**:
+```json
+{
+  "invitation": {
+    "id": "inv_3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f",
+    "email": "ravi.demo@medivara.test",
+    "relationship": "sibling",
+    "scopes": ["view_records"],
+    "status": "pending",
+    "created_at": "2026-10-24T05:35:00Z",
+    "expires_at": "2026-11-07T05:35:00Z",
+    "responded_at": null,
+    "invite_url": "/invite/inv_3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f"
+  },
+  "invite_url": "/invite/inv_3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f",
+  "email_sent": false
+}
+```
+
+`invite_url` is a frontend path. `email_sent` is `true` when the server queued an email (SMTP configured); otherwise the owner shares the link. Errors: 403 `OWNER_ONLY` · 409 `INVITATION_EXISTS` · 409 `GRANT_EXISTS` (that email's account already has active access) · 422. Audit `invitation.created` (meta: invitation ID and scopes, never the email).
+
+### API-55 `GET /patients/{patient_id}/invitations`
+
+Owner only. **200** `{ "invitations": [OwnerInvitation] }`, newest first, every status. A pending invitation past `expires_at` is reported as `expired` (computed, not stored).
+
+### API-56 `DELETE /patients/{patient_id}/invitations/{invitation_id}`
+
+Owner only. Cancels a pending invitation. **204**. 404 `NOT_FOUND` if it isn't this profile's · 409 `INVALID_STATE` if it isn't pending (accepted, declined, cancelled or expired). Audit `invitation.cancelled`.
+
+### API-57 `GET /me/invitations`
+
+Bearer. Pending, unexpired invitations addressed to the current user's email, newest first. **200**:
+```json
+{
+  "invitations": [
+    {
+      "id": "inv_3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f",
+      "patient": { "id": "pat_meera", "display_name": "Meera Raman" },
+      "invited_by": { "display_name": "Meera Raman" },
+      "relationship": "sibling",
+      "scopes": ["view_records"],
+      "created_at": "2026-10-24T05:35:00Z",
+      "expires_at": "2026-11-07T05:35:00Z"
+    }
+  ]
+}
+```
+
+### API-58 `POST /me/invitations/{invitation_id}/accept`
+
+Bearer. The invitation must be pending, unexpired and addressed to the current user's email; otherwise 404 `NOT_FOUND` (the same answer in every case). 422 if the current user owns the profile. Creates the caregiver grant (the invitation's scopes, granted by the inviter, linked to the invitation's consent record) unless an active grant already exists, and marks the invitation accepted. **200** `{ "patient_id": "pat_meera" }`; the profile then appears in API-06. Audit `invitation.accepted` and `access.granted` (actor: the invitee).
+
+### API-59 `POST /me/invitations/{invitation_id}/decline`
+
+Bearer. Same lookup rules as API-58. **204**. Audit `invitation.declined`.
+
+### API-60 `GET /voice/config`
+
+Bearer. **200** `{ "available": true, "mode": "signed_url" }`. `mode` is `signed_url` (server has an ElevenLabs API key and agent ID), `public_agent` (agent ID only) or `off`; `available` is `false` only when `off`. Use it to show or hide voice conversation.
+
+### API-61 `POST /patients/{patient_id}/voice/session`
+
+`view_records`, and the **current user's** own current `voice_input` consent (API-05), else 403 `CONSENT_REQUIRED` with `details.consent_type: "voice_input"`. No body. **200**:
+```json
+{
+  "signed_url": "wss://api.elevenlabs.io/v1/convai/conversation?agent_id=…&conversation_signature=…",
+  "agent_id": null,
+  "dynamic_variables": { "patient_first_name": "Meera", "user_first_name": "Karthik" }
+}
+```
+
+`signed_url` is set only in `signed_url` mode (short-lived; fetch a new one per conversation) and `agent_id` only in `public_agent` mode. Start the ElevenLabs conversation with whichever is set plus `dynamic_variables`, and implement the agent's client tool `ask_medical_records({ question })` with API-52 (`input_mode: "voice"`) or API-21, returning the answer text, so spoken answers go through the same gate and validator. The API key is never returned. Errors: 403 `CONSENT_REQUIRED` · 503 `VOICE_UNAVAILABLE` ("Voice conversation isn't set up on this server.") · 502 `VOICE_UNAVAILABLE` ("The voice service didn't respond. Try again, or type your question."). Audit `voice.session_started`.
+
+
+---
+
 ## 6. Contract changelog
 
 | Version | Date | Change | Type | Approved by |
 |---|---|---|---|---|
 | 1.0.0 | Pre-event | Initial contract: API-01…33 | n/a | B (owner), A (ack), C (review) |
 | 1.1.0 | 2026-10-10 | API-11 adds `document.pages` (`[{ page, lines: [{ line_id, text }] }]`) so SCR-06 can show the document text and highlight source lines. Clients ignore unknown fields. | Additive | B (owner); A to acknowledge |
+| 1.2.0 | 2026-10-10 | §5b redesign extensions, API-40 to API-61: registration, family profiles, Medical ID, vitals, saved chats, email invitations and voice sessions. New codes `EMAIL_TAKEN`, `PROFILE_LIMIT`, `INVITATION_EXISTS`, `VOICE_UNAVAILABLE`. API-04 `owned_patient_id` is now the first-created owned profile. No existing response shape changes. | Additive | B (owner); A to acknowledge |
 
 Rules for entries are in [../hackathon/integration-plan.md](../hackathon/integration-plan.md) §5. Additive changes increase the minor version (1.1.0). Breaking changes increase the major version and need Person A's acknowledgement.

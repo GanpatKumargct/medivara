@@ -61,3 +61,39 @@ export const UNCERTAINTY_LABELS: Record<string, string> = {
   date_in_future: 'The date is in the future',
   model_note: 'The reader flagged this as unclear',
 }
+
+export const RELATIONSHIP_LABELS: Record<string, string> = {
+  self: 'You',
+  spouse: 'Spouse / partner',
+  parent: 'Parent',
+  child: 'Child',
+  sibling: 'Sibling',
+  grandparent: 'Grandparent',
+  other: 'Other family',
+}
+
+export const SCOPE_LABELS: Record<string, string> = {
+  view_records: 'View records',
+  upload_documents: 'Add records',
+  manage_reminders: 'Manage reminders',
+}
+
+export function initials(name: string): string {
+  return name.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'
+}
+
+const AVATAR_TINTS = [
+  'bg-brand-100 text-brand-800',
+  'bg-cyan-bg text-cyan-fg',
+  'bg-teal-bg text-teal-fg',
+  'bg-violet-bg text-violet-fg',
+  'bg-green-bg text-green-fg',
+  'bg-warn-bg text-warn-fg',
+]
+
+/** Stable avatar tint per id, so each family member keeps their colour. */
+export function avatarTint(id: string): string {
+  let h = 0
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return AVATAR_TINTS[h % AVATAR_TINTS.length]
+}

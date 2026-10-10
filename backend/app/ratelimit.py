@@ -73,6 +73,44 @@ def record_success(email: str) -> None:
         _failures.pop(f"email:{email}", None)
 
 
+# --- Registrations (API-40) ------------------------------------------------------------
+# Every registration attempt that passes field validation counts, including EMAIL_TAKEN
+# answers, so the endpoint can't be used to test many emails for existing accounts.
+
+REGISTER_MAX_PER_IP = 10
+_registrations: dict[str, deque[float]] = {}
+
+
+def registration_retry_after_s(ip: str) -> int | None:
+    """Seconds until this IP may register again, or None if it may go ahead."""
+    window = get_settings().login_window_minutes * 60
+    now = time.monotonic()
+    with _lock:
+        times = _recent_in(_registrations, ip, now, window)
+        if len(times) < REGISTER_MAX_PER_IP:
+            return None
+        wait = times[len(times) - REGISTER_MAX_PER_IP] + window - now
+    return max(1, int(wait) + 1)
+
+
+def record_registration(ip: str) -> None:
+    window = get_settings().login_window_minutes * 60
+    now = time.monotonic()
+    with _lock:
+        _recent_in(_registrations, ip, now, window).append(now)
+        if len(_registrations) > _MAX_KEYS:
+            for key in [k for k in _registrations if not _recent_in(_registrations, k, now, window)]:
+                del _registrations[key]
+
+
+def _recent_in(store: dict[str, deque[float]], key: str, now: float, window: float) -> deque[float]:
+    times = store.setdefault(key, deque())
+    while times and times[0] <= now - window:
+        times.popleft()
+    return times
+
+
 def reset() -> None:
     with _lock:
         _failures.clear()
+        _registrations.clear()
