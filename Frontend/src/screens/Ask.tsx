@@ -6,9 +6,10 @@
 // this profile's documents, with sources, and can be read aloud.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import * as api from '../api/endpoints'
 import type { AskResponse } from '../api/types'
-import { ASK_EXAMPLE_QUESTIONS } from '../dummy-data/ask'
+import { buildAskSuggestions } from '../lib/ask-suggestions'
 import { GLOSSARY } from '../dummy-data/glossary'
 import { useSpeechInput } from '../lib/useSpeechInput'
 import { useReadAloud } from '../lib/useReadAloud'
@@ -46,7 +47,12 @@ export default function Ask() {
   const [busy, setBusy] = useState(false)
   const [loadingStep, setLoadingStep] = useState(0)
   const voiceUsed = useRef(false)
-  const examples = ASK_EXAMPLE_QUESTIONS[patientId] ?? []
+  // Suggestions come from this profile's own documents, so each one has an answer.
+  const timelineQ = useQuery({
+    queryKey: ['timeline', patientId, 'ask-suggestions'],
+    queryFn: () => api.getTimeline(patientId, { include_unverified: true }),
+  })
+  const examples = buildAskSuggestions(timelineQ.data)
   const endRef = useRef<HTMLDivElement>(null)
   const seq = useRef(0)
 
@@ -100,7 +106,15 @@ export default function Ask() {
         {thread.length === 0 && (
           <Card accent>
             <CardBody>
-              <p className="text-sm font-medium text-ink">Try one of these</p>
+              {timelineQ.data && examples.length === 0 ? (
+                <p className="text-sm text-ink-muted">
+                  No documents to ask about yet.{' '}
+                  <Link to={`/p/${patientId}/records`} className="font-medium text-brand-700 underline">Add a document in Records</Link>{' '}
+                  and suggested questions about it will appear here.
+                </p>
+              ) : (
+                <p className="text-sm font-medium text-ink">Try one of these</p>
+              )}
               <div className="mt-2 flex flex-wrap gap-2">
                 {examples.map((ex) => (
                   <button
