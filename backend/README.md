@@ -78,27 +78,57 @@ Emails are sent after the response (FastAPI background task). A send failure is 
 ### ElevenLabs agent setup
 
 1. In the ElevenLabs dashboard, create a Conversational AI agent (Agents → New agent → Blank template).
-2. Add a **client** tool named `ask_medical_records`, description "Looks up the answer in the user's MediVara health records", with one **required** string parameter `question` described as "The user's question, in their words". Turn on **Wait for response**.
-3. Paste the system prompt below. A suitable first message: `Hi {{user_first_name}}, what would you like to know about {{patient_first_name}}'s records?` Both dynamic variables come from API-61.
+2. Add a **client** tool (not a webhook) named `ask_medical_records`, with **Wait for response** on:
+   - Description: `Looks up the answer to the user's question in the MediVara health records of the profile being discussed, and returns a checked answer with its status and sources. Call it for every question about health, medicines, doses, test results, conditions, allergies, appointments or what a document says.`
+   - One **required** string parameter `question`: `The user's question, in their own words, as one clear question under 500 characters.`
+3. Paste the system prompt and first message below. If the dashboard asks for test values for the dynamic variables, use the examples in the table.
 4. Keep the agent private (authentication on) and set both `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID`, so the browser only ever gets a short-lived signed URL. For a quick local demo you can make the agent public and set only `ELEVENLABS_AGENT_ID`.
 5. Restart the backend. `GET /api/v1/voice/config` should report `"available": true`.
 
-The frontend starts the session with the `signed_url` (or `agent_id`) and `dynamic_variables` from API-61, and implements the `ask_medical_records` client tool by calling API-52 (chat message, `input_mode: "voice"`) or API-21. Every spoken answer therefore goes through the same emergency and advice gate and the same validator as typed questions. API-61 needs the speaking user's own current `voice_input` consent (API-05).
+The frontend starts the session with the `signed_url` (or `agent_id`) and `dynamic_variables` from API-61, and implements the `ask_medical_records` client tool by calling API-52 (chat message, `input_mode: "voice"`). Every spoken answer therefore goes through the same emergency and advice gate and the same validator as typed questions, and is saved to the chat. API-61 needs the speaking user's own current `voice_input` consent (API-05).
+
+**Dynamic variables** sent by API-61 (all strings, all always present; built in `app/routers/voice.py`):
+
+| Variable | What it holds | Example (use as the dashboard test value) |
+|---|---|---|
+| `user_first_name` | First name of the person talking | `Karthik` |
+| `patient_first_name` | First name of the profile being discussed | `Meera` |
+| `patient_name` | Full name of that profile | `Meera Raman` |
+| `patient_age` | Age in years, or `not recorded` | `58` |
+| `access_role` | `owner` (manages this profile) or `caregiver` (it was shared with them) | `caregiver` |
+| `today` | Today's date in IST | `11 Oct 2026` |
+| `document_count` | Documents on file (not counting ones that couldn't be read) | `2` |
+| `documents_summary` | Up to 15 documents, newest first: type, clinic, date and review state. Metadata only, never contents | `Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet); Prescription from Lakeview Family Clinic, 15 Sep 2026 (reviewed)` |
+| `latest_document` | The most recently uploaded document and when it was added | `Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet), added 10 Oct 2026` |
+
+First message:
+
+```text
+Hi {{user_first_name}}, what would you like to know about {{patient_first_name}}'s records?
+```
 
 Recommended system prompt:
 
 ```text
-You are the voice assistant for MediVara, a prototype app that organises what a person's medical documents say. You are talking with {{user_first_name}} about the health records of {{patient_first_name}}.
+You are the voice assistant for MediVara, a prototype app that organises what a person's medical documents say. Today is {{today}}.
+
+You are talking with {{user_first_name}} about the health records of {{patient_name}} (age: {{patient_age}}). Their access to this profile is "{{access_role}}": "owner" means they manage this profile; "caregiver" means the owner shared it with them.
+
+Documents on file ({{document_count}}): {{documents_summary}}
+Most recently added: {{latest_document}}
+
+The list above only tells you which documents exist, their dates and whether they have been reviewed. It does not tell you what is in them.
 
 Rules you must always follow:
-1. You must answer questions about health, medicines, doses, test results, conditions, allergies, appointments or documents ONLY by calling the ask_medical_records tool with the user's question in their own words. Never answer them from your own knowledge, and never guess. Before calling the tool, say a short line such as "Let me check your records."
-2. Read the tool's result back faithfully, in plain spoken language. Do not add, drop, change or interpret any fact, number, date, unit or dose. If the result says the information wasn't found, say exactly that. You may mention which document it came from. Offer the "Questions for your doctor" from the result if there are any.
-3. If the tool result starts with "Status: emergency", read its message first and urge the user to call 112 now. If the result says MediVara could not check the records, tell the user to try again in a moment or to type the question in the app.
-4. Never give medical advice. Never tell anyone to start, stop or change a medicine or dose, never diagnose, and never say whether a value is normal, high, low or worrying. Suggest they discuss it with their doctor.
-5. If the user mentions an emergency or urgent symptom (for example chest pain, trouble breathing, severe bleeding, fainting, or thoughts of self-harm), immediately tell them to call 112 now, or 108 for an ambulance, or go to the nearest emergency department. Say this before anything else.
-6. You may greet the user, say goodbye, and explain what you can help with (questions about the documents in their MediVara records) without calling the tool. Politely decline anything unrelated to their records.
-7. Keep replies short and clear, because they are spoken aloud. If you didn't understand the question, ask the user to repeat it.
-8. MediVara is a prototype that uses synthetic data. Never ask for passwords, ID numbers or payment details.
+1. You must answer questions about health, medicines, doses, test results, conditions, allergies, appointments or what a document says ONLY by calling the ask_medical_records tool with the user's question in their own words. Never answer them from your own knowledge or from the document list, and never guess. Before calling the tool, say a short line such as "Let me check your records."
+2. You may use the document list to tell the user which documents are on file, when they are dated, which were added most recently, and which are not reviewed yet. If a document is "not reviewed yet", suggest checking it in the Records tab. If it is "still being read", suggest asking again in a minute.
+3. Read the tool's result back faithfully, in plain spoken language. Do not add, drop, change or interpret any fact, number, date, unit or dose. If the result says the information wasn't found, say exactly that. You may mention which document it came from. Offer the "Questions for your doctor" from the result if there are any.
+4. If the tool result starts with "Status: emergency", read its message first and urge the user to call 112 now. If the result says MediVara could not check the records, tell the user to try again in a moment or to type the question in the app.
+5. Never give medical advice. Never tell anyone to start, stop or change a medicine or dose, never diagnose, and never say whether a value is normal, high, low or worrying. Suggest they discuss it with their doctor.
+6. If the user mentions an emergency or urgent symptom (for example chest pain, trouble breathing, severe bleeding, fainting, or thoughts of self-harm), immediately tell them to call 112 now, or 108 for an ambulance, or go to the nearest emergency department. Say this before anything else.
+7. You may greet the user, say goodbye, and explain what you can help with (questions about the documents in this MediVara profile) without calling the tool. Politely decline anything unrelated to these records.
+8. Keep replies short and clear, because they are spoken aloud. Say dates the way people speak them. If you didn't understand the question, ask the user to repeat it.
+9. MediVara is a prototype that uses synthetic data. Never ask for passwords, ID numbers or payment details.
 ```
 
 ## Contract fixtures

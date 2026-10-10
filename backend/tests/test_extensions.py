@@ -826,10 +826,50 @@ def test_voice_public_agent_mode(client, monkeypatch):
     assert response.json() == {
         "signed_url": None,
         "agent_id": "agent_public_1",
-        "dynamic_variables": {"patient_first_name": "Meera", "user_first_name": "Karthik"},
+        "dynamic_variables": {
+            "user_first_name": "Karthik",
+            "patient_first_name": "Meera",
+            "patient_name": "Meera Raman",
+            "patient_age": "58",
+            "access_role": "caregiver",
+            "today": today_ist(),
+            "document_count": "0",
+            "documents_summary": "No documents yet.",
+            "latest_document": "No documents yet.",
+        },
     }
     events = audit_rows("voice.session_started")
     assert len(events) == 1 and events[0].meta == {"mode": "public_agent"} and events[0].actor_user_id == "usr_karthik"
+
+
+def today_ist() -> str:
+    from zoneinfo import ZoneInfo
+
+    return datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y")
+
+
+def test_voice_variables_describe_documents_by_metadata_only(client, monkeypatch, fake_model, pdfs):
+    configure_voice(monkeypatch, agent="agent_public_1")
+    token = login(client, MEERA)
+    meera = auth(token)
+    for name in ("lab_sunrise_mar2025.pdf", "lab_sunrise_may2026.pdf", "scanned_prescription.pdf"):
+        upload(client, token, name, pdfs[name])
+    voice_consent(client, meera)
+    response = client.post(f"{P}/voice/session", headers=meera)
+    assert response.status_code == 200, response.text
+    variables = response.json()["dynamic_variables"]
+    assert all(isinstance(v, str) for v in variables.values())
+    # The unreadable scan isn't "on file", but it is the latest upload.
+    assert variables["document_count"] == "2"
+    assert variables["documents_summary"] == (
+        "Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet); "
+        "Lab report from Sunrise Diagnostics, 18 Mar 2025 (not reviewed yet)"
+    )
+    assert variables["latest_document"] == f"Document, date unknown (could not be read), added {today_ist()}"
+    # Metadata only: no values or test names from the documents themselves.
+    text = " ".join(variables.values())
+    for content in ("HbA1c", "8.4", "7.6", "Haemoglobin", "glucose"):
+        assert content not in text
 
 
 def test_voice_signed_url_mode_never_reveals_the_key(client, monkeypatch, caplog):
@@ -858,7 +898,9 @@ def test_voice_signed_url_mode_never_reveals_the_key(client, monkeypatch, caplog
         assert response.status_code == 200, response.text
         body = response.json()
         assert body["signed_url"].startswith("wss://") and body["agent_id"] is None
-        assert body["dynamic_variables"] == {"patient_first_name": "Meera", "user_first_name": "Meera"}
+        variables = body["dynamic_variables"]
+        assert variables["user_first_name"] == variables["patient_first_name"] == "Meera"
+        assert variables["access_role"] == "owner"
         assert calls == [{
             "url": "https://api.elevenlabs.io/v1/convai/conversation/get-signed-url",
             "params": {"agent_id": "agent_private_1"},

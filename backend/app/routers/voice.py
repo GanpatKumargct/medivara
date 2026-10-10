@@ -10,13 +10,20 @@ Modes:
 - public_agent: only ELEVENLABS_AGENT_ID set (a public agent); the browser connects by agent ID.
 - off: neither.
 The API key is never returned or logged.
+
+The session also returns `dynamic_variables` for the agent's prompt: first names, the profile's
+age, the speaker's role, today's date (IST) and a list of the profile's documents described by
+metadata only (type, facility, date, review state). Document contents never go in them; facts
+reach the agent only as checked answers from the tool.
 """
 
 import logging
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import APIRouter, Depends, Request
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app import audit
 from app.access import PatientAccess, require_access
@@ -25,7 +32,7 @@ from app.config import Settings, get_settings
 from app.consents import has_current_consent
 from app.db import get_session
 from app.errors import ApiError
-from app.models import ConsentType
+from app.models import ConsentType, DocumentStatus, MedicalDocument, PatientProfile, Role, User, as_utc
 from app.routers import API_PREFIX
 
 router = APIRouter(prefix=API_PREFIX, tags=["voice"])
@@ -43,9 +50,68 @@ def voice_mode(settings: Settings) -> str:
     return "off"
 
 
+IST = ZoneInfo("Asia/Kolkata")
+MAX_LISTED_DOCUMENTS = 15
+_TYPE_LABELS = {
+    "prescription": "Prescription",
+    "lab_report": "Lab report",
+    "discharge_summary": "Discharge summary",
+    "consultation_note": "Consultation note",
+}
+_STATE_LABELS = {
+    DocumentStatus.ready: "reviewed",
+    DocumentStatus.needs_review: "not reviewed yet",
+    DocumentStatus.queued: "still being read",
+    DocumentStatus.processing: "still being read",
+    DocumentStatus.failed: "could not be read",
+}
+
+
 def _first_word(name: str | None) -> str:
     parts = (name or "").split()
     return parts[0] if parts else ""
+
+
+def _day(value: date | datetime | None) -> str:
+    return value.strftime("%d %b %Y") if value else "date unknown"
+
+
+def describe_document(doc: MedicalDocument) -> str:
+    """For example "Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet)". Metadata only."""
+    kind = _TYPE_LABELS.get(doc.document_type.value, "Document")
+    source = f" from {doc.facility_name}" if doc.facility_name else ""
+    return f"{kind}{source}, {_day(doc.document_date)} ({_STATE_LABELS[doc.status]})"
+
+
+def voice_variables(session: Session, patient: PatientProfile, user: User, role: Role) -> dict[str, str]:
+    """Dynamic variables for the agent's prompt. All values are strings (contract §5b, API-61)."""
+    docs = session.exec(
+        select(MedicalDocument)
+        .where(MedicalDocument.patient_id == patient.id)
+        .order_by(MedicalDocument.created_at.desc(), MedicalDocument.id.desc())
+    ).all()
+    on_file = [d for d in docs if d.status != DocumentStatus.failed]
+    # Newest document date first, undated last.
+    listed = sorted(on_file, key=lambda d: d.document_date or date.min, reverse=True)[:MAX_LISTED_DOCUMENTS]
+    summary = "; ".join(describe_document(d) for d in listed) or "No documents yet."
+    if len(on_file) > MAX_LISTED_DOCUMENTS:
+        summary += f"; and {len(on_file) - MAX_LISTED_DOCUMENTS} more"
+    latest = docs[0] if docs else None
+    return {
+        "user_first_name": _first_word(user.display_name),
+        "patient_first_name": _first_word(patient.display_name),
+        "patient_name": patient.display_name,
+        "patient_age": str(patient.age_years) if patient.age_years is not None else "not recorded",
+        "access_role": "owner" if role == Role.owner else "caregiver",
+        "today": _day(datetime.now(IST)),
+        "document_count": str(len(on_file)),
+        "documents_summary": summary,
+        "latest_document": (
+            f"{describe_document(latest)}, added {_day(as_utc(latest.created_at).astimezone(IST))}"
+            if latest
+            else "No documents yet."
+        ),
+    }
 
 
 def fetch_signed_url(settings: Settings) -> str:
@@ -112,8 +178,5 @@ def start_voice_session(
     return {
         "signed_url": signed_url,
         "agent_id": settings.elevenlabs_agent_id if mode == "public_agent" else None,
-        "dynamic_variables": {
-            "patient_first_name": _first_word(access.patient.display_name),
-            "user_first_name": _first_word(user.display_name),
-        },
+        "dynamic_variables": voice_variables(session, access.patient, user, access.role),
     }

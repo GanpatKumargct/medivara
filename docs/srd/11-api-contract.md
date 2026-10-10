@@ -1779,9 +1779,21 @@ Bearer. **200** `{ "available": true, "mode": "signed_url" }`. `mode` is `signed
 {
   "signed_url": "wss://api.elevenlabs.io/v1/convai/conversation?agent_id=…&conversation_signature=…",
   "agent_id": null,
-  "dynamic_variables": { "patient_first_name": "Meera", "user_first_name": "Karthik" }
+  "dynamic_variables": {
+    "user_first_name": "Karthik",
+    "patient_first_name": "Meera",
+    "patient_name": "Meera Raman",
+    "patient_age": "58",
+    "access_role": "caregiver",
+    "today": "11 Oct 2026",
+    "document_count": "2",
+    "documents_summary": "Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet); Prescription from Lakeview Family Clinic, 15 Sep 2026 (reviewed)",
+    "latest_document": "Lab report from Sunrise Diagnostics, 04 May 2026 (not reviewed yet), added 10 Oct 2026"
+  }
 }
 ```
+
+Every `dynamic_variables` value is a string, and every key is always present. `patient_age` is `"not recorded"` when unknown; `access_role` is `"owner"` or `"caregiver"`; `today` is the IST date (`DD Mon YYYY`). `document_count` and `documents_summary` cover documents that weren't `failed`: up to 15, newest document date first (undated last), each `"{Type}[ from {facility}], {date or "date unknown"} ({reviewed | not reviewed yet | still being read})"`, then `"; and N more"`. `latest_document` is the most recently uploaded document, failed ones included (`"could not be read"`), plus `", added {IST date}"`. With no documents both are `"No documents yet."`. The variables carry document **metadata only**, never contents: facts reach the agent only through the `ask_medical_records` tool.
 
 `signed_url` is set only in `signed_url` mode (short-lived; fetch a new one per conversation) and `agent_id` only in `public_agent` mode. Start the ElevenLabs conversation with whichever is set plus `dynamic_variables`, and implement the agent's client tool `ask_medical_records({ question })` with API-52 (`input_mode: "voice"`) or API-21, returning the answer text, so spoken answers go through the same gate and validator. The API key is never returned. Errors: 403 `CONSENT_REQUIRED` · 503 `VOICE_UNAVAILABLE` ("Voice conversation isn't set up on this server.") · 502 `VOICE_UNAVAILABLE` ("The voice service didn't respond. Try again, or type your question."). Audit `voice.session_started`.
 
@@ -1795,5 +1807,6 @@ Bearer. **200** `{ "available": true, "mode": "signed_url" }`. `mode` is `signed
 | 1.0.0 | Pre-event | Initial contract: API-01…33 | n/a | B (owner), A (ack), C (review) |
 | 1.1.0 | 2026-10-10 | API-11 adds `document.pages` (`[{ page, lines: [{ line_id, text }] }]`) so SCR-06 can show the document text and highlight source lines. Clients ignore unknown fields. | Additive | B (owner); A to acknowledge |
 | 1.2.0 | 2026-10-10 | §5b redesign extensions, API-40 to API-61: registration, family profiles, Medical ID, vitals, saved chats, email invitations and voice sessions. New codes `EMAIL_TAKEN`, `PROFILE_LIMIT`, `INVITATION_EXISTS`, `VOICE_UNAVAILABLE`. API-04 `owned_patient_id` is now the first-created owned profile. No existing response shape changes. | Additive | B (owner); A to acknowledge |
+| 1.3.0 | 2026-10-11 | API-61 `dynamic_variables` gains `patient_name`, `patient_age`, `access_role`, `today`, `document_count`, `documents_summary` and `latest_document` (document metadata only). | Additive | B (owner); A to acknowledge |
 
 Rules for entries are in [../hackathon/integration-plan.md](../hackathon/integration-plan.md) §5. Additive changes increase the minor version (1.1.0). Breaking changes increase the major version and need Person A's acknowledgement.
