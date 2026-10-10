@@ -7,6 +7,7 @@ import { ApiError } from '../api/types'
 import { DEMO_CARDS, DEMO_PASSWORD, USERS } from '../dummy-data/accounts'
 import { Button, Card, CardBody, Field, Input } from '../components/ui'
 import { SyntheticWarning } from '../components/common'
+import { LogoFull } from '../components/brand'
 import { COPY } from '../lib/copy'
 
 export default function Login() {
@@ -37,10 +38,17 @@ export default function Login() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-brand-700">MediVara</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+    <div className="relative min-h-screen overflow-hidden bg-hero-fade">
+      {/* Soft animated brand orbs (decorative). */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="mv-orb" style={{ width: 340, height: 340, top: -80, left: -60, background: '#0284F7', animationDelay: '0s' }} />
+        <div className="mv-orb" style={{ width: 300, height: 300, bottom: -70, right: -40, background: '#10B981', animationDelay: '-4s' }} />
+        <div className="mv-orb" style={{ width: 220, height: 220, top: '40%', right: '12%', background: '#06B6D4', animationDelay: '-8s' }} />
+      </div>
+    <div className="relative mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
+      <div className="animate-fade-up mb-6 flex flex-col items-center text-center">
+        <LogoFull className="max-w-[220px] mix-blend-multiply" />
+        <p className="mt-2 text-sm text-ink-muted">
           Your medical documents, organised and explained — with sources.
         </p>
       </div>
@@ -51,7 +59,7 @@ export default function Login() {
         </div>
       )}
 
-      <Card>
+      <Card className="animate-scale-in">
         <CardBody>
           <form
             onSubmit={(e) => {
@@ -94,11 +102,11 @@ export default function Login() {
 
       <div className="mt-6">
         <h2 className="mb-2 text-sm font-semibold text-ink">Demo accounts (synthetic data)</h2>
-        <div className="space-y-2">
+        <div className="mv-stagger space-y-2">
           {DEMO_CARDS.map((card) => {
             const u = USERS.find((x) => x.id === card.user_id)!
             return (
-              <Card key={card.user_id}>
+              <Card key={card.user_id} interactive onClick={() => !busy && void submit(u.email, DEMO_PASSWORD)}>
                 <CardBody className="flex items-center justify-between gap-3 p-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-ink">
@@ -126,6 +134,7 @@ export default function Login() {
       <div className="mt-6">
         <SyntheticWarning />
       </div>
+    </div>
     </div>
   )
 }

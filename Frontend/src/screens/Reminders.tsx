@@ -9,6 +9,8 @@ import { reminderSuggestions } from '../api/endpoints'
 import { useToast } from '../context/ToastContext'
 import { Alert, Badge, Button, Card, CardBody, Checkbox, Field, Input } from '../components/ui'
 import { EmptyState, ErrorBanner, LoadingRows } from '../components/states'
+import { PageHeader } from '../components/page-header'
+import { IconBell } from '../components/icons'
 import { COPY } from '../lib/copy'
 
 export default function Reminders() {
@@ -39,12 +41,16 @@ export default function Reminders() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-ink">Reminders</h1>
-        {canManage && !showForm && (
-          <Button onClick={() => { setPrefill(null); setShowForm(true) }}>New reminder</Button>
-        )}
-      </div>
+      <PageHeader
+        icon={<IconBell className="h-5 w-5" />}
+        title="Reminders"
+        subtitle="Appointments, follow-ups and medicine times — shown while the app is open."
+        actions={
+          canManage && !showForm ? (
+            <Button onClick={() => { setPrefill(null); setShowForm(true) }}>New reminder</Button>
+          ) : undefined
+        }
+      />
 
       <Alert tone="info">{COPY['COPY-23']}</Alert>
 

@@ -79,6 +79,17 @@ export const COPY = {
   'COPY-27':
     'This profile hasn’t been shared with you, or access was removed. Ask the profile owner to share it with you.',
   'COPY-28': 'The date {as_written} was read as {parsed} (day first). Please check it.',
+  'COPY-29':
+    'Your documents list different strengths for {medicine}: {strengthA} ({documentA}, {dateA}) and {strengthB} ({documentB}, {dateB}). The most recent document lists {latest}. Please confirm your current dose with your doctor.',
+  'COPY-29b':
+    'Your documents list different instructions for how often to take {medicine}. Please confirm with your doctor.',
+  'COPY-29c':
+    'Your documents differ on allergies. Please confirm your allergies with your doctor.',
+  'COPY-30a': 'None of your documents mention allergies.',
+  'COPY-30b': '{title} has no date we could read.',
+  'COPY-30c': '{test} ({date}) has no reference range printed on the report.',
+  'COPY-30d':
+    'Your {documentType} from {date} says “{instruction}”. No later visit, appointment or reminder was found in MediVara.',
   'COPY-31':
     'Your documents changed after this brief was created. Create a new brief to include the changes.',
   'COPY-32': 'MOCK DATA — not connected to the server',

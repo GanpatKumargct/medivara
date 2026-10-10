@@ -8,13 +8,14 @@ import type { Brief as BriefType } from '../api/types'
 import * as api from '../api/endpoints'
 import { useReadAloud } from '../lib/useReadAloud'
 import { useDisplayPrefs } from '../context/DisplayPrefsContext'
-import { Alert, Badge, Button, Card, CardBody, Checkbox, Field, Input } from '../components/ui'
+import { Alert, Button, Card, CardBody, Checkbox, Field, Input } from '../components/ui'
 import { EmptyState, ErrorBanner, LoadingRows } from '../components/states'
 import { AiGeneratedBadge, DocumentsDifferBadge, Disclaimer, UnverifiedBadge } from '../components/common'
 import { CitationChips } from '../components/evidence'
+import { PageHeader } from '../components/page-header'
 import { COPY } from '../lib/copy'
 import { formatDate, formatTimestampDate } from '../lib/format'
-import { IconHand, IconPrint, IconSpeaker } from '../components/icons'
+import { IconBrief, IconHand, IconPrint, IconSpeaker } from '../components/icons'
 
 export default function Brief() {
   const { patientId = '' } = useParams()
@@ -74,25 +75,31 @@ export default function Brief() {
 
   return (
     <div className="space-y-4">
+      <PageHeader
+        icon={<IconBrief className="h-5 w-5" />}
+        title="Consultation Brief"
+        subtitle="A one-page, source-linked summary to take to your appointment."
+        className="no-print"
+        actions={
+          brief ? (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => window.print()}><IconPrint className="h-4 w-4" /> Print</Button>
+              {supported && (
+                <Button size="sm" variant="secondary" onClick={() => (speaking ? stop() : readBriefAloud())}>
+                  <IconSpeaker className="h-4 w-4" /> {speaking ? 'Stop' : 'Read aloud'}
+                </Button>
+              )}
+              <Link to={`/p/${patientId}/visit-assist`}>
+                <Button size="sm" variant="secondary"><IconHand className="h-4 w-4" /> Visit Card</Button>
+              </Link>
+            </>
+          ) : undefined
+        }
+      />
+
       {/* Create bar */}
-      <Card className="no-print">
+      <Card accent className="no-print">
         <CardBody className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h1 className="text-xl font-semibold text-ink">Consultation Brief</h1>
-            {brief && (
-              <div className="flex gap-2">
-                <Button size="sm" variant="secondary" onClick={() => window.print()}><IconPrint className="h-4 w-4" /> Print</Button>
-                {supported && (
-                  <Button size="sm" variant="secondary" onClick={() => (speaking ? stop() : readBriefAloud())}>
-                    <IconSpeaker className="h-4 w-4" /> {speaking ? 'Stop' : 'Read aloud'}
-                  </Button>
-                )}
-                <Link to={`/p/${patientId}/visit-assist`}>
-                  <Button size="sm" variant="secondary"><IconHand className="h-4 w-4" /> Visit Card</Button>
-                </Link>
-              </div>
-            )}
-          </div>
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[200px]">
               <Field label="Reason for visit (optional, your words)" htmlFor="visit-reason">
@@ -125,7 +132,7 @@ export default function Brief() {
 function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoading: boolean }) {
   const s = brief.sections
   return (
-    <div className="print-page space-y-5">
+    <div className="mv-stagger print-page space-y-5">
       {brief.stale && <Alert tone="warn">{COPY['COPY-31']}</Alert>}
 
       {/* Header */}

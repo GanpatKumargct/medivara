@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import * as api from '../api/endpoints'
 import { clearSession, getCurrentUserId } from '../api/client'
 import type { MeResponse, UserSummary } from '../api/types'
@@ -22,6 +23,7 @@ interface AuthContextValue {
 const Ctx = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const qc = useQueryClient()
   const [user, setUser] = useState<UserSummary | null>(null)
   const [me, setMe] = useState<MeResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -45,7 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    void refreshMe().finally(() => setLoading(false))
+    // Show the branded splash for a brief minimum on first load.
+    const started = Date.now()
+    const MIN_SPLASH = 900
+    void refreshMe().finally(() => {
+      const wait = Math.max(0, MIN_SPLASH - (Date.now() - started))
+      window.setTimeout(() => setLoading(false), wait)
+    })
   }, [refreshMe])
 
   // React to a forced sign-out triggered elsewhere (401 handler).
@@ -60,6 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     await api.login(email, password)
+    // Drop any cached data from a previous session in this tab.
+    qc.clear()
     const data = await api.getMe()
     setUser(data.user)
     setMe(data)
@@ -71,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await api.logout()
     } finally {
       clearSession()
+      qc.clear()
       setUser(null)
       setMe(null)
     }

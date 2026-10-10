@@ -7,10 +7,11 @@ import { ApiError } from '../api/types'
 import * as api from '../api/endpoints'
 import { GLOSSARY } from '../dummy-data/glossary'
 import { Alert, Badge, Button, Card, CardBody, Input, Tabs } from '../components/ui'
-import { LoadingRows } from '../components/states'
+import { PageHeader } from '../components/page-header'
+import { GLOSSARY_TONE } from '../lib/category'
 import { COPY } from '../lib/copy'
 import { formatDate } from '../lib/format'
-import { IconExternal, IconPrint, IconSearch, IconX } from '../components/icons'
+import { IconExternal, IconHand, IconPrint, IconSearch, IconX } from '../components/icons'
 
 const STORAGE_KEY = 'mv_visit_card_choices'
 
@@ -20,10 +21,11 @@ export default function VisitAssist() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-ink">ISL Visit Assist</h1>
-        <p className="mt-1 text-sm text-ink-muted">Help staff understand your communication needs. This does not translate sign language.</p>
-      </div>
+      <PageHeader
+        icon={<IconHand className="h-5 w-5" />}
+        title="ISL Visit Assist"
+        subtitle="Help staff understand your communication needs. MediVara does not translate sign language."
+      />
       <div className="no-print">
         <Tabs
           tabs={[{ id: 'card', label: 'Visit Card' }, { id: 'glossary', label: 'ISL Glossary' }, { id: 'about', label: 'About' }]}
@@ -109,6 +111,16 @@ function VisitCard({ patientId }: { patientId: string }) {
           <div className="mt-3">
             <label htmlFor="vc-note" className="mb-1 block text-sm font-medium text-ink">Optional note (max 140)</label>
             <Input id="vc-note" value={note} maxLength={140} onChange={(e) => setNote(e.target.value)} placeholder="Anything else you'd like staff to know" />
+          </div>
+          <div className="mt-4">
+            <p className="mb-1 text-sm font-medium text-ink">Quick phrases</p>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_PHRASES.map((p) => (
+                <span key={p} className="rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-sm text-brand-800">
+                  {p}
+                </span>
+              ))}
+            </div>
           </div>
           <div className="mt-3 flex gap-2">
             <Button onClick={() => setFullScreen(true)}>Show to staff</Button>
@@ -234,13 +246,13 @@ function Glossary() {
         <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
         <Input className="pl-9" placeholder="Search health terms…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search glossary" />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="mv-stagger grid gap-3 sm:grid-cols-2">
         {results.map((t) => (
-          <Card key={t.term_id}>
+          <Card key={t.term_id} className="mv-lift">
             <CardBody>
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-base font-semibold text-ink">{t.term}</h3>
-                <Badge tone="neutral">{t.category.replace(/_/g, ' ')}</Badge>
+                <Badge tone={GLOSSARY_TONE[t.category] ?? 'neutral'}>{t.category.replace(/_/g, ' ')}</Badge>
               </div>
               {t.notes && <p className="mt-1 text-xs text-ink-subtle">{t.notes}</p>}
               {/* Every entry in this dummy set has no verified embeddable video → fallback. */}

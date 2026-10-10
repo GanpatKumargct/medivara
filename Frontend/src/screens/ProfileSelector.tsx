@@ -29,17 +29,17 @@ export default function ProfileSelector() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-xl font-semibold text-ink">Choose a profile</h1>
+      <h1 className="text-xl font-semibold text-brand-900">Choose a profile</h1>
       <p className="mt-1 text-sm text-ink-muted">Open the records you want to work with.</p>
 
       <div className="mt-6">
         {isLoading && <LoadingRows rows={2} />}
         {error && <ErrorBanner error={error} onRetry={refetch} />}
         {data && (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mv-stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.items.map((p) => (
               <li key={p.id}>
-                <Card>
+                <Card className="mv-lift">
                   <CardBody>
                     <div className="flex items-start justify-between gap-2">
                       <h2 className="text-base font-semibold text-ink">{p.display_name}</h2>
