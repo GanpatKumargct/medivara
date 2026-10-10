@@ -54,7 +54,7 @@ Full matrix: [02-scope-and-priority-matrix.md](02-scope-and-priority-matrix.md).
 |---|---|---|
 | Frontend | React + TypeScript + Vite; Tailwind + shadcn/ui; TanStack Query; MSW mocks | [06-architecture.md](06-architecture.md) |
 | Backend | Python FastAPI; SQLite (WAL); PyMuPDF; local private file store | [06-architecture.md](06-architecture.md) |
-| AI | Gemini (`gemini-3.8-flash`) through the official SDK; `store=false`; JSON schemas; one call in flight; no agent framework; no vector database in the MVP | [08-ai-rag-design.md](08-ai-rag-design.md) |
+| AI | Gemini 2.5 Flash (`google/gemini-2.5-flash`) through OpenRouter (DEC-24, DEC-25); no data retention; JSON schemas; one call in flight; no agent framework; no vector database in the MVP | [08-ai-rag-design.md](08-ai-rag-design.md) |
 | Contract | 33 endpoints (21 P0, 12 P1); P0 frozen Day 1 09:45 | [11-api-contract.md](11-api-contract.md) |
 | Demo | One laptop runs everything; snapshot restore; backup video | [../hackathon/execution-schedule.md](../hackathon/execution-schedule.md) |
 
@@ -112,5 +112,9 @@ Full list with alternative wording: [../hackathon/demo-and-judging-strategy.md](
 | DEC-20 | Family demo uses two browser windows with per-tab sessions | C (demo) · A (session design) | No sign-out and sign-in mid-demo | [../hackathon/demo-and-judging-strategy.md](../hackathon/demo-and-judging-strategy.md) §4 |
 | DEC-21 | Emergency numbers (112, 108, Tele-MANAS 14416) re-verified before the event | C | Fixed safety text must be correct | COPY-05 |
 | DEC-22 | Brief medicines come only from the most recent document that lists medicines; older ones are labelled as such | B · reviewed by C | Never present outdated medicines as current | [08-ai-rag-design.md](08-ai-rag-design.md) §9.2 |
+| DEC-23 | PostgreSQL 16 (local Docker container) replaces SQLite as the running database; SQLite stays for the fast test suite. Prisma Studio, read-only, for browsing the data | Team request · B implements | Closer to the production path (06 §9); data visible locally without SQL. Snapshots became engine-neutral JSON exports | [../../backend/README.md](../../backend/README.md) |
+| DEC-24 | Model calls go through OpenRouter (model set by DEC-25); direct Gemini kept behind `LLM_PROVIDER=gemini`. Privacy via `provider.data_collection = "deny"` instead of `store=false`; COPY-04 updated to name OpenRouter | Team request · B implements | One key for many models | `backend/app/llm.py` |
+| DEC-25 | Default model is `google/gemini-2.5-flash` (was `gemini-3.8-flash`; direct-Gemini default `gemini-2.5-flash`). The extraction schema drops array length limits, which 2.5 rejects ("too many states for serving"); the fact limit is enforced in code | Team request · B implements | Tested live on the demo pack: all text documents extracted, Ask answers in 2–4 s. Prompts were calibrated on 3.8, so extraction accuracy is re-checked on the answer key | `backend/app/config.py` |
+| DEC-26 | Sign-in attempt limit (5 failures per email, 20 per client IP, 15-minute window, 429 `RATE_LIMITED`) and security headers on every API response, plus page headers on the Vite dev server. The Vite proxy sends `X-Forwarded-For`, trusted only from a loopback peer | Team request · B implements | Closes the "no rate limiting on login" risk in 12; limits password guessing and credential stuffing | `backend/app/ratelimit.py`, `backend/app/middleware.py` |
 
 New decisions are added by Person C during the hackathon, with an owner and a reason ([../hackathon/integration-plan.md](../hackathon/integration-plan.md) §8).

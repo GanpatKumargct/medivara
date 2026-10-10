@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "id": "rem_0a1b2c3d-4e5f-4a6b-7c8d-9e0f1a2b3c4d",
+      "type": "follow_up",
+      "title": "Review with Dr. Arun Kumar (bring fasting glucose report)",
+      "notes": null,
+      "schedule_kind": "once",
+      "schedule": { "date": "2026-10-27", "time": "10:00", "times": null, "start_date": null, "end_date": null },
+      "timezone": "Asia/Kolkata",
+      "next_due_at": "2026-10-27T04:30:00Z",
+      "next_due_local": "27 Oct 2026, 10:00 IST",
+      "last_completed_at": null,
+      "status": "active",
+      "source_fact_id": "fct_meera_rx_2026_09_08",
+      "medication_schedule_attested": false,
+      "created_by": { "user_id": "usr_meera", "display_name": "Meera Raman" },
+      "created_at": "2026-10-24T05:09:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0
+}

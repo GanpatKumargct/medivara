@@ -69,7 +69,7 @@ export default function Settings() {
               ))}
           </ul>
           <p className="mt-2 text-xs text-ink-subtle">
-            Withdrawing AI processing stops new documents being read; existing information stays. (Withdrawal is specified for the prototype but not wired in dummy-data mode.)
+            Withdrawing AI processing stops new documents being read; existing information stays.{api.API_MODE === 'dummy' ? ' (Withdrawal is not wired in dummy-data mode.)' : ' Asking questions and the brief summary then show matching lines from your documents instead of an AI answer.'}
           </p>
         </CardBody>
       </Card>
@@ -79,7 +79,7 @@ export default function Settings() {
           <h2 className="text-sm font-semibold text-ink">Privacy</h2>
           <div className="mt-2 space-y-1 text-sm text-ink-muted">
             <p>{COPY['COPY-04']}</p>
-            <p>MediVara asks Google not to store these requests (<code>store=false</code>). Synthetic data only.</p>
+            <p>Requests go through OpenRouter to AI providers that don’t store or train on them (<code>data_collection: deny</code>). Synthetic data only.</p>
             <p>Browser speech features are cloud services in some browsers.</p>
           </div>
         </CardBody>
@@ -93,7 +93,7 @@ export default function Settings() {
             <div><dt className="text-xs text-ink-subtle">Profile</dt><dd className="text-ink">{patientId}</dd></div>
             <div><dt className="text-xs text-ink-subtle">Contract version</dt><dd className="text-ink">{healthQ.data?.contract_version ?? '—'}</dd></div>
             <div><dt className="text-xs text-ink-subtle">AI mode</dt><dd className="text-ink">{healthQ.data?.ai.mode ?? '—'}</dd></div>
-            <div><dt className="text-xs text-ink-subtle">Data</dt><dd className="text-ink">Synthetic (dummy-data)</dd></div>
+            <div><dt className="text-xs text-ink-subtle">Data</dt><dd className="text-ink">{api.API_MODE === 'dummy' ? 'Synthetic (in-browser dummy data)' : 'Synthetic (MediVara backend)'}</dd></div>
           </dl>
         </CardBody>
       </Card>

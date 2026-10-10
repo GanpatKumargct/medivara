@@ -1,0 +1,14 @@
+{
+  "brief_id": "brf_2c7e9a14-5b3d-4f6e-8a1c-0d9e8f7a6b5c",
+  "narrative": {
+    "output_id": "aio_9f2a3b4c-5d6e-4f7a-8b9c-0d1e2f3a4b5c",
+    "status": "unavailable",
+    "statements": [],
+    "evidence": [],
+    "notices": [
+      { "code": "ai_unavailable", "text": "The AI summary isn't available right now. Everything below comes directly from your documents." }
+    ],
+    "templated_text": "Based on 5 documents from 3 providers between 18 Mar 2025 and 15 Sep 2026.",
+    "generated_at": "2026-10-24T05:03:20Z"
+  }
+}

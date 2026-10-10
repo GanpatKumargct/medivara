@@ -1,0 +1,11 @@
+{
+  "token": "mvs_9b1f6c2e4a7d4f0e8c3b5a1d2e6f7a8b9c0d1e2f3a4b5c6d",
+  "token_type": "bearer",
+  "expires_at": "2026-10-24T16:30:00Z",
+  "user": {
+    "id": "usr_meera",
+    "email": "meera.demo@medivara.test",
+    "display_name": "Meera Raman",
+    "is_demo": true
+  }
+}

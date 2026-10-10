@@ -1,30 +1,14 @@
-// Dummy-data client plumbing: simulated latency, the current session, and the
-// access guard. In a real build this file would hold the fetch wrapper (bearer
-// token, error-envelope parsing, 401 handling). The shapes it returns are identical.
+// Dummy-data client plumbing (VITE_API_MODE=dummy only): simulated latency and the
+// in-browser access guard. The real transport (bearer token, error envelope, 401
+// handling) is in ./http.ts; both return identical shapes.
 import { ApiError } from './types'
 import type { ApiErrorBody, Role, Scope } from './types'
 import { GRANTS, USERS } from '../dummy-data/accounts'
 import { db } from '../dummy-data/db'
 
-const TOKEN_KEY = 'mv_token'
-const USER_KEY = 'mv_user_id'
-
-// Per-tab session (sessionStorage) so two browser windows can hold two users
-// (family demo). Token is never placed in a URL (FE-1.3).
-export function setSession(token: string, userId: string) {
-  sessionStorage.setItem(TOKEN_KEY, token)
-  sessionStorage.setItem(USER_KEY, userId)
-}
-export function clearSession() {
-  sessionStorage.removeItem(TOKEN_KEY)
-  sessionStorage.removeItem(USER_KEY)
-}
-export function getToken(): string | null {
-  return sessionStorage.getItem(TOKEN_KEY)
-}
-export function getCurrentUserId(): string | null {
-  return sessionStorage.getItem(USER_KEY)
-}
+// Session storage is shared with the real transport (one implementation, both modes).
+export { clearSession, getCurrentUserId, getToken, setSession } from './http'
+import { getCurrentUserId } from './http'
 
 let requestSeq = 0
 export function newRequestId(): string {

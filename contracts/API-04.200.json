@@ -1,0 +1,17 @@
+{
+  "user": {
+    "id": "usr_meera",
+    "email": "meera.demo@medivara.test",
+    "display_name": "Meera Raman",
+    "is_demo": true
+  },
+  "owned_patient_id": "pat_meera",
+  "current_policy_version": "2026-10-demo-1",
+  "onboarding_required": false,
+  "consents": {
+    "terms_and_disclaimer": { "granted": true, "policy_version": "2026-10-demo-1", "at": "2026-10-24T04:32:10Z" },
+    "ai_processing": { "granted": true, "policy_version": "2026-10-demo-1", "at": "2026-10-24T04:32:10Z" },
+    "voice_input": null,
+    "notifications": null
+  }
+}

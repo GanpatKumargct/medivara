@@ -1,0 +1,44 @@
+{
+  "categories": [
+    {
+      "specialty_id": "endocrinology",
+      "specialty_name": "Endocrinology (diabetes and hormone specialist)",
+      "why": [
+        { "text": "Your records document \"Type 2 diabetes mellitus\".", "evidence_ids": ["E1"] }
+      ]
+    },
+    {
+      "specialty_id": "general_medicine",
+      "specialty_name": "General medicine",
+      "why": [
+        { "text": "Your records document \"Hypertension\".", "evidence_ids": ["E1"] }
+      ]
+    }
+  ],
+  "evidence": [
+    { "evidence_id": "E1", "document_id": "doc_meera_rx_2026_09", "document_title": "Prescription · Lakeview Family Clinic · 15 Sep 2026", "document_type": "prescription", "document_date": "2026-09-15", "page": 1, "line_ids": ["p1-l5"], "text": "Diagnosis: Type 2 diabetes mellitus; Hypertension; Dyslipidaemia", "fact_status": "confirmed", "is_user_correction": false }
+  ],
+  "preparation_checklist": [
+    "Bring your latest Consultation Brief or Visit Card.",
+    "Bring all your current medicines or their strips.",
+    "Bring your most recent lab reports.",
+    "Write down the questions you want to ask."
+  ],
+  "emergency_notice": false,
+  "providers": [
+    {
+      "id": "spr_demo_endo_1",
+      "display_name": "Demo Endocrinology Clinic A (simulated)",
+      "specialty_id": "endocrinology",
+      "city": "Chennai",
+      "languages": ["English", "Tamil"],
+      "isl_interpreter_on_request": true,
+      "is_simulated": true,
+      "slots": [
+        { "id": "sls_demo_endo_1_a", "start_at": "2026-10-28T05:00:00Z", "end_at": "2026-10-28T05:20:00Z" },
+        { "id": "sls_demo_endo_1_b", "start_at": "2026-10-29T09:30:00Z", "end_at": "2026-10-29T09:50:00Z" }
+      ]
+    }
+  ],
+  "disclaimer": "These are general categories based on what your documents mention. They are not a diagnosis or a referral. Providers shown are simulated for this demo."
+}

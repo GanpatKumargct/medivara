@@ -1,0 +1,12 @@
+{
+  "name": "medivara-db-studio",
+  "private": true,
+  "description": "Read-only view of the MediVara PostgreSQL database with Prisma Studio (local only)",
+  "scripts": {
+    "pull": "prisma db pull",
+    "studio": "prisma studio --port 5555 --hostname 127.0.0.1 --browser none"
+  },
+  "devDependencies": {
+    "prisma": "6.19.3"
+  }
+}

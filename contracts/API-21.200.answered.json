@@ -1,0 +1,23 @@
+{
+  "answer_id": "aio_1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "status": "answered",
+  "statements": [
+    { "id": "S1", "kind": "record_fact", "text": "Your most recent HbA1c was 7.6 % on the lab report dated 04 May 2026.", "evidence_ids": ["E1"] },
+    { "id": "S2", "kind": "record_fact", "text": "Before that, your HbA1c was 8.4 % on the lab report dated 18 Mar 2025.", "evidence_ids": ["E2"] },
+    { "id": "S3", "kind": "record_fact", "text": "Both reports mark the result with \"H\" next to a reference range of 4.0 - 5.6.", "evidence_ids": ["E1", "E2"] }
+  ],
+  "evidence": [
+    { "evidence_id": "E1", "document_id": "doc_meera_lab_2026_05", "document_title": "Lab report · Sunrise Diagnostics · 04 May 2026", "document_type": "lab_report", "document_date": "2026-05-04", "page": 1, "line_ids": ["p1-l6"], "text": "HbA1c (Glycated haemoglobin)   7.6   %   4.0 - 5.6   H", "fact_status": "unverified", "is_user_correction": false },
+    { "evidence_id": "E2", "document_id": "doc_meera_lab_2025_03", "document_title": "Lab report · Sunrise Diagnostics · 18 Mar 2025", "document_type": "lab_report", "document_date": "2025-03-18", "page": 1, "line_ids": ["p1-l6"], "text": "HbA1c (Glycated haemoglobin)   8.4   %   4.0 - 5.6   H", "fact_status": "confirmed", "is_user_correction": false }
+  ],
+  "questions_for_doctor": [
+    "What do my recent HbA1c results mean for my diabetes care?",
+    "When should I repeat my HbA1c test?"
+  ],
+  "notices": [
+    { "code": "unverified_included", "text": "Some of this comes from information you haven't reviewed yet." }
+  ],
+  "disclaimer": "MediVara organises what your documents say. It is not medical advice. Check important information with your doctor.",
+  "generated_at": "2026-10-24T05:05:10Z",
+  "latency_ms": 6840
+}

@@ -137,7 +137,7 @@ The latest record per (user_id, consent_type, patient_id) is the current state.
 | flags | list of enum | `suspicious_instructions` · `date_ambiguous` · `date_missing` · `low_text_density` · `cached_extraction` · `sample` · `ai_transcribed` (P1) |
 | is_sample | boolean | True for synthetic sample documents |
 | extraction_source | enum | `live` · `cache` · `none` |
-| model_id | string, nullable | For example `gemini-3.8-flash` |
+| model_id | string, nullable | For example `gemini-2.5-flash` |
 | prompt_version | string, nullable | For example `extract-v1` |
 | discarded_fact_count | integer | Facts dropped because no valid source line was cited |
 | created_at, updated_at, processed_at | timestamps | |

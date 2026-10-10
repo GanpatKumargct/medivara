@@ -1,0 +1,27 @@
+[project]
+name = "medivara-api"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "argon2-cffi==25.1.0",
+    "fastapi==0.143.0",
+    "filetype==1.2.0",
+    "google-genai==2.29.0",
+    "httpx==0.28.1",
+    "psycopg[binary]==3.3.6",
+    "pydantic-settings==2.15.0",
+    "pymupdf==1.28.2",
+    "python-multipart==0.0.32",
+    "sqlmodel==0.0.48",
+    "tzdata==2026.5",
+    "uvicorn[standard]==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]

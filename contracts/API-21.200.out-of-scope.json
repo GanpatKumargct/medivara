@@ -1,0 +1,18 @@
+{
+  "answer_id": "aio_7a8b9c0d-1e2f-4a3b-4c5d-6e7f8a9b0c1d",
+  "status": "out_of_scope",
+  "statements": [
+    {
+      "id": "S1",
+      "kind": "not_found",
+      "text": "I can only help with questions about the documents in this MediVara profile.",
+      "evidence_ids": []
+    }
+  ],
+  "evidence": [],
+  "questions_for_doctor": [],
+  "notices": [],
+  "disclaimer": "MediVara organises what your documents say. It is not medical advice. Check important information with your doctor.",
+  "generated_at": "2026-10-24T05:07:15Z",
+  "latency_ms": 5210
+}

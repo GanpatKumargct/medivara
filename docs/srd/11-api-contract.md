@@ -16,6 +16,7 @@
 | Nulls | Every documented key is always present. Unknown or not-applicable values are `null`, never omitted. |
 | Unknown fields | Clients must ignore fields they do not recognise. This lets additive changes ship without breaking the frontend. |
 | Pagination | List endpoints accept `limit` (default 50, max 100) and `offset` (default 0) and return `{ items, total, limit, offset }`. The MVP UI does not show pagination controls. |
+| Security headers | Every response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy: same-origin`, a `Permissions-Policy` and `Cache-Control: no-store` (unless the route sets its own). JSON responses also carry `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`. |
 | Request IDs | Every response carries an `X-Request-ID` header. Errors repeat it in the body. Logs use the same ID. |
 | AI results | AI paths (API-20, API-21) **never** return an HTTP error because the AI failed. They return 200 with a `status` such as `degraded`, `unavailable` or `withheld`, so the frontend handles a single response shape. |
 | Fixtures | `contracts/API-<NN>.<http-status>[.<variant>].json` for endpoint examples and `contracts/errors/<CODE>.json` for shared errors. Person C copies the blocks at kickoff and Person B reviews them. |
@@ -73,6 +74,7 @@ Fixture: `contracts/errors/VALIDATION_ERROR.json`
 | 415 | `UNSUPPORTED_FILE_TYPE` | Content is not a PDF (P0). PNG and JPEG are accepted only when FR-024 ships | Inline upload error |
 | 422 | `VALIDATION_ERROR` | Field-level problems; `details.fields` | Inline field errors |
 | 422 | `TOO_MANY_PAGES` | Over 10 pages | Inline upload error |
+| 429 | `RATE_LIMITED` | API-02 only: 5 failed sign-ins for one email, or 20 from one IP, within 15 minutes. Same answer for known and unknown emails; `details.retry_after_s` and a `Retry-After` header | Inline form error (COPY-34f) |
 | 500 | `INTERNAL_ERROR` | Unexpected failure | Error banner with the request ID |
 
 ## 3. Shared objects
@@ -162,7 +164,7 @@ Fixture: `contracts/API-01.200.json`
   "ai": {
     "mode": "live",
     "available": true,
-    "model": "gemini-3.8-flash"
+    "model": "google/gemini-2.5-flash"
   },
   "time": "2026-10-24T04:30:00Z"
 }
@@ -191,7 +193,7 @@ Fixture: `contracts/API-01.200.ai-off.json`
 | email | string | Required; trimmed and lowercased; max 254 chars |
 | password | string | Required; 1–128 chars |
 
-Status codes: 200 · 401 `INVALID_CREDENTIALS` (identical for unknown email and wrong password) · 422.
+Status codes: 200 · 401 `INVALID_CREDENTIALS` (identical for unknown email and wrong password) · 422 · 429 `RATE_LIMITED` (checked before the password; a successful sign-in clears the email's count).
 
 Example request:
 ```json
@@ -535,7 +537,7 @@ Fixture: `contracts/API-10.200.json`
 
 ### API-11 `GET /patients/{patient_id}/documents/{document_id}` — P0
 
-Returns the document, header sources and all facts, including rejected ones so the user can undo. Facts are ordered by type (medication, lab_result, condition, allergy, procedure, vital_sign, follow_up, instruction), then by first source line. This is also the polling endpoint during processing.
+Returns the document, header sources, the extracted page lines (`document.pages`, added in 1.1.0) and all facts, including rejected ones so the user can undo. Facts are ordered by type (medication, lab_result, condition, allergy, procedure, vital_sign, follow_up, instruction), then by first source line. This is also the polling endpoint during processing.
 
 Fixture: `contracts/API-11.200.needs-review.json`
 ```json
@@ -571,6 +573,16 @@ Fixture: `contracts/API-11.200.needs-review.json`
     },
     "flags_detail": [
       { "flag": "date_ambiguous", "text": "The date 04/05/2026 was read as 04 May 2026 (day first). Please check it." }
+    ],
+    "pages": [
+      {
+        "page": 1,
+        "lines": [
+          { "line_id": "p1-l1", "text": "SUNRISE DIAGNOSTICS — LABORATORY REPORT — SYNTHETIC DEMO DOCUMENT" },
+          { "line_id": "p1-l6", "text": "HbA1c (Glycated haemoglobin)   7.6   %   4.0 - 5.6   H" },
+          { "line_id": "p1-l10", "text": "Haemoglobin   12.1   g/dL" }
+        ]
+      }
     ]
   },
   "facts": [
@@ -1498,5 +1510,6 @@ Returns `{ items: [appointment…], total, limit, offset }`, using the same obje
 | Version | Date | Change | Type | Approved by |
 |---|---|---|---|---|
 | 1.0.0 | Pre-event | Initial contract: API-01…33 | n/a | B (owner), A (ack), C (review) |
+| 1.1.0 | 2026-10-10 | API-11 adds `document.pages` (`[{ page, lines: [{ line_id, text }] }]`) so SCR-06 can show the document text and highlight source lines. Clients ignore unknown fields. | Additive | B (owner); A to acknowledge |
 
 Rules for entries are in [../hackathon/integration-plan.md](../hackathon/integration-plan.md) §5. Additive changes increase the minor version (1.1.0). Breaking changes increase the major version and need Person A's acknowledgement.

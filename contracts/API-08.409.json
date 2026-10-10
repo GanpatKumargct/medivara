@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "DUPLICATE_DOCUMENT",
+    "message": "This file is already in Meera Raman's records.",
+    "details": { "existing_document_id": "doc_meera_rx_2026_09" },
+    "request_id": "req_01JB7QD6G7H8J9K0M1N2P3Q4R5"
+  }
+}

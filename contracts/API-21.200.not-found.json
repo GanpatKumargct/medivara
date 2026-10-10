@@ -1,0 +1,13 @@
+{
+  "answer_id": "aio_4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a",
+  "status": "not_found",
+  "statements": [
+    { "id": "S1", "kind": "not_found", "text": "I couldn't find this in your documents. If you have a report that mentions it, you can upload it, or ask your doctor.", "evidence_ids": [] }
+  ],
+  "evidence": [],
+  "questions_for_doctor": [],
+  "notices": [],
+  "disclaimer": "MediVara organises what your documents say. It is not medical advice. Check important information with your doctor.",
+  "generated_at": "2026-10-24T05:07:15Z",
+  "latency_ms": 5210
+}

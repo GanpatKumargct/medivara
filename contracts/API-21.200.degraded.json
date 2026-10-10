@@ -1,0 +1,16 @@
+{
+  "answer_id": "aio_5e6f7a8b-9c0d-4e1f-2a3b-4c5d6e7f8a9b",
+  "status": "degraded",
+  "statements": [],
+  "evidence": [
+    { "evidence_id": "E1", "document_id": "doc_meera_lab_2026_05", "document_title": "Lab report · Sunrise Diagnostics · 04 May 2026", "document_type": "lab_report", "document_date": "2026-05-04", "page": 1, "line_ids": ["p1-l6"], "text": "HbA1c (Glycated haemoglobin)   7.6   %   4.0 - 5.6   H", "fact_status": "unverified", "is_user_correction": false },
+    { "evidence_id": "E2", "document_id": "doc_meera_lab_2025_03", "document_title": "Lab report · Sunrise Diagnostics · 18 Mar 2025", "document_type": "lab_report", "document_date": "2025-03-18", "page": 1, "line_ids": ["p1-l6"], "text": "HbA1c (Glycated haemoglobin)   8.4   %   4.0 - 5.6   H", "fact_status": "confirmed", "is_user_correction": false }
+  ],
+  "questions_for_doctor": [],
+  "notices": [
+    { "code": "ai_unavailable", "text": "The AI assistant isn't available right now. These lines from your documents match your question." }
+  ],
+  "disclaimer": "MediVara organises what your documents say. It is not medical advice. Check important information with your doctor.",
+  "generated_at": "2026-10-24T05:08:00Z",
+  "latency_ms": 20015
+}

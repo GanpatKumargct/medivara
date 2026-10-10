@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Some fields need attention.",
+    "details": {
+      "fields": [
+        { "field": "question", "issue": "must be between 1 and 500 characters" }
+      ]
+    },
+    "request_id": "req_01JB7Q9A1C4D5E6F7G8H9J0K1M"
+  }
+}

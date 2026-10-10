@@ -1,0 +1,15 @@
+{
+  "confirmed_fact_ids": [
+    "fct_meera_rx_2026_09_01",
+    "fct_meera_rx_2026_09_02",
+    "fct_meera_rx_2026_09_03",
+    "fct_meera_rx_2026_09_04",
+    "fct_meera_rx_2026_09_05",
+    "fct_meera_rx_2026_09_06",
+    "fct_meera_rx_2026_09_07",
+    "fct_meera_rx_2026_09_08",
+    "fct_meera_rx_2026_09_09"
+  ],
+  "remaining_unverified": 0,
+  "document": { "id": "doc_meera_rx_2026_09", "status": "ready" }
+}

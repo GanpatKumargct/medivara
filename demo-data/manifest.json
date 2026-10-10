@@ -1,0 +1,84 @@
+{
+  "samples": [
+    {
+      "sample_id": "meera-lab-2025-03",
+      "document_id": "doc_meera_lab_2025_03",
+      "patient_id": "pat_meera",
+      "sample_set": "meera-core",
+      "filename": "lab_sunrise_mar2025.pdf",
+      "sha256": "18cebbdeda145599c415d2613a4693ca992a79e2cc7b12084dafd8637beb062f"
+    },
+    {
+      "sample_id": "meera-rx-2025-03",
+      "document_id": "doc_meera_rx_2025_03",
+      "patient_id": "pat_meera",
+      "sample_set": "meera-core",
+      "filename": "rx_lakeview_mar2025.pdf",
+      "sha256": "633b71bc3b7213c28526be5fd197d420be531280f928d4443c4ce53062ddc7e5"
+    },
+    {
+      "sample_id": "meera-dc-2025-07",
+      "document_id": "doc_meera_dc_2025_07",
+      "patient_id": "pat_meera",
+      "sample_set": "meera-core",
+      "filename": "discharge_greenfield_jul2025.pdf",
+      "sha256": "d16157984a3e8c1f1cf1e1b6d9177e7cb0a29ccb2675461ab89a7dba4eef7e7e"
+    },
+    {
+      "sample_id": "meera-lab-2026-05",
+      "document_id": "doc_meera_lab_2026_05",
+      "patient_id": "pat_meera",
+      "sample_set": "meera-core",
+      "filename": "lab_sunrise_may2026.pdf",
+      "sha256": "76ebbbd5a1ecbfa5f806f5c24a479645977afdf0b1402941b910d9b455837cab"
+    },
+    {
+      "sample_id": "meera-rx-2026-09",
+      "document_id": "doc_meera_rx_2026_09",
+      "patient_id": "pat_meera",
+      "sample_set": "meera-full",
+      "filename": "rx_lakeview_sep2026.pdf",
+      "sha256": "c1f7ec1f23a9bb9878756d87eee7735ed0bc84f0b0a2ab8bf7efb2d9e8744430"
+    },
+    {
+      "sample_id": "meera-note-2026-09",
+      "document_id": "doc_meera_note_2026_09",
+      "patient_id": "pat_meera",
+      "sample_set": "meera-safety",
+      "filename": "note_lakeview_sep2026.pdf",
+      "sha256": "63f3fe0293a574f1ed4622efa8b320d0f7d4f00721facb798fa40f367cc3fd6d"
+    },
+    {
+      "sample_id": "meera-scan-2026-06",
+      "document_id": "doc_meera_scan_2026_06",
+      "patient_id": "pat_meera",
+      "sample_set": "meera-safety",
+      "filename": "scanned_prescription.pdf",
+      "sha256": "065f76eac2ecdf5b8fa029d9e9a70d269265f67ce74eb35f8053c6ae67634e21"
+    },
+    {
+      "sample_id": "ravi-lab-2026-06",
+      "document_id": "doc_ravi_lab_2026_06",
+      "patient_id": "pat_ravi",
+      "sample_set": "ravi-core",
+      "filename": "lab_citycare_jun2026.pdf",
+      "sha256": "4cb3d8164463b329bc192ccc017fce0e472008f7a827973a5ba267841c910a9f"
+    },
+    {
+      "sample_id": "ravi-rx-2026-06",
+      "document_id": "doc_ravi_rx_2026_06",
+      "patient_id": "pat_ravi",
+      "sample_set": "ravi-core",
+      "filename": "rx_riverside_jun2026.pdf",
+      "sha256": "b9557096f927ef63e562042706baff6be48283d35fa8595d7c9519cc89288782"
+    },
+    {
+      "sample_id": "karthik-lab-2026-02",
+      "document_id": "doc_karthik_lab_2026_02",
+      "patient_id": "pat_karthik",
+      "sample_set": "karthik-core",
+      "filename": "lab_sunrise_feb2026.pdf",
+      "sha256": "2274a15c8026946533268f018a3931e1989ae237b2c828a5c8c31b4a3607cfe9"
+    }
+  ]
+}

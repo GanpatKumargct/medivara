@@ -10,7 +10,7 @@ export const COPY = {
   'COPY-03':
     'This is a hackathon prototype. Use only the synthetic sample documents provided by the team. Do not upload real medical records — yours or anyone else’s.',
   'COPY-04':
-    'To read your documents, MediVara sends the text of each document to Google’s Gemini AI service. When you ask a question, the text of this profile’s documents is sent too. MediVara asks Google not to store these requests, but Google’s terms may allow limited logging to prevent abuse. Use synthetic documents only. You can withdraw this consent in Settings.',
+    'To read your documents, MediVara sends the text of each document to an AI model (Google Gemini) through the OpenRouter service. When you ask a question, the text of this profile’s documents is sent too. MediVara asks OpenRouter to use only AI providers that don’t store or train on these requests, but their terms may allow limited logging to prevent abuse. Use synthetic documents only. You can withdraw this consent in Settings.',
   'COPY-05':
     'If you or someone else may be in danger or need urgent medical help, call 112 (emergency) or 108 (ambulance) now, or go to the nearest emergency department. If you are thinking about harming yourself, call Tele-MANAS on 14416 (free, 24×7). MediVara cannot help in an emergency.',
   'COPY-06':
@@ -99,6 +99,7 @@ export const COPY = {
   'COPY-34c': 'Only PDF files can be added in this prototype.',
   'COPY-34d': 'This file is already in {patient}’s records.',
   'COPY-34e': 'This PDF has more than 10 pages. Please split it into smaller files.',
+  'COPY-34f': 'Too many sign-in attempts. Please wait a few minutes and try again.',
   'COPY-35': 'Synthetic sample',
   'COPY-37': 'General information — not from your documents',
   'COPY-38': 'AI-generated, checked against your documents',

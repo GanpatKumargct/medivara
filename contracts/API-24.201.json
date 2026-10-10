@@ -1,0 +1,11 @@
+{
+  "grant": {
+    "id": "grt_5d6e7f8a-9b0c-4d1e-2f3a-4b5c6d7e8f9a",
+    "grantee": { "user_id": "usr_karthik", "display_name": "Karthik Raman", "email": "karthik.demo@medivara.test" },
+    "role": "caregiver",
+    "scopes": ["view_records", "manage_reminders"],
+    "status": "active",
+    "granted_at": "2026-10-24T05:10:00Z",
+    "revoked_at": null
+  }
+}

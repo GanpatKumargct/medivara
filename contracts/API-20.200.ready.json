@@ -1,0 +1,27 @@
+{
+  "brief_id": "brf_2c7e9a14-5b3d-4f6e-8a1c-0d9e8f7a6b5c",
+  "narrative": {
+    "output_id": "aio_8e1f2a3b-4c5d-4e6f-9a0b-1c2d3e4f5a6b",
+    "status": "ready",
+    "statements": [
+      { "id": "S1", "kind": "record_fact", "text": "Your records from Sunrise Diagnostics, Lakeview Family Clinic and Greenfield General Hospital document Type 2 diabetes mellitus and hypertension.", "evidence_ids": ["E1"] },
+      { "id": "S2", "kind": "record_fact", "text": "You were admitted to Greenfield General Hospital from 27 Jul 2025 to 31 Jul 2025 for acute gastroenteritis with dehydration.", "evidence_ids": ["E2", "E3"] },
+      { "id": "S3", "kind": "record_fact", "text": "Your HbA1c was 8.4 % on 18 Mar 2025 and 7.6 % on 04 May 2026.", "evidence_ids": ["E4", "E5"] },
+      { "id": "S4", "kind": "uncertainty", "text": "Your documents list different Metformin strengths over time, so it is worth confirming your current dose.", "evidence_ids": ["E6", "E7"] }
+    ],
+    "evidence": [
+      { "evidence_id": "E1", "document_id": "doc_meera_rx_2025_03", "document_title": "Prescription · Lakeview Family Clinic · 21 Mar 2025", "document_type": "prescription", "document_date": "2025-03-21", "page": 1, "line_ids": ["p1-l5"], "text": "Diagnosis: Type 2 diabetes mellitus; Hypertension", "fact_status": "confirmed", "is_user_correction": false },
+      { "evidence_id": "E2", "document_id": "doc_meera_dc_2025_07", "document_title": "Discharge summary · Greenfield General Hospital · 31 Jul 2025", "document_type": "discharge_summary", "document_date": "2025-07-31", "page": 1, "line_ids": ["p1-l3"], "text": "Date of admission: 27-Jul-2025   Date of discharge: 31-Jul-2025", "fact_status": null, "is_user_correction": false },
+      { "evidence_id": "E3", "document_id": "doc_meera_dc_2025_07", "document_title": "Discharge summary · Greenfield General Hospital · 31 Jul 2025", "document_type": "discharge_summary", "document_date": "2025-07-31", "page": 1, "line_ids": ["p1-l5"], "text": "Diagnosis: Acute gastroenteritis with dehydration", "fact_status": "confirmed", "is_user_correction": false },
+      { "evidence_id": "E4", "document_id": "doc_meera_lab_2025_03", "document_title": "Lab report · Sunrise Diagnostics · 18 Mar 2025", "document_type": "lab_report", "document_date": "2025-03-18", "page": 1, "line_ids": ["p1-l6"], "text": "HbA1c (Glycated haemoglobin)   8.4   %   4.0 - 5.6   H", "fact_status": "confirmed", "is_user_correction": false },
+      { "evidence_id": "E5", "document_id": "doc_meera_lab_2026_05", "document_title": "Lab report · Sunrise Diagnostics · 04 May 2026", "document_type": "lab_report", "document_date": "2026-05-04", "page": 1, "line_ids": ["p1-l6"], "text": "HbA1c (Glycated haemoglobin)   7.6   %   4.0 - 5.6   H", "fact_status": "unverified", "is_user_correction": false },
+      { "evidence_id": "E6", "document_id": "doc_meera_rx_2025_03", "document_title": "Prescription · Lakeview Family Clinic · 21 Mar 2025", "document_type": "prescription", "document_date": "2025-03-21", "page": 1, "line_ids": ["p1-l8"], "text": "1. Tab. Metformin 500 mg — 1 tablet twice daily after meals — 90 days", "fact_status": "confirmed", "is_user_correction": false },
+      { "evidence_id": "E7", "document_id": "doc_meera_rx_2026_09", "document_title": "Prescription · Lakeview Family Clinic · 15 Sep 2026", "document_type": "prescription", "document_date": "2026-09-15", "page": 1, "line_ids": ["p1-l8"], "text": "1. Tab. Metformin 1000 mg — 1 tablet twice daily after meals — 90 days", "fact_status": "confirmed", "is_user_correction": false }
+    ],
+    "notices": [
+      { "code": "unverified_included", "text": "Some of this comes from information you haven't reviewed yet." }
+    ],
+    "templated_text": "Based on 5 documents from 3 providers between 18 Mar 2025 and 15 Sep 2026.",
+    "generated_at": "2026-10-24T05:02:52Z"
+  }
+}

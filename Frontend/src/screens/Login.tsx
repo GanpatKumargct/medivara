@@ -31,7 +31,8 @@ export default function Login() {
       if (me.onboarding_required) navigate('/onboarding', { replace: true })
       else navigate('/profiles', { replace: true })
     } catch (e) {
-      setError(e instanceof ApiError ? COPY['COPY-34a'] : 'Something went wrong. Try again.')
+      if (e instanceof ApiError && e.code === 'RATE_LIMITED') setError(COPY['COPY-34f'])
+      else setError(e instanceof ApiError ? COPY['COPY-34a'] : 'Something went wrong. Try again.')
     } finally {
       setBusy(false)
     }
