@@ -5,10 +5,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/types'
 import type { DocumentSummary } from '../api/types'
 import * as api from '../api/endpoints'
-import { Badge, Button, Card, CardBody } from '../components/ui'
+import { Badge, Button, Card, CardBody, Dialog } from '../components/ui'
 import { EmptyState, ErrorBanner, LoadingRows } from '../components/states'
 import { FlagBadge, SyntheticWarning } from '../components/common'
-import { PROCESSING_STAGE_LABELS, COPY } from '../lib/copy'
+import { PROCESSING_STAGE_LABELS, COPY, fill } from '../lib/copy'
+import { useToast } from '../context/ToastContext'
 import { DOCUMENT_TYPE_LABELS, formatDate } from '../lib/format'
 import { IconUpload } from '../components/icons'
 
@@ -35,6 +36,7 @@ export default function Records() {
 
   const patientQ = useQuery({ queryKey: ['patient', patientId], queryFn: () => api.getPatient(patientId) })
   const canUpload = patientQ.data ? patientQ.data.my_role === 'owner' || patientQ.data.scopes.includes('upload_documents') : false
+  const isOwner = patientQ.data?.my_role === 'owner' // API-22 delete is owner only
 
   const docsQ = useQuery({
     queryKey: ['documents', patientId, statusF, typeF],
@@ -155,7 +157,7 @@ export default function Records() {
         <ul className="space-y-3">
           {docsQ.data.items.map((d) => (
             <li key={d.id}>
-              <DocumentRow patientId={patientId} doc={d} canRetry={canUpload} />
+              <DocumentRow patientId={patientId} doc={d} canRetry={canUpload} canDelete={isOwner} patientName={patientQ.data?.display_name ?? ''} />
             </li>
           ))}
         </ul>
@@ -179,12 +181,38 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   )
 }
 
-function DocumentRow({ patientId, doc, canRetry }: { patientId: string; doc: DocumentSummary; canRetry: boolean }) {
+function DocumentRow({
+  patientId,
+  doc,
+  canRetry,
+  canDelete,
+  patientName,
+}: {
+  patientId: string
+  doc: DocumentSummary
+  canRetry: boolean
+  canDelete: boolean
+  patientName: string
+}) {
   const qc = useQueryClient()
+  const { toast } = useToast()
+  const [confirming, setConfirming] = useState(false)
   const processing = doc.status === 'queued' || doc.status === 'processing'
   const retry = useMutation({
     mutationFn: () => api.reprocessDocument(patientId, doc.id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['documents', patientId] }),
+  })
+  const remove = useMutation({
+    mutationFn: () => api.deleteDocument(patientId, doc.id),
+    onSuccess: () => {
+      setConfirming(false)
+      qc.removeQueries({ queryKey: ['document', patientId, doc.id] })
+      // Everything built from documents: list, timeline, brief (now stale), stats, reminder links.
+      for (const key of ['documents', 'timeline', 'latest-brief', 'patient', 'patients', 'reminders']) {
+        void qc.invalidateQueries({ queryKey: [key] })
+      }
+      toast('Document deleted')
+    },
   })
 
   const body = (
@@ -222,9 +250,38 @@ function DocumentRow({ patientId, doc, canRetry }: { patientId: string; doc: Doc
             <Button size="sm" variant="secondary">Open</Button>
           </Link>
         )}
+        {canDelete && !processing && (
+          <Button size="sm" variant="ghost" aria-label={`Delete ${doc.title}`} onClick={() => { remove.reset(); setConfirming(true) }}>
+            Delete
+          </Button>
+        )}
       </div>
     </CardBody>
   )
 
-  return <Card>{body}</Card>
+  return (
+    <>
+      <Card>{body}</Card>
+      {confirming && (
+        <Dialog
+          open
+          onClose={() => setConfirming(false)}
+          title="Delete document"
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setConfirming(false)}>Cancel</Button>
+              <Button variant="danger" loading={remove.isPending} onClick={() => remove.mutate()}>Delete</Button>
+            </>
+          }
+        >
+          <p className="text-sm text-ink">{fill(COPY['COPY-26b'], { title: doc.title, patient: patientName })}</p>
+          {remove.error && (
+            <p className="mt-2 text-sm font-medium text-danger-fg" role="alert">
+              {remove.error instanceof ApiError ? remove.error.message : 'Delete failed. Try again.'}
+            </p>
+          )}
+        </Dialog>
+      )}
+    </>
+  )
 }

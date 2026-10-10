@@ -20,6 +20,7 @@ export const {
   getDocument,
   uploadDocument,
   reprocessDocument,
+  deleteDocument,
   patchDocument,
   patchFact,
   bulkReview,

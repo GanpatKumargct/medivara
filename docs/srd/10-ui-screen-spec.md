@@ -487,6 +487,7 @@ Use these strings verbatim. Placeholders appear in `{braces}`. Strings that also
 | COPY-24 | Medication reminder attestation | "I am entering this schedule exactly as my doctor or pharmacist told me. MediVara will not change my medicines or doses." |
 | COPY-25 | Sharing consent | "I agree to share {patient}'s MediVara records with {name} ({email}) with the permissions ticked above. I can remove their access at any time, and they will lose access immediately." |
 | COPY-26 | Revoke confirmation | "Remove {name}'s access to {patient}'s records? They will lose access immediately. You can share again later." |
+| COPY-26b | Delete document confirmation | "Delete \"{title}\" from {patient}'s records? The file and everything read from it will be removed. Earlier briefs will be marked out of date. This can't be undone." |
 | COPY-27 | Access denied page | Title: "You don't have access to this profile." Body: "This profile hasn't been shared with you, or access was removed. Ask the profile owner to share it with you." |
 | COPY-28 | Ambiguous date | "The date {as_written} was read as {DD Mon YYYY} (day first). Please check it." |
 | COPY-29 | Documents differ: dose | "Your documents list different strengths for {medicine}: {strength A} ({document type A}, {date A}) and {strength B} ({document type B}, {date B}). The most recent document lists {latest strength}. Please confirm your current dose with your doctor." |

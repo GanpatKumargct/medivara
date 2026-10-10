@@ -75,6 +75,8 @@ export const COPY = {
     'I agree to share {patient}’s MediVara records with {name} ({email}) with the permissions ticked above. I can remove their access at any time, and they will lose access immediately.',
   'COPY-26':
     'Remove {name}’s access to {patient}’s records? They will lose access immediately. You can share again later.',
+  'COPY-26b':
+    'Delete “{title}” from {patient}’s records? The file and everything read from it will be removed. Earlier briefs will be marked out of date. This can’t be undone.',
   'COPY-27-title': 'You don’t have access to this profile.',
   'COPY-27':
     'This profile hasn’t been shared with you, or access was removed. Ask the profile owner to share it with you.',

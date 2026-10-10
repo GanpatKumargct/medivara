@@ -1,16 +1,17 @@
 """API-08 upload, API-10 list, API-11 detail, API-12 file stream."""
 
 import hashlib
+import logging
 import re
 import unicodedata
 from datetime import date
 from typing import Literal
 
 import filetype
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Query, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from sqlmodel import Session, func, select
+from sqlmodel import Session, delete, func, select
 
 from app import audit, storage
 from app.access import PatientAccess, load_owned, require_access
@@ -41,6 +42,7 @@ from app.routers import API_PREFIX
 
 router = APIRouter(prefix=API_PREFIX, tags=["documents"])
 
+log = logging.getLogger("medivara.documents")
 MAX_BYTES = 10 * 1024 * 1024
 MAX_PAGES = 10
 HINT_TYPES = {"prescription", "lab_report", "discharge_summary", "consultation_note", "other"}
@@ -371,6 +373,46 @@ def reprocess_document(
     )
     background.add_task(process_document, doc.id)
     return {"document": document_summary(doc, _fact_counts(session, [doc.id])[doc.id])}
+
+
+@router.delete("/patients/{patient_id}/documents/{document_id}", status_code=204)
+def delete_document(
+    document_id: str,
+    request: Request,
+    access: PatientAccess = Depends(require_access(None, owner_only=True)),
+    session: Session = Depends(get_session),
+) -> Response:
+    """API-22 (BE-4.6, FR-023): removes the file, pages and facts. Briefs that used the document
+    turn stale through the fingerprint. Reminders made from its facts are kept, unlinked."""
+    doc = load_owned(session, MedicalDocument, document_id, access.patient.id)
+    if doc.status in (DocumentStatus.queued, DocumentStatus.processing):
+        raise ApiError(409, "INVALID_STATE", "This document is still being read. Try again when it has finished.")
+    fact_ids = select(ExtractedFact.id).where(ExtractedFact.document_id == doc.id)
+    for reminder in session.exec(
+        select(Reminder).where(Reminder.patient_id == access.patient.id, Reminder.source_fact_id.in_(fact_ids))
+    ).all():
+        reminder.source_fact_id = None
+        reminder.updated_at = utcnow()
+        session.add(reminder)
+    session.exec(delete(ExtractedFact).where(ExtractedFact.document_id == doc.id))
+    session.exec(delete(DocumentPage).where(DocumentPage.document_id == doc.id))
+    storage_key = doc.storage_key
+    session.delete(doc)
+    session.commit()
+    try:
+        storage.path_for(storage_key).unlink(missing_ok=True)
+    except (OSError, ValueError) as exc:
+        # The database delete stands; the orphaned file is noted for clean-up (IDs only).
+        log.error("document_file_not_removed", extra={"document_id": document_id, "exc_type": type(exc).__name__})
+    audit.write(
+        request,
+        "document.deleted",
+        actor_user_id=access.current.user.id,
+        patient_id=access.patient.id,
+        resource_type="document",
+        resource_id=document_id,
+    )
+    return Response(status_code=204)
 
 
 class DocumentPatch(BaseModel):

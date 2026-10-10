@@ -101,6 +101,11 @@ export function reprocessDocument(patientId: string, documentId: string): Promis
   return request('POST', `${p(patientId)}/documents/${encodeURIComponent(documentId)}/reprocess`)
 }
 
+// API-22 (owner only): removes the file, pages and facts. 409 INVALID_STATE while processing.
+export function deleteDocument(patientId: string, documentId: string): Promise<void> {
+  return request('DELETE', `${p(patientId)}/documents/${encodeURIComponent(documentId)}`)
+}
+
 export function patchDocument(
   patientId: string,
   documentId: string,

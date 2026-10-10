@@ -276,6 +276,29 @@ export async function reprocessDocument(patientId: string, documentId: string): 
   return { document: d }
 }
 
+export async function deleteDocument(patientId: string, documentId: string): Promise<void> {
+  await delay(300)
+  requireOwner(requireAccess(patientId))
+  const docs = db.documents[patientId] ?? []
+  const d = docs.find((x) => x.id === documentId)
+  if (!d) throw apiError(404, 'NOT_FOUND', 'Document not found.')
+  if (d.status === 'queued' || d.status === 'processing') {
+    throw apiError(409, 'INVALID_STATE', 'This document is still being read. Try again when it has finished.')
+  }
+  const factIds = new Set((db.facts[documentId] ?? []).map((f) => f.id))
+  for (const r of db.reminders[patientId] ?? []) if (r.source_fact_id && factIds.has(r.source_fact_id)) r.source_fact_id = null
+  db.documents[patientId] = docs.filter((x) => x.id !== documentId)
+  delete db.facts[documentId]
+  pushAudit(patientId, {
+    actor: { user_id: getCurrentUserId()!, display_name: currentUser()?.display_name ?? '' },
+    action: 'document.deleted',
+    action_label: 'Deleted a document',
+    resource_type: 'document',
+    resource_id: documentId,
+    outcome: 'success',
+  })
+}
+
 export async function patchDocument(
   patientId: string,
   documentId: string,
