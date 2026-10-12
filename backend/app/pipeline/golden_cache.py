@@ -14,6 +14,7 @@ from pathlib import Path
 
 from sqlmodel import Session, select
 
+from app.versions import visible
 from app.config import get_settings
 from app.db import get_engine
 from app.models import DocumentStatus, ExtractedFact, FactStatus, MedicalDocument, utcnow
@@ -51,7 +52,7 @@ def export(session: Session) -> list[str]:
     """Write one cache file per processed manifest document; returns the file names written."""
     allowed = manifest_hashes()
     docs = session.exec(
-        select(MedicalDocument).where(MedicalDocument.status.in_([DocumentStatus.needs_review, DocumentStatus.ready]))
+        select(MedicalDocument).where(MedicalDocument.status.in_([DocumentStatus.needs_review, DocumentStatus.ready]), visible())
     ).all()
     written = []
     _dir().mkdir(parents=True, exist_ok=True)

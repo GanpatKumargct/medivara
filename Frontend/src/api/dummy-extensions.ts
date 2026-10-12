@@ -285,7 +285,7 @@ export async function sendChatMessage(
   patientId: string,
   chatId: string,
   question: string,
-  inputMode: 'text' | 'voice' = 'text',
+  inputMode: 'text' | 'voice' | 'sign' = 'text',
 ): Promise<{ user_message: ChatMessage; assistant_message: ChatMessage; chat: Chat }> {
   const stored = ownChat(patientId, chatId)
   const text = question.trim()

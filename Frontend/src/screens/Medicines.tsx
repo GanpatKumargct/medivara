@@ -14,6 +14,7 @@ import { IconBell, IconChevronDown, IconPill } from '../components/icons'
 import { cn } from '../lib/cn'
 import { COPY } from '../lib/copy'
 import { formatDate } from '../lib/format'
+import { t } from '../lib/i18n'
 
 interface MedicineGroup {
   key: string
@@ -61,8 +62,8 @@ export default function Medicines() {
     <div className="space-y-5">
       <PageHeader
         icon={<IconPill className="h-5 w-5" />}
-        title="Medicines"
-        subtitle="Every medicine your documents mention, newest first, with where it came from."
+        title={t("Medicines")}
+        subtitle={t("Every medicine your documents mention, newest first, with where it came from.")}
       />
 
       <div className="rounded-xl border border-info-border bg-info-bg px-3 py-2 text-sm text-info-fg">{COPY['COPY-06']}</div>
@@ -71,9 +72,9 @@ export default function Medicines() {
       {timelineQ.error && <ErrorBanner error={timelineQ.error} onRetry={timelineQ.refetch} />}
       {timelineQ.data && groups.length === 0 && (
         <EmptyState
-          title="No medicines found yet"
-          message="Upload a prescription or discharge summary and the medicines it lists will appear here, linked to the document."
-          action={<Link to={`${base}/records`}><Button variant="secondary">Go to records</Button></Link>}
+          title={t("No medicines found yet")}
+          message={t("Upload a prescription or discharge summary and the medicines it lists will appear here, linked to the document.")}
+          action={<Link to={`${base}/records`}><Button variant="secondary">{t("Go to records")}</Button></Link>}
         />
       )}
 
@@ -90,14 +91,14 @@ export default function Medicines() {
       <Card>
         <CardBody>
           <div className="flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><IconBell className="h-4 w-4 text-ink-muted" /> Medicine reminders</h2>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><IconBell className="h-4 w-4 text-ink-muted" /> {t("Medicine reminders")}</h2>
             <Link to={`${base}/reminders`} className="text-sm font-medium text-brand-700 hover:underline">
-              {canRemind ? 'Manage reminders →' : 'View reminders →'}
+              {canRemind ? t("Manage reminders →") : t("View reminders →")}
             </Link>
           </div>
           {medReminders.length === 0 ? (
             <p className="mt-2 text-sm text-ink-muted">
-              No medicine reminders yet.{canRemind && ' Add one exactly as your doctor or pharmacist told you.'}
+              {t("No medicine reminders yet.")}{canRemind && ' Add one exactly as your doctor or pharmacist told you.'}
             </p>
           ) : (
             <ul className="mt-2 divide-y divide-line">
@@ -106,10 +107,10 @@ export default function Medicines() {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-ink">{r.title}</p>
                     <p className="text-xs text-ink-subtle">
-                      {r.schedule_kind === 'daily' ? `Daily at ${(r.schedule.times ?? []).join(', ')}` : r.next_due_local ?? 'Once'}
+                      {r.schedule_kind === 'daily' ? t("Daily at {{value}}", { value: (r.schedule.times ?? []).join(', ') }) : r.next_due_local ?? 'Once'}
                     </p>
                   </div>
-                  {r.next_due_local && <Badge tone="info">Next: {r.next_due_local}</Badge>}
+                  {r.next_due_local && <Badge tone="info">{t("Next:")}{' '}{r.next_due_local}</Badge>}
                 </li>
               ))}
             </ul>
@@ -136,21 +137,20 @@ function MedicineCard({ group, base, docTitles }: { group: MedicineGroup; base: 
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-semibold text-ink">{latest.title}</h3>
               {latest.status === 'unverified' && <UnverifiedBadge />}
-              {latest.status === 'corrected' && <Badge tone="info">Corrected by you</Badge>}
-              {latest.change?.kind === 'dose_change' && <Badge tone="warn">Strength changed</Badge>}
+              {latest.status === 'corrected' && <Badge tone="info">{t("Corrected by you")}</Badge>}
+              {latest.change?.kind === 'dose_change' && <Badge tone="warn">{t("Strength changed")}</Badge>}
             </div>
             {latest.summary && <p className="mt-0.5 text-sm text-ink-muted">{latest.summary}</p>}
             <p className="mt-1 text-xs text-ink-subtle">
-              Latest mention {formatDate(latest.date)} in{' '}
+              {t("Latest mention")}{' '}{formatDate(latest.date)} in{' '}
               <Link to={`${base}/records/${latest.document_id}`} className="font-medium text-brand-700 hover:underline">
                 {docTitles[latest.document_id] ?? 'a document'}
               </Link>
-              {docs > 1 && ` · mentioned in ${docs} documents`}
+              {docs > 1 && t(" · mentioned in {{docs}} documents", { docs: docs })}
             </p>
             {latest.change?.kind === 'dose_change' && (
               <p className="mt-1 text-xs text-warn-fg">
-                {latest.change.previous.strength} ({formatDate(latest.change.previous.date)}) → {latest.change.current.strength} ({formatDate(latest.change.current.date)}). Confirm your current dose with your doctor.
-              </p>
+                {latest.change.previous.strength} ({formatDate(latest.change.previous.date)}) → {latest.change.current.strength} ({formatDate(latest.change.current.date)}{t("). Confirm your current dose with your doctor.")}</p>
             )}
           </div>
         </div>
@@ -162,7 +162,7 @@ function MedicineCard({ group, base, docTitles }: { group: MedicineGroup; base: 
               className="flex items-center gap-1 text-xs font-medium text-ink-muted hover:text-ink"
             >
               <IconChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} />
-              {open ? 'Hide' : 'Show'} earlier mentions ({group.mentions.length - 1})
+              {open ? t("Hide") : t("Show")} {t("earlier mentions (")}{group.mentions.length - 1})
             </button>
             {open && (
               <ul className="mt-2 space-y-1.5">

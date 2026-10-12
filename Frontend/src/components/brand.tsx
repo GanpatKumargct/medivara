@@ -4,6 +4,7 @@
 // mobile nav, where the full stacked logo would be illegible.
 import { useId } from 'react'
 import { cn } from '../lib/cn'
+import { t } from '../lib/i18n'
 
 /** Compact square app mark: gradient tile with a white "M" and a care cross. */
 export function LogoMark({ className, size = 32 }: { className?: string; size?: number }) {
@@ -16,7 +17,7 @@ export function LogoMark({ className, size = 32 }: { className?: string; size?: 
       viewBox="0 0 48 48"
       className={className}
       role="img"
-      aria-label="Medivara"
+      aria-label={t("Medivara")}
     >
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
@@ -62,8 +63,7 @@ export function LogoLockup({
           tone === 'light' ? 'text-white' : 'text-brand-900',
         )}
       >
-        Medivara
-      </span>
+        {t("Medivara")}</span>
     </span>
   )
 }
@@ -73,7 +73,7 @@ export function LogoFull({ className }: { className?: string }) {
   return (
     <img
       src="/medivara-logo.png"
-      alt="Medivara — Your Health History. Clearer Decisions."
+      alt={t("Medivara — Your Health History. Clearer Decisions.")}
       className={cn('h-auto w-full select-none', className)}
       draggable={false}
     />

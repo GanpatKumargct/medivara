@@ -9,6 +9,7 @@ from datetime import date
 
 from sqlmodel import Session, select
 
+from app.versions import visible
 from app.facts import effective_fields, fact_sort_key
 from app.models import DocumentPage, DocumentStatus, ExtractedFact, FactStatus, MedicalDocument
 
@@ -46,7 +47,7 @@ class PatientRecords:
 def load_records(session: Session, patient_id: str, include_unverified: bool = True) -> PatientRecords:
     documents = session.exec(
         select(MedicalDocument)
-        .where(MedicalDocument.patient_id == patient_id, MedicalDocument.status.in_(PROCESSED))
+        .where(MedicalDocument.patient_id == patient_id, MedicalDocument.status.in_(PROCESSED), visible())
         .order_by(MedicalDocument.created_at)
     ).all()
     by_id = {d.id: d for d in documents}

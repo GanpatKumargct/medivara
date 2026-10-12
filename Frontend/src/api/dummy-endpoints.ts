@@ -18,7 +18,10 @@ import type {
   AskResponse,
   AuditEvent,
   Brief,
+  ChangesResponse,
+  DeletedDocument,
   DocumentDetailResponse,
+  DocumentHistory,
   DocumentSummary,
   Fact,
   Grant,
@@ -26,9 +29,13 @@ import type {
   ListResponse,
   LoginResponse,
   MeResponse,
+  LoginItem,
   PatientSummary,
+  RecordsAsOf,
   Reminder,
   TimelineResponse,
+  VersionDetail,
+  VersionState,
 } from './types'
 import {
   GRANTS,
@@ -276,7 +283,7 @@ export async function reprocessDocument(patientId: string, documentId: string): 
   return { document: d }
 }
 
-export async function deleteDocument(patientId: string, documentId: string): Promise<void> {
+export async function deleteDocument(patientId: string, documentId: string, _permanent = false): Promise<void> {
   await delay(300)
   requireOwner(requireAccess(patientId))
   const docs = db.documents[patientId] ?? []
@@ -486,7 +493,7 @@ function emptyBrief(patientId: string): Brief {
 
 // --- Ask (API-21) -----------------------------------------------------------
 
-export async function ask(patientId: string, question: string, _inputMode: 'text' | 'voice' = 'text'): Promise<AskResponse> {
+export async function ask(patientId: string, question: string, _inputMode: 'text' | 'voice' | 'sign' = 'text'): Promise<AskResponse> {
   requireScope(requireAccess(patientId), 'view_records')
   if (!health.ai.available) {
     await delay(900)
@@ -633,3 +640,104 @@ export async function listAuditEvents(patientId: string): Promise<ListResponse<A
 // --- Redesign extensions (contract §5b) -------------------------------------
 
 export * from './dummy-extensions'
+
+// --- Document history and versions (DEC-27) ------------------------------------------------
+// Mock data keeps no history: each document shows one "existing" version, and the actions
+// that need stored versions explain that they need the real backend.
+
+const NEEDS_BACKEND = 'Version history needs the real backend (this is mock data).'
+
+function stateOf(doc: DocumentSummary): VersionState {
+  return {
+    document_id: doc.id,
+    file_version: 1,
+    status: doc.status,
+    deleted: false,
+    header: {
+      document_type: doc.document_type,
+      document_date: doc.document_date,
+      document_date_text: doc.document_date,
+      facility_name: doc.facility_name,
+      clinician_name: doc.clinician_name,
+      title: doc.title,
+    },
+    facts: (db.facts[doc.id] ?? []).map((f) => ({
+      id: f.id, fact_type: f.fact_type, status: f.status, confidence: f.confidence, text: f.display_text,
+    })),
+  }
+}
+
+function mockDoc(patientId: string, documentId: string): DocumentSummary {
+  requireScope(requireAccess(patientId), 'view_records')
+  const doc = (db.documents[patientId] ?? []).find((x) => x.id === documentId)
+  if (!doc) throw apiError(404, 'NOT_FOUND', 'Document not found.')
+  return doc
+}
+
+export async function getDocumentHistory(patientId: string, documentId: string): Promise<DocumentHistory> {
+  await delay(150)
+  const doc = mockDoc(patientId, documentId)
+  return {
+    document: doc,
+    files: [{ document_id: doc.id, file_version: 1, original_filename: doc.title, is_current: true, status: doc.status, uploaded_at: doc.created_at }],
+    versions: [{ version_no: 1, action: 'existing', actor: null, by_me: false, at: doc.created_at, file_version: 1, summary: [] }],
+    latest_version: 1,
+  }
+}
+
+export async function getDocumentVersion(patientId: string, documentId: string, versionNo: number): Promise<VersionDetail> {
+  await delay(150)
+  const doc = mockDoc(patientId, documentId)
+  if (versionNo !== 1) throw apiError(404, 'NOT_FOUND', 'We couldn’t find that.')
+  return {
+    version: { version_no: 1, action: 'existing', actor: null, by_me: false, at: doc.created_at, file_version: 1, summary: [] },
+    state: stateOf(doc),
+  }
+}
+
+export async function restoreVersion(_patientId: string, _documentId: string, _versionNo: number): Promise<{ document: DocumentSummary }> {
+  await delay(150)
+  throw apiError(409, 'INVALID_STATE', NEEDS_BACKEND)
+}
+
+export async function uploadNewVersion(_patientId: string, _documentId: string, _file: File): Promise<{ document: DocumentSummary }> {
+  await delay(150)
+  throw apiError(409, 'INVALID_STATE', NEEDS_BACKEND)
+}
+
+export async function listDeletedDocuments(patientId: string): Promise<{ items: DeletedDocument[]; retention_days: number }> {
+  await delay(120)
+  requireOwner(requireAccess(patientId))
+  return { items: [], retention_days: 30 }
+}
+
+export async function undeleteDocument(_patientId: string, _documentId: string): Promise<{ document: DocumentSummary }> {
+  await delay(150)
+  throw apiError(409, 'INVALID_STATE', NEEDS_BACKEND)
+}
+
+export async function getChanges(patientId: string, _since = 'last_login'): Promise<ChangesResponse> {
+  await delay(120)
+  requireScope(requireAccess(patientId), 'view_records')
+  return { since: null, items: [], counts: { documents: 0, changes: 0 } }
+}
+
+export async function getMyLogins(): Promise<{ items: LoginItem[] }> {
+  await delay(100)
+  requireAuth()
+  return { items: [{ session_id: 'ses_mock', at: new Date().toISOString(), current: true }] }
+}
+
+export async function getRecordsAsOf(patientId: string, at: string): Promise<RecordsAsOf> {
+  await delay(150)
+  requireScope(requireAccess(patientId), 'view_records')
+  const docs = (db.documents[patientId] ?? []).map((doc) => ({ series_id: doc.id, version_no: 1, ...stateOf(doc) }))
+  return { at, documents: docs }
+}
+
+// API-69 (DEC-29): mock data keeps the language in the browser only.
+export async function updatePreferences(preferredLanguage: string): Promise<{ preferred_language: string }> {
+  await delay(80)
+  requireAuth()
+  return { preferred_language: preferredLanguage }
+}

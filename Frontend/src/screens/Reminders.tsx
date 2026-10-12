@@ -11,6 +11,7 @@ import { EmptyState, ErrorBanner, LoadingRows } from '../components/states'
 import { PageHeader } from '../components/page-header'
 import { IconBell } from '../components/icons'
 import { COPY } from '../lib/copy'
+import { t } from '../lib/i18n'
 
 export default function Reminders() {
   const { patientId = '' } = useParams()
@@ -28,11 +29,11 @@ export default function Reminders() {
 
   const complete = useMutation({
     mutationFn: (id: string) => api.completeReminder(patientId, id),
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['reminders', patientId] }); toast('Marked done') },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['reminders', patientId] }); toast(t("Marked done")) },
   })
   const dismiss = useMutation({
     mutationFn: (id: string) => api.updateReminder(patientId, id, { status: 'dismissed' }),
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['reminders', patientId] }); toast('Dismissed') },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['reminders', patientId] }); toast(t("Dismissed")) },
   })
 
   const items = q.data?.items ?? []
@@ -43,11 +44,11 @@ export default function Reminders() {
     <div className="space-y-5">
       <PageHeader
         icon={<IconBell className="h-5 w-5" />}
-        title="Reminders"
-        subtitle="Appointments, follow-ups and medicine times — shown while the app is open."
+        title={t("Reminders")}
+        subtitle={t("Appointments, follow-ups and medicine times — shown while the app is open.")}
         actions={
           canManage && !showForm ? (
-            <Button onClick={() => { setPrefill(null); setShowForm(true) }}>New reminder</Button>
+            <Button onClick={() => { setPrefill(null); setShowForm(true) }}>{t("New reminder")}</Button>
           ) : undefined
         }
       />
@@ -57,7 +58,7 @@ export default function Reminders() {
       {canManage && suggestions.length > 0 && (
         <Card>
           <CardBody>
-            <h2 className="text-sm font-semibold text-ink">Suggested from your documents</h2>
+            <h2 className="text-sm font-semibold text-ink">{t("Suggested from your documents")}</h2>
             <ul className="mt-2 space-y-2">
               {suggestions.map((s) => (
                 <li key={s.source_fact_id} className="flex items-center justify-between gap-2 rounded-lg border border-line p-2">
@@ -66,8 +67,7 @@ export default function Reminders() {
                     <p className="text-xs text-ink-subtle">{s.document_title} · “{s.due_text}”</p>
                   </div>
                   <Button size="sm" variant="secondary" onClick={() => { setPrefill({ title: s.title, type: s.type, source_fact_id: s.source_fact_id }); setShowForm(true) }}>
-                    Create reminder
-                  </Button>
+                    {t("Create reminder")}</Button>
                 </li>
               ))}
             </ul>
@@ -80,19 +80,19 @@ export default function Reminders() {
           patientId={patientId}
           prefill={prefill}
           onClose={() => setShowForm(false)}
-          onCreated={() => { setShowForm(false); void qc.invalidateQueries({ queryKey: ['reminders', patientId] }); toast('Reminder created') }}
+          onCreated={() => { setShowForm(false); void qc.invalidateQueries({ queryKey: ['reminders', patientId] }); toast(t("Reminder created")) }}
         />
       )}
 
       {q.isLoading && <LoadingRows rows={2} />}
       {q.error && <ErrorBanner error={q.error} onRetry={q.refetch} />}
       {q.data && items.length === 0 && !showForm && (
-        <EmptyState title="No reminders yet" message="Create one, or add a suggestion from your documents." />
+        <EmptyState title={t("No reminders yet")} message={t("Create one, or add a suggestion from your documents.")} />
       )}
 
       {active.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-ink">Active</h2>
+          <h2 className="mb-2 text-sm font-semibold text-ink">{t("Active")}</h2>
           <ul className="space-y-2">
             {active.map((r) => (
               <li key={r.id}>
@@ -105,7 +105,7 @@ export default function Reminders() {
 
       {done.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-ink-muted">Completed / dismissed</h2>
+          <h2 className="mb-2 text-sm font-semibold text-ink-muted">{t("Completed / dismissed")}</h2>
           <ul className="space-y-2">
             {done.map((r) => (
               <li key={r.id}><ReminderRow r={r} canManage={false} /></li>
@@ -131,8 +131,8 @@ function ReminderRow({ r, canManage, onDone, onDismiss }: { r: Reminder; canMana
         </div>
         {canManage && (
           <div className="flex shrink-0 gap-2">
-            <Button size="sm" variant="secondary" onClick={onDone}>Done</Button>
-            <Button size="sm" variant="ghost" onClick={onDismiss}>Dismiss</Button>
+            <Button size="sm" variant="secondary" onClick={onDone}>{t("Done")}</Button>
+            <Button size="sm" variant="ghost" onClick={onDismiss}>{t("Dismiss")}</Button>
           </div>
         )}
       </CardBody>
@@ -171,33 +171,33 @@ function ReminderForm({
         medication_schedule_attested: attested,
       }),
     onSuccess: onCreated,
-    onError: () => setError('Please check the fields and try again.'),
+    onError: () => setError(t("Please check the fields and try again.")),
   })
 
   return (
     <Card>
       <CardBody className="space-y-3">
-        <h2 className="text-sm font-semibold text-ink">New reminder</h2>
-        <Field label="Type" htmlFor="r-type">
+        <h2 className="text-sm font-semibold text-ink">{t("New reminder")}</h2>
+        <Field label={t("Type")} htmlFor="r-type">
           <select id="r-type" value={type} onChange={(e) => setType(e.target.value as ReminderType)} className="w-full rounded-lg border border-line px-3 py-2 text-sm">
-            <option value="follow_up">Follow-up</option>
-            <option value="appointment">Appointment</option>
-            <option value="medication">Medication</option>
-            <option value="other">Other</option>
+            <option value="follow_up">{t("Follow-up")}</option>
+            <option value="appointment">{t("Appointment")}</option>
+            <option value="medication">{t("Medication")}</option>
+            <option value="other">{t("Other")}</option>
           </select>
         </Field>
-        <Field label="Title" htmlFor="r-title">
+        <Field label={t("Title")} htmlFor="r-title">
           <Input id="r-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Date" htmlFor="r-date">
+          <Field label={t("Date")} htmlFor="r-date">
             <Input id="r-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
-          <Field label="Time (IST · Asia/Kolkata)" htmlFor="r-time">
+          <Field label={t("Time (IST · Asia/Kolkata)")} htmlFor="r-time">
             <Input id="r-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
           </Field>
         </div>
-        <Field label="Notes (optional)" htmlFor="r-notes">
+        <Field label={t("Notes (optional)")} htmlFor="r-notes">
           <Input id="r-notes" value={notes} maxLength={500} onChange={(e) => setNotes(e.target.value)} />
         </Field>
         {type === 'medication' && (
@@ -207,10 +207,9 @@ function ReminderForm({
         )}
         {error && <p className="text-sm text-danger-fg" role="alert">{error}</p>}
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
           <Button loading={create.isPending} disabled={!title || (type === 'medication' && !attested)} onClick={() => create.mutate()}>
-            Create
-          </Button>
+            {t("Create")}</Button>
         </div>
       </CardBody>
     </Card>

@@ -20,3 +20,6 @@ logs/
 
 # Node
 node_modules/
+
+# MediaPipe files for sign-assisted questions (made by Frontend/scripts/fetch-mediapipe.mjs)
+Frontend/public/mediapipe/

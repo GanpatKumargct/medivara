@@ -15,6 +15,7 @@ import { Avatar } from '../components/shell/Sidebar'
 import { AddFamilyMemberDialog } from '../components/family/AddFamilyMemberDialog'
 import { IconLogout, IconMail, IconUserPlus } from '../components/icons'
 import { RELATIONSHIP_LABELS, SCOPE_LABELS } from '../lib/format'
+import { t } from '../lib/i18n'
 
 export default function ProfileSelector() {
   const navigate = useNavigate()
@@ -39,17 +40,16 @@ export default function ProfileSelector() {
         <div className="flex items-center gap-3">
           <span className="hidden text-sm text-ink-muted sm:inline">{user?.email}</span>
           <Button size="sm" variant="ghost" onClick={() => void signOut().then(() => navigate('/login'))}>
-            <IconLogout className="h-4 w-4" /> Sign out
-          </Button>
+            <IconLogout className="h-4 w-4" /> {t("Sign out")}</Button>
         </div>
       </header>
 
       <div className="mx-auto max-w-4xl px-4 pb-12 pt-4">
-        <h1 className="font-serif text-3xl text-ink">Whose records?</h1>
-        <p className="mt-1 text-sm text-ink-muted">Choose a profile, or add a family member whose health you look after.</p>
+        <h1 className="font-serif text-3xl text-ink">{t("Whose records?")}</h1>
+        <p className="mt-1 text-sm text-ink-muted">{t("Choose a profile, or add a family member whose health you look after.")}</p>
 
         {(invitesQ.data?.length ?? 0) > 0 && (
-          <section className="mt-6 space-y-3" aria-label="Invitations">
+          <section className="mt-6 space-y-3" aria-label={t("Invitations")}>
             {invitesQ.data!.map((inv) => <InvitationCard key={inv.id} inv={inv} />)}
           </section>
         )}
@@ -59,16 +59,15 @@ export default function ProfileSelector() {
           {patientsQ.error && <ErrorBanner error={patientsQ.error} onRetry={patientsQ.refetch} />}
           {patientsQ.data && (
             <>
-              <ProfileGrid title="Profiles you manage" items={owned} onOpen={(id) => navigate(`/p/${id}`)} extra={
+              <ProfileGrid title={t("Profiles you manage")} items={owned} onOpen={(id) => navigate(`/p/${id}`)} extra={
                 <button
                   onClick={() => setAdding(true)}
                   className="mv-press flex h-full min-h-[132px] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-canvas-border text-sm font-medium text-ink-muted transition-colors hover:border-brand-300 hover:text-brand-700"
                 >
-                  <IconUserPlus className="h-6 w-6" /> Add family member
-                </button>
+                  <IconUserPlus className="h-6 w-6" /> {t("Add family member")}</button>
               } />
               {shared.length > 0 && (
-                <ProfileGrid title="Shared with you" items={shared} onOpen={(id) => navigate(`/p/${id}`)} />
+                <ProfileGrid title={t("Shared with you")} items={shared} onOpen={(id) => navigate(`/p/${id}`)} />
               )}
             </>
           )}
@@ -102,14 +101,14 @@ function ProfileGrid({
                 <div className="min-w-0">
                   <p className="truncate text-base font-semibold text-ink">{p.display_name}</p>
                   <p className="truncate text-xs text-ink-subtle">
-                    {p.my_role === 'owner' ? (p.age_years != null ? `${p.age_years} years` : 'You manage this') : `Shared by ${p.owner_display_name}`}
+                    {p.my_role === 'owner' ? (p.age_years != null ? `${p.age_years} years` : t("You manage this")) : t("Shared by {{owner_display_name}}", { owner_display_name: p.owner_display_name })}
                   </p>
                 </div>
               </div>
               <dl className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
-                <div><dt className="text-[11px] text-ink-subtle">Documents</dt><dd className="font-semibold text-ink">{p.stats.documents_total}</dd></div>
-                <div><dt className="text-[11px] text-ink-subtle">To review</dt><dd className="font-semibold text-ink">{p.stats.documents_needs_review}</dd></div>
-                <div><dt className="text-[11px] text-ink-subtle">Reminders</dt><dd className="font-semibold text-ink">{p.stats.upcoming_reminders}</dd></div>
+                <div><dt className="text-[11px] text-ink-subtle">{t("Documents")}</dt><dd className="font-semibold text-ink">{p.stats.documents_total}</dd></div>
+                <div><dt className="text-[11px] text-ink-subtle">{t("To review")}</dt><dd className="font-semibold text-ink">{p.stats.documents_needs_review}</dd></div>
+                <div><dt className="text-[11px] text-ink-subtle">{t("Reminders")}</dt><dd className="font-semibold text-ink">{p.stats.upcoming_reminders}</dd></div>
               </dl>
               {p.my_role !== 'owner' && (
                 <div className="mt-2 flex flex-wrap gap-1">
@@ -136,13 +135,13 @@ function InvitationCard({ inv }: { inv: MyInvitation }) {
       void qc.invalidateQueries({ queryKey: ['my-invitations'] })
       navigate(`/p/${patient_id}`)
     },
-    onError: () => toast('Couldn’t accept this invitation. It may have expired.', 'error'),
+    onError: () => toast(t("Couldn’t accept this invitation. It may have expired."), 'error'),
   })
   const decline = useMutation({
     mutationFn: () => api.declineInvitation(inv.id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['my-invitations'] })
-      toast('Invitation declined', 'info')
+      toast(t("Invitation declined"), 'info')
     },
   })
   return (
@@ -152,16 +151,15 @@ function InvitationCard({ inv }: { inv: MyInvitation }) {
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700"><IconMail className="h-5 w-5" /></span>
           <div>
             <p className="text-sm font-semibold text-ink">
-              {inv.invited_by.display_name} invited you to {inv.patient.display_name}’s records
-            </p>
+              {inv.invited_by.display_name} {t("invited you to")}{' '}{inv.patient.display_name}{t("’s records")}</p>
             <p className="text-xs text-ink-subtle">
-              As their {RELATIONSHIP_LABELS[inv.relationship]?.toLowerCase() ?? 'family member'} · {inv.scopes.map((s) => SCOPE_LABELS[s] ?? s).join(', ')}
+              {t("As their")}{' '}{RELATIONSHIP_LABELS[inv.relationship]?.toLowerCase() ?? 'family member'} · {inv.scopes.map((s) => SCOPE_LABELS[s] ?? s).join(', ')}
             </p>
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button size="sm" variant="secondary" loading={decline.isPending} onClick={() => decline.mutate()}>Decline</Button>
-          <Button size="sm" loading={accept.isPending} onClick={() => accept.mutate()}>Accept</Button>
+          <Button size="sm" variant="secondary" loading={decline.isPending} onClick={() => decline.mutate()}>{t("Decline")}</Button>
+          <Button size="sm" loading={accept.isPending} onClick={() => accept.mutate()}>{t("Accept")}</Button>
         </div>
       </CardBody>
     </Card>

@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 
 from sqlmodel import Session, select
 
+from app.versions import visible
 from app.copy import COPY_02
 from app.models import DocumentStatus, ExtractedFact, FactStatus, MedicalDocument
 from app.organise.records import FactView, PatientRecords
@@ -61,6 +62,7 @@ def fingerprint(session: Session, patient_id: str) -> str:
         select(MedicalDocument.id, MedicalDocument.updated_at).where(
             MedicalDocument.patient_id == patient_id,
             MedicalDocument.status.in_([DocumentStatus.needs_review, DocumentStatus.ready]),
+            visible(),
         )
     ).all()
     facts = session.exec(

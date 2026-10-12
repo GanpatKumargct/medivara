@@ -8,6 +8,7 @@ import { cn } from '../lib/cn'
 import { formatDate, DOCUMENT_TYPE_LABELS } from '../lib/format'
 import { IconExternal, IconX } from './icons'
 import { Badge } from './ui'
+import { t } from '../lib/i18n'
 
 interface EvidenceCtx {
   open: (evidence: Evidence[], focusId?: string) => void
@@ -59,7 +60,7 @@ export function CitationChips({
     <span className="ml-1 inline-flex flex-wrap gap-1 align-middle">
       {evidenceIds.map((id) => {
         const ev = evidence.find((e) => e.evidence_id === id)
-        const label = ev ? `Source ${id.replace('E', '')}: ${DOCUMENT_TYPE_LABELS[ev.document_type] ?? 'Document'}, ${formatDate(ev.document_date)}` : id
+        const label = ev ? t("Source {{value}}: {{value2}}, {{formatDate}}", { value: id.replace('E', ''), value2: DOCUMENT_TYPE_LABELS[ev.document_type] ?? 'Document', formatDate: formatDate(ev.document_date) }) : id
         return (
           <button
             key={id}
@@ -92,12 +93,12 @@ function EvidenceDrawer({
       <div className="animate-fade-in absolute inset-0 bg-ink/30 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
       <aside
         role="dialog"
-        aria-label="Evidence"
+        aria-label={t("Evidence")}
         className="animate-slide-in-right relative z-10 flex h-full w-full max-w-md flex-col bg-surface shadow-pop"
       >
         <header className="flex items-center justify-between border-b border-line p-4">
-          <h2 className="text-base font-semibold text-ink">Evidence</h2>
-          <button onClick={onClose} aria-label="Close evidence" className="rounded p-1 text-ink-muted hover:bg-surface-muted">
+          <h2 className="text-base font-semibold text-ink">{t("Evidence")}</h2>
+          <button onClick={onClose} aria-label={t("Close evidence")} className="rounded p-1 text-ink-muted hover:bg-surface-muted">
             <IconX />
           </button>
         </header>
@@ -107,19 +108,19 @@ function EvidenceDrawer({
               key={ev.evidence_id}
               className={cn(
                 'rounded-lg border p-3',
-                ev.evidence_id === focusId ? 'border-brand-400 bg-brand-50' : 'border-line bg-white',
+                ev.evidence_id === focusId ? "border-brand-400 bg-brand-50" : "border-line bg-white",
               )}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center rounded border border-brand-200 bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold text-brand-700">
                   {ev.evidence_id}
                 </span>
-                {ev.is_user_correction && <Badge tone="info">Corrected by you</Badge>}
-                {ev.fact_status === 'unverified' && <Badge tone="warn">Unverified</Badge>}
+                {ev.is_user_correction && <Badge tone="info">{t("Corrected by you")}</Badge>}
+                {ev.fact_status === 'unverified' && <Badge tone="warn">{t("Unverified")}</Badge>}
               </div>
               <p className="mt-2 text-sm font-medium text-ink">{ev.document_title}</p>
               <p className="text-xs text-ink-subtle">
-                {formatDate(ev.document_date)} · Page {ev.page}
+                {formatDate(ev.document_date)} {t("· Page")}{' '}{ev.page}
               </p>
               <blockquote className="mt-2 border-l-2 border-line pl-3 text-sm text-ink-muted">
                 {ev.text}
@@ -130,7 +131,7 @@ function EvidenceDrawer({
                 className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline"
               >
                 <IconExternal className="h-4 w-4" />
-                Open document at page {ev.page}
+                {t("Open document at page")}{' '}{ev.page}
               </Link>
             </div>
           ))}

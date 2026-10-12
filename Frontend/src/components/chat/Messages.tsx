@@ -17,8 +17,9 @@ import { useReadAloud } from '../../lib/useReadAloud'
 import { LogoMark } from '../brand'
 import { AiGeneratedBadge } from '../common'
 import { CitationChips, useEvidence } from '../evidence'
-import { IconCopy, IconDoc, IconMic, IconSpeaker, IconWarn } from '../icons'
+import { IconHand, IconCopy, IconDoc, IconMic, IconSpeaker, IconWarn } from '../icons'
 import { Badge } from '../ui'
+import { t } from '../../lib/i18n'
 
 export function UserBubble({ message, onRetry }: { message: ChatMessage; onRetry?: () => void }) {
   return (
@@ -28,16 +29,17 @@ export function UserBubble({ message, onRetry }: { message: ChatMessage; onRetry
       </div>
       {message.input_mode === 'voice' && (
         <span className="flex items-center gap-1 pr-2 text-[11px] text-ink-subtle">
-          <IconMic className="h-3 w-3" /> Spoken
-        </span>
+          <IconMic className="h-3 w-3" /> {t("Spoken")}</span>
+      )}
+      {message.input_mode === 'sign' && (
+        <span className="flex items-center gap-1 pr-2 text-[11px] text-ink-subtle">
+          <IconHand className="h-3 w-3" /> {t("Signed")}</span>
       )}
       {message.failed && (
         <div className="flex items-center gap-2 pr-1 text-xs text-danger-fg" role="alert">
-          <IconWarn className="h-3.5 w-3.5" /> That took too long or didn’t reach MediVara.
-          {onRetry && (
+          <IconWarn className="h-3.5 w-3.5" /> {t("That took too long or didn’t reach MediVara.")}{onRetry && (
             <button onClick={onRetry} className="font-semibold underline underline-offset-2">
-              Try again
-            </button>
+              {t("Try again")}</button>
           )}
         </div>
       )}
@@ -71,11 +73,11 @@ export function AttachmentCard({ patientId, message }: { patientId: string; mess
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-ink" title={title}>{title}</p>
             {message.pending ? (
-              <p className="text-xs text-ink-subtle">Uploading…</p>
+              <p className="text-xs text-ink-subtle">{t("Uploading…")}</p>
             ) : message.failed ? (
               <p className="text-xs font-medium text-danger-fg" role="alert">{message.text}</p>
             ) : !message.document ? (
-              <p className="text-xs text-ink-subtle">This document was removed.</p>
+              <p className="text-xs text-ink-subtle">{t("This document was removed.")}</p>
             ) : (
               <p className="text-xs text-ink-subtle">
                 {DOCUMENT_TYPE_LABELS[live?.document_type ?? message.document.document_type]}
@@ -87,19 +89,19 @@ export function AttachmentCard({ patientId, message }: { patientId: string; mess
         {processing && !message.failed && (
           <div className="mt-2.5">
             <p className="text-xs text-ink-muted" role="status" aria-live="polite">
-              {message.pending ? 'Sending to your records…' : PROCESSING_STAGE_LABELS[live?.stage ?? 'queued'] ?? 'Processing…'}
+              {message.pending ? t("Sending to your records…") : PROCESSING_STAGE_LABELS[live?.stage ?? 'queued'] ?? 'Processing…'}
             </p>
             <div className="mv-progress mt-1.5" aria-hidden="true" />
           </div>
         )}
         {!processing && live && (
           <div className="mt-2.5 flex items-center justify-between gap-2">
-            {live.status === 'needs_review' && <Badge tone="warn">{live.fact_counts.unverified} to review</Badge>}
-            {live.status === 'ready' && <Badge tone="ok">Reviewed</Badge>}
+            {live.status === 'needs_review' && <Badge tone="warn">{live.fact_counts.unverified} {t("to review")}</Badge>}
+            {live.status === 'ready' && <Badge tone="ok">{t("Reviewed")}</Badge>}
             {live.status === 'failed' && <span className="text-xs text-danger-fg">{live.failure_message}</span>}
             {live.status !== 'failed' && (
               <Link to={`/p/${patientId}/records/${live.id}`} className="text-xs font-semibold text-brand-700 hover:underline">
-                {live.status === 'needs_review' ? 'Review details →' : 'Open →'}
+                {live.status === 'needs_review' ? t("Review details →") : t("Open →")}
               </Link>
             )}
           </div>
@@ -110,9 +112,9 @@ export function AttachmentCard({ patientId, message }: { patientId: string; mess
 }
 
 const THINKING_STEPS = [
-  'Checking your documents…',
-  'Writing an answer…',
-  'Checking every statement against your documents…',
+  t("Checking your documents…"),
+  t("Writing an answer…"),
+  t("Checking every statement against your documents…"),
 ]
 
 export function ThinkingRow() {
@@ -145,11 +147,11 @@ function AnswerBody({ answer }: { answer: AskResponse }) {
   if (answer.status === 'emergency') {
     return (
       <div role="alert" className="rounded-2xl border-2 border-danger-border bg-danger-bg p-4">
-        <p className="flex items-center gap-2 font-semibold text-danger-fg"><IconWarn /> Urgent</p>
+        <p className="flex items-center gap-2 font-semibold text-danger-fg"><IconWarn /> {t("Urgent")}</p>
         <p className="mt-2 text-sm leading-relaxed text-danger-fg">{answer.statements[0]?.text ?? COPY['COPY-05']}</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <a href="tel:112" className="rounded-lg bg-danger-fg px-3 py-1.5 text-sm font-semibold text-white">Call 112</a>
-          <a href="tel:108" className="rounded-lg border border-danger-border bg-white px-3 py-1.5 text-sm font-semibold text-danger-fg">Ambulance 108</a>
+          <a href="tel:112" className="rounded-lg bg-danger-fg px-3 py-1.5 text-sm font-semibold text-white">{t("Call 112")}</a>
+          <a href="tel:108" className="rounded-lg border border-danger-border bg-white px-3 py-1.5 text-sm font-semibold text-danger-fg">{t("Ambulance 108")}</a>
         </div>
       </div>
     )
@@ -161,7 +163,7 @@ function AnswerBody({ answer }: { answer: AskResponse }) {
         <p className="mv-prose">{COPY['COPY-06']}</p>
         {answer.evidence.length > 0 && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">What your documents say</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">{t("What your documents say")}</p>
             <EvidenceList answer={answer} />
           </div>
         )}
@@ -215,18 +217,18 @@ function AnswerActions({ answer }: { answer: AskResponse }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(text)
-      toast('Copied')
+      toast(t("Copied"))
     } catch {
-      toast('Couldn’t copy. Select the text instead.', 'error')
+      toast(t("Couldn’t copy. Select the text instead."), 'error')
     }
   }
 
   return (
     <div className="space-y-1.5">
       <div className="flex flex-wrap items-center gap-1">
-        <ActionButton onClick={copy} label="Copy answer"><IconCopy className="h-4 w-4" /></ActionButton>
+        <ActionButton onClick={copy} label={t("Copy answer")}><IconCopy className="h-4 w-4" /></ActionButton>
         {supported && text && (
-          <ActionButton onClick={() => (speaking ? stop() : speak(text))} label={speaking ? 'Stop reading aloud' : 'Read aloud'} active={speaking}>
+          <ActionButton onClick={() => (speaking ? stop() : speak(text))} label={speaking ? t("Stop reading aloud") : t("Read aloud")} active={speaking}>
             <IconSpeaker className="h-4 w-4" />
           </ActionButton>
         )}
@@ -278,7 +280,7 @@ function DoctorQuestions({ answer }: { answer: AskResponse }) {
   if (!answer.questions_for_doctor.length) return null
   return (
     <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">Questions for your doctor</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">{t("Questions for your doctor")}</p>
       <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-sm text-ink">
         {answer.questions_for_doctor.map((q, i) => <li key={i}>{q}</li>)}
       </ul>

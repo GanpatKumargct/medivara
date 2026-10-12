@@ -6,10 +6,13 @@ import type {
   AskResponse,
   AuditEvent,
   Brief,
+  ChangesResponse,
   Chat,
   ChatDetail,
   ChatMessage,
+  DeletedDocument,
   DocumentDetailResponse,
+  DocumentHistory,
   DocumentSummary,
   Fact,
   Grant,
@@ -17,6 +20,7 @@ import type {
   ListResponse,
   LoginResponse,
   MeResponse,
+  LoginItem,
   MyInvitation,
   OwnerInvitation,
   PatientSummary,
@@ -27,9 +31,11 @@ import type {
   WomensHealthSettingsInput,
   ProfileDetails,
   ProfileDetailsInput,
+  RecordsAsOf,
   Relationship,
   Reminder,
   TimelineResponse,
+  VersionDetail,
   Vital,
   VitalInput,
   VitalKind,
@@ -128,9 +134,59 @@ export function reprocessDocument(patientId: string, documentId: string): Promis
   return request('POST', `${p(patientId)}/documents/${encodeURIComponent(documentId)}/reprocess`)
 }
 
-// API-22 (owner only): removes the file, pages and facts. 409 INVALID_STATE while processing.
-export function deleteDocument(patientId: string, documentId: string): Promise<void> {
-  return request('DELETE', `${p(patientId)}/documents/${encodeURIComponent(documentId)}`)
+// API-22 (owner only): moves the document to Recently deleted (30 days); `permanent` removes
+// the files, pages, facts and history now. 409 INVALID_STATE while processing.
+export function deleteDocument(patientId: string, documentId: string, permanent = false): Promise<void> {
+  return request('DELETE', `${p(patientId)}/documents/${encodeURIComponent(documentId)}`, {
+    query: permanent ? { permanent: 'true' } : undefined,
+  })
+}
+
+// API-69: the signed-in user's preferences (interface language, DEC-29).
+export function updatePreferences(preferredLanguage: string): Promise<{ preferred_language: string }> {
+  return request('PATCH', '/me/preferences', { json: { preferred_language: preferredLanguage } })
+}
+
+// --- Document history and versions (DEC-27, API-34..39, API-68) ---------------------------------
+
+const d = (patientId: string, documentId: string) => `${p(patientId)}/documents/${encodeURIComponent(documentId)}`
+
+export function getDocumentHistory(patientId: string, documentId: string): Promise<DocumentHistory> {
+  return request('GET', `${d(patientId, documentId)}/history`)
+}
+
+export function getDocumentVersion(patientId: string, documentId: string, versionNo: number): Promise<VersionDetail> {
+  return request('GET', `${d(patientId, documentId)}/history/${versionNo}`)
+}
+
+export function restoreVersion(patientId: string, documentId: string, versionNo: number): Promise<{ document: DocumentSummary }> {
+  return request('POST', `${d(patientId, documentId)}/history/${versionNo}/restore`)
+}
+
+export function uploadNewVersion(patientId: string, documentId: string, file: File): Promise<{ document: DocumentSummary }> {
+  const form = new FormData()
+  form.append('file', file)
+  return request('POST', `${d(patientId, documentId)}/versions`, { form })
+}
+
+export function listDeletedDocuments(patientId: string): Promise<{ items: DeletedDocument[]; retention_days: number }> {
+  return request('GET', `${p(patientId)}/documents/deleted`)
+}
+
+export function undeleteDocument(patientId: string, documentId: string): Promise<{ document: DocumentSummary }> {
+  return request('POST', `${d(patientId, documentId)}/undelete`)
+}
+
+export function getChanges(patientId: string, since = 'last_login'): Promise<ChangesResponse> {
+  return request('GET', `${p(patientId)}/changes`, { query: { since } })
+}
+
+export function getMyLogins(): Promise<{ items: LoginItem[] }> {
+  return request('GET', '/me/logins')
+}
+
+export function getRecordsAsOf(patientId: string, at: string): Promise<RecordsAsOf> {
+  return request('GET', `${p(patientId)}/records-as-of`, { query: { at } })
 }
 
 export function patchDocument(
@@ -204,7 +260,7 @@ export async function generateNarrative(
 
 // --- Ask (API-21) -----------------------------------------------------------
 
-export function ask(patientId: string, question: string, inputMode: 'text' | 'voice' = 'text'): Promise<AskResponse> {
+export function ask(patientId: string, question: string, inputMode: 'text' | 'voice' | 'sign' = 'text'): Promise<AskResponse> {
   return request('POST', `${p(patientId)}/ask`, { json: { question, input_mode: inputMode } })
 }
 
@@ -343,7 +399,7 @@ export function sendChatMessage(
   patientId: string,
   chatId: string,
   question: string,
-  inputMode: 'text' | 'voice' = 'text',
+  inputMode: 'text' | 'voice' | 'sign' = 'text',
 ): Promise<{ user_message: ChatMessage; assistant_message: ChatMessage; chat: Chat }> {
   return request('POST', `${p(patientId)}/chats/${encodeURIComponent(chatId)}/messages`, {
     json: { question, input_mode: inputMode },

@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query'
 import * as api from '../api/endpoints'
 import { ApiError } from '../api/types'
 import type { ChatMessage, WomensHealth } from '../api/types'
-import { ASK_EXAMPLE_QUESTIONS } from '../dummy-data/ask'
+import { buildAskSuggestions } from '../lib/ask-suggestions'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { chatKey, uploadProblem, useChatActions } from '../lib/chat'
@@ -19,19 +19,20 @@ import { Composer } from '../components/chat/Composer'
 import { AssistantAnswer, AttachmentCard, ThinkingRow, UserBubble } from '../components/chat/Messages'
 import { Button, Skeleton, Spinner } from '../components/ui'
 import { IconArrowUp, IconBrief, IconFlower, IconHeartPulse, IconPaperclip, IconPill, IconUpload, IconWaveform } from '../components/icons'
+import { t } from '../lib/i18n'
 
 const VoiceMode = lazy(() => import('../components/chat/VoiceMode'))
 
 const GENERIC_EXAMPLES = [
-  'Which medicines are listed in my latest prescription?',
-  'Summarise my most recent lab report',
-  'Do my documents mention any allergies?',
-  'When is my next follow-up?',
+  t("Which medicines are listed in my latest prescription?"),
+  t("Summarise my most recent lab report"),
+  t("Do my documents mention any allergies?"),
+  t("When is my next follow-up?"),
 ]
 
 function greeting() {
   const h = new Date().getHours()
-  return h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+  return h < 5 ? t("Good evening") : h < 12 ? t("Good morning") : h < 17 ? t("Good afternoon") : t("Good evening")
 }
 
 export default function Chat() {
@@ -67,7 +68,14 @@ export default function Chat() {
   const busy = messages.some((m) => m.kind === 'question' && m.pending)
   const patient = patientQ.data
   const canUpload = !!patient && (patient.my_role === 'owner' || patient.scopes.includes('upload_documents'))
-  const examples = ASK_EXAMPLE_QUESTIONS[patientId]?.length ? ASK_EXAMPLE_QUESTIONS[patientId] : GENERIC_EXAMPLES
+  // Suggestions come from this profile's own documents, so each one has an answer; the
+  // generic examples are used only when there is nothing to suggest yet.
+  const timelineQ = useQuery({
+    queryKey: ['timeline', patientId, 'ask-suggestions'],
+    queryFn: () => api.getTimeline(patientId, { include_unverified: true }),
+  })
+  const fromDocuments = buildAskSuggestions(timelineQ.data)
+  const examples = fromDocuments.length ? fromDocuments : GENERIC_EXAMPLES
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
@@ -86,14 +94,14 @@ export default function Chat() {
     return id
   }, [actions])
 
-  async function ask(text: string, usedVoice: boolean) {
+  async function ask(text: string, inputMode: 'text' | 'voice' | 'sign') {
     setDraft('')
     try {
       const id = await ensureChat()
-      await actions.sendQuestion(id, text, usedVoice ? 'voice' : 'text')
+      await actions.sendQuestion(id, text, inputMode)
     } catch {
       setDraft(text)
-      toast('MediVara couldn’t start a chat. Check your connection and try again.', 'error')
+      toast(t("MediVara couldn’t start a chat. Check your connection and try again."), 'error')
     }
   }
 
@@ -108,14 +116,14 @@ export default function Chat() {
       const id = await ensureChat()
       await actions.attachFile(id, file)
     } catch {
-      toast('MediVara couldn’t start a chat. Check your connection and try again.', 'error')
+      toast(t("MediVara couldn’t start a chat. Check your connection and try again."), 'error')
     }
   }
 
   async function retry(m: ChatMessage) {
     if (!chatId || !m.text) return
     actions.discardMessage(chatId, m.id)
-    await actions.sendQuestion(chatId, m.text, m.input_mode === 'voice' ? 'voice' : 'text')
+    await actions.sendQuestion(chatId, m.text, m.input_mode === 'voice' || m.input_mode === 'sign' ? m.input_mode : 'text')
   }
 
   const askRecords = useCallback(
@@ -155,18 +163,18 @@ export default function Chat() {
       patientId={patientId}
       value={draft}
       onChange={setDraft}
-      onSubmit={(t, v) => void ask(t, v)}
+      onSubmit={(t, mode) => void ask(t, mode)}
       busy={busy}
       canAttach={canUpload}
       onAttach={(f) => void attach(f)}
       onVoiceMode={() => setVoiceOpen(true)}
-      examples={examples}
+      patientName={patient?.display_name ?? ''}
       size={size}
       autoFocus
       placeholder={
         patient && patient.my_role !== 'owner'
-          ? `Ask about ${patient.display_name.split(' ')[0]}’s records…`
-          : 'Ask about your health records…'
+          ? t("Ask about {{value}}’s records…", { value: patient.display_name.split(' ')[0] })
+          : t("Ask about your health records…")
       }
     />
   )
@@ -180,19 +188,18 @@ export default function Chat() {
       {dragging && (
         <div className="pointer-events-none absolute inset-3 z-30 flex items-center justify-center rounded-3xl border-2 border-dashed border-brand-400 bg-brand-50/80">
           <p className="flex items-center gap-2 text-base font-medium text-brand-800">
-            <IconUpload className="h-5 w-5" /> Drop a PDF to add it to {patient?.display_name ?? 'this profile'}’s records
-          </p>
+            <IconUpload className="h-5 w-5" /> {t("Drop a PDF to add it to")}{' '}{patient?.display_name ?? 'this profile'}{t("’s records")}</p>
         </div>
       )}
 
       {notFound ? (
         <div className="mx-auto max-w-md px-4 py-20 text-center">
-          <h1 className="font-serif text-2xl text-ink">This chat isn’t available</h1>
-          <p className="mt-2 text-sm text-ink-muted">It may have been deleted, or it belongs to someone else.</p>
-          <Button className="mt-6" onClick={() => navigate(`/p/${patientId}`)}>Start a new chat</Button>
+          <h1 className="font-serif text-2xl text-ink">{t("This chat isn’t available")}</h1>
+          <p className="mt-2 text-sm text-ink-muted">{t("It may have been deleted, or it belongs to someone else.")}</p>
+          <Button className="mt-6" onClick={() => navigate(`/p/${patientId}`)}>{t("Start a new chat")}</Button>
         </div>
       ) : chatId && chatQ.isLoading ? (
-        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8" aria-busy="true" aria-label="Loading chat">
+        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8" aria-busy="true" aria-label={t("Loading chat")}>
           <Skeleton className="ml-auto h-10 w-2/3 rounded-3xl" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
@@ -211,26 +218,26 @@ export default function Chat() {
               </h1>
               <p className="mt-2 max-w-md text-[15px] text-ink-muted">
                 {patient && patient.my_role !== 'owner'
-                  ? `You’re viewing ${patient.display_name}’s records, shared with you.`
-                  : 'How can I help with your health records today?'}
+                  ? t("You’re viewing {{display_name}}’s records, shared with you.", { display_name: patient.display_name })
+                  : t("How can I help with your health records today?")}
               </p>
             </header>
 
             <div className="mt-8">{composer('hero')}</div>
             {notice && <p className="mt-2 text-center text-sm font-medium text-danger-fg" role="alert">{notice}</p>}
 
-            <nav aria-label="Quick actions" className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <nav aria-label={t("Quick actions")} className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               {canUpload ? (
-                <ActionTile icon={<IconPaperclip />} tint="bg-brand-50 text-brand-700" title="Upload a report" caption="PDF to your records" onClick={() => fileRef.current?.click()} />
+                <ActionTile icon={<IconPaperclip />} tint="bg-brand-50 text-brand-700" title={t("Upload a report")} caption={t("PDF to your records")} onClick={() => fileRef.current?.click()} />
               ) : (
-                <ActionTile icon={<IconPill />} tint="bg-brand-50 text-brand-700" title="Medicines" caption="All in your documents" to={`/p/${patientId}/medicines`} />
+                <ActionTile icon={<IconPill />} tint="bg-brand-50 text-brand-700" title={t("Medicines")} caption={t("All in your documents")} to={`/p/${patientId}/medicines`} />
               )}
-              <ActionTile icon={<IconWaveform />} tint="bg-violet-bg text-violet-fg" title="Talk by voice" caption="Ask hands-free" onClick={() => setVoiceOpen(true)} />
-              <ActionTile icon={<IconBrief />} tint="bg-teal-bg text-teal-fg" title="Prepare for a visit" caption="One-page doctor brief" to={`/p/${patientId}/brief`} />
+              <ActionTile icon={<IconWaveform />} tint="bg-violet-bg text-violet-fg" title={t("Talk by voice")} caption={t("Ask hands-free")} onClick={() => setVoiceOpen(true)} />
+              <ActionTile icon={<IconBrief />} tint="bg-teal-bg text-teal-fg" title={t("Prepare for a visit")} caption={t("One-page doctor brief")} to={`/p/${patientId}/brief`} />
               {detailsQ.data?.sex === 'female' || (womensQ.data && womensQ.data.mode !== 'off') ? (
-                <ActionTile icon={<IconFlower />} tint="bg-cyan-bg text-cyan-fg" title="Women’s health" caption={womensCaption(womensQ.data)} to={`/p/${patientId}/womens-health`} />
+                <ActionTile icon={<IconFlower />} tint="bg-cyan-bg text-cyan-fg" title={t("Women’s health")} caption={womensCaption(womensQ.data)} to={`/p/${patientId}/womens-health`} />
               ) : (
-                <ActionTile icon={<IconHeartPulse />} tint="bg-cyan-bg text-cyan-fg" title="Track vitals" caption="BP, sugar, weight" to={`/p/${patientId}/vitals`} />
+                <ActionTile icon={<IconHeartPulse />} tint="bg-cyan-bg text-cyan-fg" title={t("Track vitals")} caption={t("BP, sugar, weight")} to={`/p/${patientId}/vitals`} />
               )}
             </nav>
             <input
@@ -248,13 +255,12 @@ export default function Chat() {
 
             <section aria-labelledby="try-asking" className="mt-9">
               <h2 id="try-asking" className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
-                Try asking
-              </h2>
+                {t("Try asking")}</h2>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {examples.slice(0, 4).map((ex) => (
                   <li key={ex}>
                     <button
-                      onClick={() => void ask(ex, false)}
+                      onClick={() => void ask(ex, 'text')}
                       disabled={busy}
                       className="group flex h-full w-full items-center justify-between gap-3 rounded-xl border border-canvas-border bg-white/70 px-3.5 py-2.5 text-left text-sm text-ink-muted transition-colors hover:border-brand-200 hover:bg-white hover:text-ink"
                     >
@@ -319,11 +325,11 @@ export default function Chat() {
 function womensCaption(wh: WomensHealth | undefined): string {
   const s = wh?.summary
   if (!wh || wh.mode === 'off') return 'Periods, pregnancy, after birth'
-  if (wh.mode === 'pregnancy' && s?.pregnancy) return `Week ${s.pregnancy.weeks} of pregnancy`
-  if (wh.mode === 'postpartum' && s?.postpartum) return `${s.postpartum.weeks_since_delivery} weeks since birth`
+  if (wh.mode === 'pregnancy' && s?.pregnancy) return t("Week {{weeks}} of pregnancy", { weeks: s.pregnancy.weeks })
+  if (wh.mode === 'postpartum' && s?.postpartum) return t('{{count}} weeks since birth', { count: s.postpartum.weeks_since_delivery })
   const d = s?.cycle.days_until_next_period
-  if (d === null || d === undefined) return 'Log your period'
-  return d > 0 ? `Next period in ~${d} day${d === 1 ? '' : 's'}` : d === 0 ? 'Period expected today' : `Period ${-d} day${d === -1 ? '' : 's'} late`
+  if (d === null || d === undefined) return t('Log your period')
+  return d > 0 ? t('Next period in about {{count}} days', { count: d }) : d === 0 ? t('Period expected today') : t('Period {{count}} days late', { count: -d })
 }
 
 function ActionTile({

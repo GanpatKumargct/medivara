@@ -166,6 +166,12 @@ model medical_document {
   created_at           DateTime         @db.Timestamptz(6)
   updated_at           DateTime         @db.Timestamptz(6)
   processed_at         DateTime?        @db.Timestamptz(6)
+  series_id            String           @default("") @db.VarChar
+  file_version         Int              @default(1)
+  is_current           Boolean          @default(true)
+  superseded_at        DateTime?        @db.Timestamptz(6)
+  deleted_at           DateTime?        @db.Timestamptz(6)
+  deleted_by_user_id   String?          @db.VarChar
   document_page        document_page[]
   extracted_fact       extracted_fact[]
   patient_profile      patient_profile  @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -173,6 +179,8 @@ model medical_document {
 
   @@index([patient_id], map: "ix_medical_document_patient_id")
   @@index([sha256], map: "ix_medical_document_sha256")
+  @@index([deleted_at], map: "ix_medical_document_deleted_at")
+  @@index([series_id], map: "ix_medical_document_series_id")
 }
 
 model patient_access_grant {
@@ -203,13 +211,18 @@ model patient_profile {
   is_synthetic         Boolean
   created_at           DateTime               @db.Timestamptz(6)
   ai_output            ai_output[]
+  chat_session         chat_session[]
   consent_record       consent_record[]
   consultation_brief   consultation_brief[]
   extracted_fact       extracted_fact[]
+  invitation           invitation[]
   medical_document     medical_document[]
   patient_access_grant patient_access_grant[]
   user                 user                   @relation(fields: [owner_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profile_details      profile_details?
+  record_version       record_version[]
   reminder             reminder[]
+  vital_reading        vital_reading[]
 
   @@index([owner_user_id], map: "ix_patient_profile_owner_user_id")
 }
@@ -257,15 +270,130 @@ model user {
   is_demo                                                            Boolean
   created_at                                                         DateTime               @db.Timestamptz(6)
   last_login_at                                                      DateTime?              @db.Timestamptz(6)
+  previous_login_at                                                  DateTime?              @db.Timestamptz(6)
   ai_output                                                          ai_output[]
+  chat_session                                                       chat_session[]
   consent_record                                                     consent_record[]
   consultation_brief                                                 consultation_brief[]
+  invitation                                                         invitation[]
   medical_document                                                   medical_document[]
   patient_access_grant_patient_access_grant_granted_by_user_idTouser patient_access_grant[] @relation("patient_access_grant_granted_by_user_idTouser")
   patient_access_grant_patient_access_grant_grantee_user_idTouser    patient_access_grant[] @relation("patient_access_grant_grantee_user_idTouser")
   patient_profile                                                    patient_profile[]
   reminder                                                           reminder[]
   session                                                            session[]
+  vital_reading                                                      vital_reading[]
+}
+
+model alembic_version {
+  version_num String @id(map: "alembic_version_pkc") @db.VarChar(32)
+}
+
+model record_version {
+  id              String          @id @db.VarChar
+  patient_id      String          @db.VarChar
+  series_id       String          @db.VarChar
+  document_id     String          @db.VarChar
+  version_no      Int
+  action          String          @db.VarChar
+  actor_user_id   String?         @db.VarChar
+  session_id      String?         @db.VarChar
+  snapshot        Json            @db.Json
+  summary         Json            @db.Json
+  at              DateTime        @db.Timestamptz(6)
+  patient_profile patient_profile @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([series_id, version_no], map: "uq_record_version_no")
+  @@index([at], map: "ix_record_version_at")
+  @@index([patient_id], map: "ix_record_version_patient_id")
+  @@index([series_id], map: "ix_record_version_series_id")
+}
+
+model chat_message {
+  id           String       @id @db.VarChar
+  chat_id      String       @db.VarChar
+  role         String       @db.VarChar
+  kind         String       @db.VarChar
+  text         String?      @db.VarChar
+  input_mode   String?      @db.VarChar
+  document_id  String?      @db.VarChar
+  payload      Json         @db.Json
+  ai_output_id String?      @db.VarChar
+  created_at   DateTime     @db.Timestamptz(6)
+  chat_session chat_session @relation(fields: [chat_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([chat_id], map: "ix_chat_message_chat_id")
+}
+
+model chat_session {
+  id              String          @id @db.VarChar
+  patient_id      String          @db.VarChar
+  user_id         String          @db.VarChar
+  title           String          @db.VarChar
+  created_at      DateTime        @db.Timestamptz(6)
+  updated_at      DateTime        @db.Timestamptz(6)
+  chat_message    chat_message[]
+  patient_profile patient_profile @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user            user            @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([patient_id], map: "ix_chat_session_patient_id")
+  @@index([user_id], map: "ix_chat_session_user_id")
+}
+
+model invitation {
+  id                 String          @id @db.VarChar
+  patient_id         String          @db.VarChar
+  email              String          @db.VarChar
+  relationship       String          @db.VarChar
+  scopes             Json            @db.Json
+  status             String          @db.VarChar
+  invited_by_user_id String          @db.VarChar
+  consent_record_id  String?         @db.VarChar
+  created_at         DateTime        @db.Timestamptz(6)
+  expires_at         DateTime        @db.Timestamptz(6)
+  responded_at       DateTime?       @db.Timestamptz(6)
+  accepted_user_id   String?         @db.VarChar
+  user               user            @relation(fields: [invited_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  patient_profile    patient_profile @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([email], map: "ix_invitation_email")
+  @@index([patient_id], map: "ix_invitation_patient_id")
+}
+
+model profile_details {
+  patient_id         String          @id @db.VarChar
+  relationship       String?         @db.VarChar
+  date_of_birth      DateTime?       @db.Date
+  sex                String?         @db.VarChar
+  blood_group        String?         @db.VarChar
+  height_cm          Float?
+  emergency_contacts Json            @db.Json
+  allergies_note     String?         @db.VarChar
+  conditions_note    String?         @db.VarChar
+  medications_note   String?         @db.VarChar
+  organ_donor        Boolean?
+  updated_at         DateTime        @db.Timestamptz(6)
+  updated_by_user_id String?         @db.VarChar
+  patient_profile    patient_profile @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model vital_reading {
+  id                 String          @id @db.VarChar
+  patient_id         String          @db.VarChar
+  kind               String          @db.VarChar
+  value              Float
+  value2             Float?
+  unit               String          @db.VarChar
+  context            String?         @db.VarChar
+  notes              String?         @db.VarChar
+  measured_at        DateTime        @db.Timestamptz(6)
+  created_by_user_id String          @db.VarChar
+  created_at         DateTime        @db.Timestamptz(6)
+  user               user            @relation(fields: [created_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  patient_profile    patient_profile @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([patient_id], map: "ix_vital_reading_patient_id")
+  @@index([patient_id, kind, measured_at], map: "ix_vital_reading_patient_kind_time")
 }
 
 enum auditoutcome {
@@ -286,6 +414,7 @@ enum consenttype {
   sharing
   voice_input
   notifications
+  camera_input
 }
 
 enum documentstage {

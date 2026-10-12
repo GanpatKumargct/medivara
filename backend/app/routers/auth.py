@@ -69,6 +69,7 @@ def login(body: LoginRequest, request: Request, session: Session = Depends(get_s
 
     ratelimit.record_success(email)
     token, row = issue_session(session, user)
+    user.previous_login_at = user.last_login_at  # "since your last visit" (API-39)
     user.last_login_at = row.created_at
     session.add(user)
     session.commit()
@@ -180,6 +181,7 @@ _ME_CONSENT_TYPES = (
     ConsentType.ai_processing,
     ConsentType.voice_input,
     ConsentType.notifications,
+    ConsentType.camera_input,
 )
 
 
@@ -206,12 +208,37 @@ def me(current: CurrentUser = Depends(current_user), session: Session = Depends(
         "current_policy_version": get_settings().policy_version,
         "onboarding_required": onboarding_required(session, user.id),
         "consents": consents,
+        "preferred_language": user.preferred_language,
     }
+
+
+# Interface languages (DEC-29). Keep in step with Frontend/src/lib/i18n.ts.
+LANGUAGES = ("en", "hi", "bn", "ta", "te", "mr", "gu", "kn", "ml", "or", "pa")
+
+
+class PreferencesPatch(BaseModel):
+    preferred_language: Literal["en", "hi", "bn", "ta", "te", "mr", "gu", "kn", "ml", "or", "pa"]
+
+
+@router.patch("/me/preferences")
+def update_preferences(
+    body: PreferencesPatch,
+    request: Request,
+    current: CurrentUser = Depends(current_user),
+    session: Session = Depends(get_session),
+) -> dict:
+    """API-69: the signed-in user's own preferences. Language only for now."""
+    user = current.user
+    user.preferred_language = body.preferred_language
+    session.add(user)
+    session.commit()
+    audit.write(request, "me.preferences_updated", actor_user_id=user.id, meta={"preferred_language": body.preferred_language})
+    return {"preferred_language": user.preferred_language}
 
 
 class ConsentRequest(BaseModel):
     # `sharing` is recorded only by API-24 (grant access).
-    consent_type: Literal["terms_and_disclaimer", "ai_processing", "voice_input", "notifications"]
+    consent_type: Literal["terms_and_disclaimer", "ai_processing", "voice_input", "notifications", "camera_input"]
     granted: bool
     policy_version: str
 

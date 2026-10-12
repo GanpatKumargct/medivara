@@ -9,6 +9,7 @@ import type { Sex } from '../api/types'
 import { Button, Card, CardBody, Field, Input } from '../components/ui'
 import { SyntheticWarning } from '../components/common'
 import { LogoFull } from '../components/brand'
+import { t } from '../lib/i18n'
 
 export default function Signup() {
   const { signUp, user, loading } = useAuth()
@@ -40,10 +41,10 @@ export default function Signup() {
       const me = await signUp(email.trim(), password, name.trim(), sex || null)
       navigate(me.onboarding_required ? '/onboarding' : from ?? '/profiles', { replace: true })
     } catch (e) {
-      if (e instanceof ApiError && e.code === 'EMAIL_TAKEN') setError('An account already uses this email. Sign in instead.')
-      else if (e instanceof ApiError && e.code === 'RATE_LIMITED') setError('Too many sign-ups from this network. Please wait a few minutes.')
-      else if (e instanceof ApiError && e.code === 'VALIDATION_ERROR') setError('Some details need attention. Check your email and password.')
-      else setError('Something went wrong. Try again.')
+      if (e instanceof ApiError && e.code === 'EMAIL_TAKEN') setError(t("An account already uses this email. Sign in instead."))
+      else if (e instanceof ApiError && e.code === 'RATE_LIMITED') setError(t("Too many sign-ups from this network. Please wait a few minutes."))
+      else if (e instanceof ApiError && e.code === 'VALIDATION_ERROR') setError(t("Some details need attention. Check your email and password."))
+      else setError(t("Something went wrong. Try again."))
       setBusy(false)
     }
   }
@@ -53,8 +54,8 @@ export default function Signup() {
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
         <div className="mb-6 flex flex-col items-center text-center">
           <LogoFull className="max-w-[200px] mix-blend-multiply" />
-          <h1 className="mt-3 font-serif text-2xl text-ink">Create your account</h1>
-          <p className="mt-1 text-sm text-ink-muted">One place for your family’s health records.</p>
+          <h1 className="mt-3 font-serif text-2xl text-ink">{t("Create your account")}</h1>
+          <p className="mt-1 text-sm text-ink-muted">{t("One place for your family’s health records.")}</p>
         </div>
 
         <Card>
@@ -66,32 +67,32 @@ export default function Signup() {
               }}
               className="space-y-4"
             >
-              <Field label="Your name" htmlFor="su-name">
+              <Field label={t("Your name")} htmlFor="su-name">
                 <Input id="su-name" autoComplete="name" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
               </Field>
-              <Field label="Sex (optional)" htmlFor="su-sex" hint="Used for health tools such as Women’s health, and the app’s colour theme.">
+              <Field label={t("Sex (optional)")} htmlFor="su-sex" hint={t("Used for health tools such as Women’s health, and the app’s colour theme.")}>
                 <select id="su-sex" value={sex} onChange={(e) => setSex(e.target.value as Sex | '')} className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink">
-                  <option value="">Prefer not to say</option>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                  <option value="other">Other</option>
+                  <option value="">{t("Prefer not to say")}</option>
+                  <option value="female">{t("Female")}</option>
+                  <option value="male">{t("Male")}</option>
+                  <option value="other">{t("Other")}</option>
                 </select>
               </Field>
-              <Field label="Email" htmlFor="su-email" error={email && !emailValid ? 'Enter a valid email address' : undefined}>
+              <Field label={t("Email")} htmlFor="su-email" error={email && !emailValid ? t("Enter a valid email address") : undefined}>
                 <Input id="su-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
               </Field>
-              <Field label="Password" htmlFor="su-pw" hint="At least 10 characters" error={passwordShort ? 'Use at least 10 characters' : undefined}>
+              <Field label={t("Password")} htmlFor="su-pw" hint={t("At least 10 characters")} error={passwordShort ? t("Use at least 10 characters") : undefined}>
                 <Input id="su-pw" type="password" autoComplete="new-password" maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} />
               </Field>
-              <Field label="Confirm password" htmlFor="su-pw2" error={mismatch ? 'Passwords don’t match' : undefined}>
+              <Field label={t("Confirm password")} htmlFor="su-pw2" error={mismatch ? t("Passwords don’t match") : undefined}>
                 <Input id="su-pw2" type="password" autoComplete="new-password" maxLength={128} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
               </Field>
               {error && <p className="text-sm font-medium text-danger-fg" role="alert">{error}</p>}
-              <Button type="submit" className="w-full" loading={busy} disabled={!ready}>Create account</Button>
+              <Button type="submit" className="w-full" loading={busy} disabled={!ready}>{t("Create account")}</Button>
             </form>
             <p className="mt-4 text-center text-sm text-ink-muted">
-              Already have an account?{' '}
-              <Link to="/login" state={from ? { from } : undefined} className="font-semibold text-brand-700 hover:underline">Sign in</Link>
+              {t("Already have an account?")}{' '}
+              <Link to="/login" state={from ? { from } : undefined} className="font-semibold text-brand-700 hover:underline">{t("Sign in")}</Link>
             </p>
           </CardBody>
         </Card>

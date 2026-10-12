@@ -1,6 +1,7 @@
 // Chat state lives in the react-query cache, keyed by patient + chat id, not in
 // component state. That keeps a conversation going when the URL changes from a new
 // chat to /chat/:id, and lets voice mode add grounded turns to the same thread.
+import { dateLocale } from './format'
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient, type QueryClient } from '@tanstack/react-query'
@@ -8,6 +9,7 @@ import * as api from '../api/endpoints'
 import { ApiError } from '../api/types'
 import type { AskResponse, Chat, ChatDetail, ChatMessage, ListResponse } from '../api/types'
 import { COPY } from './copy'
+import { t } from './i18n'
 
 export const chatKey = (patientId: string, chatId: string) => ['chat', patientId, chatId] as const
 export const chatsKey = (patientId: string) => ['chats', patientId] as const
@@ -64,9 +66,9 @@ function uploadErrorText(e: unknown): string {
     if (e.code === 'FILE_TOO_LARGE') return COPY['COPY-34b']
     if (e.code === 'UNSUPPORTED_FILE_TYPE') return COPY['COPY-34c']
     if (e.code === 'TOO_MANY_PAGES') return COPY['COPY-34e']
-    return e.message
+    return t(e.message)
   }
-  return 'Upload failed. Try again.'
+  return t("Upload failed. Try again.")
 }
 
 export function useChatActions(patientId: string) {
@@ -84,7 +86,7 @@ export function useChatActions(patientId: string) {
 
   /** Ask a question in a chat. Resolves with the validated answer (also used by voice mode). */
   const sendQuestion = useCallback(
-    async (chatId: string, question: string, inputMode: 'text' | 'voice'): Promise<AskResponse | null> => {
+    async (chatId: string, question: string, inputMode: 'text' | 'voice' | 'sign'): Promise<AskResponse | null> => {
       const temp = tempMessage(chatId, { text: question, input_mode: inputMode })
       // Not awaited: an in-flight refetch must not overwrite the optimistic row, and the
       // row has to land in the same tick as a new chat's navigation (no empty-state flash).
@@ -152,12 +154,12 @@ export function historyGroup(iso: string, now = new Date()): string {
   const d = new Date(iso)
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const day = 86_400_000
-  const t = d.getTime()
-  if (t >= startOfToday) return 'Today'
-  if (t >= startOfToday - day) return 'Yesterday'
-  if (t >= startOfToday - 7 * day) return 'Previous 7 days'
-  if (t >= startOfToday - 30 * day) return 'Previous 30 days'
-  return d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+  const time = d.getTime()
+  if (time >= startOfToday) return t('Today')
+  if (time >= startOfToday - day) return t('Yesterday')
+  if (time >= startOfToday - 7 * day) return t('Previous 7 days')
+  if (time >= startOfToday - 30 * day) return t('Previous 30 days')
+  return d.toLocaleDateString(dateLocale(), { month: 'long', year: 'numeric' })
 }
 
 /** Plain-text version of a validated answer, for copying and for the voice agent to read out. */
@@ -170,7 +172,7 @@ export function answerAsText(answer: AskResponse): string {
     for (const ev of answer.evidence) lines.push(`“${ev.text}” (${ev.document_title})`)
   }
   if (answer.questions_for_doctor.length) {
-    lines.push('Questions for your doctor:')
+    lines.push(t("Questions for your doctor:"))
     for (const q of answer.questions_for_doctor) lines.push(`- ${q}`)
   }
   return lines.join('\n')

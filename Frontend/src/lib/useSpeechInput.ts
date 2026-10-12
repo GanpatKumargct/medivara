@@ -1,6 +1,7 @@
 // Speech-to-text input (FR-056) via the browser Web Speech API (Chrome/Edge).
 // en-IN. The final transcript is handed back for the user to review and edit —
 // nothing is ever sent automatically. MediVara never receives audio.
+import { currentLanguage } from './i18n'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 type RecognitionState = 'idle' | 'listening' | 'error'
@@ -45,7 +46,7 @@ export function useSpeechInput(onFinal: (text: string) => void) {
     setError(null)
     setInterim('')
     const rec = new Ctor()
-    rec.lang = 'en-IN'
+    rec.lang = currentLanguage().speech
     rec.interimResults = true
     rec.continuous = false
     rec.onresult = (e) => {

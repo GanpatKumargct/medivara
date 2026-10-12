@@ -7,7 +7,7 @@ from app.config import get_settings
 from app.models import iso_z, utcnow
 from app.routers import API_PREFIX
 
-CONTRACT_VERSION = "1.1.0"
+CONTRACT_VERSION = "1.6.0"
 
 router = APIRouter(prefix=API_PREFIX, tags=["health"])
 

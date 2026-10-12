@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import type { CycleSummary, Period } from '../../api/types'
 import { cn } from '../../lib/cn'
 import { IconChevronRight } from '../icons'
+import { t } from '../../lib/i18n'
 
 const DAY = 86_400_000
 const parse = (s: string) => new Date(`${s}T00:00:00Z`)
@@ -48,7 +49,7 @@ export function CycleRing({ cycle }: { cycle: CycleSummary }) {
     <div className="relative mx-auto" style={{ width: size, height: size }}>
       <svg width={size} height={size} aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgb(var(--mv-canvas-active))" strokeWidth={stroke} />
-        <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+        <g transform={t("rotate(-90 {{value}} {{value2}})", { value: size / 2, value2: size / 2 })}>
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgb(var(--mv-brand-500))" strokeWidth={stroke}
             strokeDasharray={period.dasharray} strokeDashoffset={period.dashoffset} />
           {fertile && (
@@ -63,14 +64,14 @@ export function CycleRing({ cycle }: { cycle: CycleSummary }) {
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         {cycle.cycle_day !== null ? (
           <>
-            <span className="text-xs uppercase tracking-wide text-ink-subtle">Cycle day</span>
+            <span className="text-xs uppercase tracking-wide text-ink-subtle">{t("Cycle day")}</span>
             <span className="text-4xl font-semibold text-ink">{cycle.cycle_day}</span>
             <span className="text-xs text-ink-subtle">
-              {late ? `${-cycle.days_until_next_period!} day${cycle.days_until_next_period === -1 ? '' : 's'} late` : cycle.average_cycle_days ? `of about ${cycle.average_cycle_days}` : 'log more periods'}
+              {late ? `${-cycle.days_until_next_period!} day${cycle.days_until_next_period === -1 ? '' : 's'} late` : cycle.average_cycle_days ? `of about ${cycle.average_cycle_days}` : t("log more periods")}
             </span>
           </>
         ) : (
-          <span className="px-6 text-sm text-ink-subtle">Log your period to start</span>
+          <span className="px-6 text-sm text-ink-subtle">{t("Log your period to start")}</span>
         )}
       </div>
     </div>
@@ -126,11 +127,11 @@ export function CycleCalendar({
   return (
     <div className="mx-auto w-full max-w-sm">
       <div className="mb-2 flex items-center justify-between">
-        <button onClick={() => shift(-1)} aria-label="Previous month" className="rounded-lg p-1.5 text-ink-muted hover:bg-canvas-hover">
+        <button onClick={() => shift(-1)} aria-label={t("Previous month")} className="rounded-lg p-1.5 text-ink-muted hover:bg-canvas-hover">
           <IconChevronRight className="h-4 w-4 rotate-180" />
         </button>
         <p className="text-sm font-semibold text-ink" aria-live="polite">{label}</p>
-        <button onClick={() => shift(1)} aria-label="Next month" className="rounded-lg p-1.5 text-ink-muted hover:bg-canvas-hover">
+        <button onClick={() => shift(1)} aria-label={t("Next month")} className="rounded-lg p-1.5 text-ink-muted hover:bg-canvas-hover">
           <IconChevronRight className="h-4 w-4" />
         </button>
       </div>
@@ -153,7 +154,7 @@ export function CycleCalendar({
             isToday && 'ring-2 ring-ink ring-offset-1',
           )
           return onPickDay && !future ? (
-            <button key={d} onClick={() => onPickDay(d)} aria-label={`${name}. Log a period starting this day`} className={cn(cls, !kind && 'hover:bg-canvas-hover')}>
+            <button key={d} onClick={() => onPickDay(d)} aria-label={t("{{name}}. Log a period starting this day", { name: name })} className={cn(cls, !kind && 'hover:bg-canvas-hover')}>
               {Number(d.slice(8))}
             </button>
           ) : (
@@ -162,9 +163,9 @@ export function CycleCalendar({
         })}
       </div>
       <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-muted">
-        <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-brand-500" aria-hidden="true" /> Period</li>
-        <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-2 border-dashed border-brand-400" aria-hidden="true" /> Predicted period</li>
-        <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-teal-bg ring-1 ring-teal-border" aria-hidden="true" /> Fertile window (estimate)</li>
+        <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-brand-500" aria-hidden="true" /> {t("Period")}</li>
+        <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-2 border-dashed border-brand-400" aria-hidden="true" /> {t("Predicted period")}</li>
+        <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-teal-bg ring-1 ring-teal-border" aria-hidden="true" /> {t("Fertile window (estimate)")}</li>
       </ul>
     </div>
   )

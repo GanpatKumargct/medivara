@@ -28,6 +28,7 @@ import {
   IconUsers,
 } from '../components/icons'
 import { COPY } from '../lib/copy'
+import { t } from '../lib/i18n'
 
 export default function Services() {
   const { patientId = '' } = useParams()
@@ -36,37 +37,37 @@ export default function Services() {
   const isOwner = patientQ.data?.my_role === 'owner'
 
   const tools: { to: string; title: string; text: string; icon: ReactNode; hide?: boolean }[] = [
-    { to: base, title: 'Ask MediVara', text: 'Chat or talk by voice about your records, with sources.', icon: <IconAsk /> },
-    { to: `${base}/records`, title: 'Health records', text: 'Upload prescriptions, lab reports and discharge summaries.', icon: <IconDoc /> },
-    { to: `${base}/timeline`, title: 'Health timeline', text: 'Your history in date order, with changes marked.', icon: <IconTimeline /> },
-    { to: `${base}/vitals`, title: 'Vitals tracker', text: 'BP, sugar, weight, heart rate, SpO₂ and temperature.', icon: <IconHeartPulse /> },
-    { to: `${base}/medicines`, title: 'Medicines', text: 'Every medicine in your documents and its source.', icon: <IconPill /> },
-    { to: `${base}/womens-health`, title: 'Women’s health', text: 'Period tracking, pregnancy and after-birth care, with reminders.', icon: <IconFlower /> },
-    { to: `${base}/reminders`, title: 'Reminders', text: 'Appointments, follow-ups and medicine times.', icon: <IconBell /> },
-    { to: `${base}/brief`, title: 'Doctor visit brief', text: 'A one-page summary and questions for your doctor.', icon: <IconBrief /> },
-    { to: `${base}/visit-assist`, title: 'Visit Assist (ISL)', text: 'Visit Card and ISL glossary for Deaf patients.', icon: <IconHand /> },
-    { to: `${base}/medical-id`, title: 'Medical ID', text: 'Blood group, allergies and emergency contacts.', icon: <IconIdCard /> },
-    { to: `${base}/family`, title: 'Family & sharing', text: 'Invite family by email and manage access.', icon: <IconUsers />, hide: !isOwner },
+    { to: base, title: t("Ask MediVara"), text: t("Chat or talk by voice about your records, with sources."), icon: <IconAsk /> },
+    { to: `${base}/records`, title: t("Health records"), text: t("Upload prescriptions, lab reports and discharge summaries."), icon: <IconDoc /> },
+    { to: `${base}/timeline`, title: t("Health timeline"), text: t("Your history in date order, with changes marked."), icon: <IconTimeline /> },
+    { to: `${base}/vitals`, title: t("Vitals tracker"), text: t("BP, sugar, weight, heart rate, SpO₂ and temperature."), icon: <IconHeartPulse /> },
+    { to: `${base}/medicines`, title: t("Medicines"), text: t("Every medicine in your documents and its source."), icon: <IconPill /> },
+    { to: `${base}/womens-health`, title: t("Women’s health"), text: t("Period tracking, pregnancy and after-birth care, with reminders."), icon: <IconFlower /> },
+    { to: `${base}/reminders`, title: t("Reminders"), text: t("Appointments, follow-ups and medicine times."), icon: <IconBell /> },
+    { to: `${base}/brief`, title: t("Doctor visit brief"), text: t("A one-page summary and questions for your doctor."), icon: <IconBrief /> },
+    { to: `${base}/visit-assist`, title: t("Visit Assist (ISL)"), text: t("Visit Card and ISL glossary for Deaf patients."), icon: <IconHand /> },
+    { to: `${base}/medical-id`, title: t("Medical ID"), text: t("Blood group, allergies and emergency contacts."), icon: <IconIdCard /> },
+    { to: `${base}/family`, title: t("Family & sharing"), text: t("Invite family by email and manage access."), icon: <IconUsers />, hide: !isOwner },
   ]
 
   const partners: { title: string; text: string; icon: ReactNode }[] = [
-    { title: 'ABHA health ID', text: 'Create or link an Ayushman Bharat Health Account and pull records from ABDM.', icon: <IconShield /> },
-    { title: 'Doctor consultations', text: 'Book in-clinic visits or video consultations with verified doctors.', icon: <IconStethoscope /> },
-    { title: 'Lab tests at home', text: 'Book sample collection and receive reports straight into your records.', icon: <IconFlask /> },
-    { title: 'Order medicines', text: 'Refill prescriptions from a licensed pharmacy.', icon: <IconCart /> },
-    { title: 'Health insurance', text: 'Keep policy cards and claims alongside your records.', icon: <IconShield /> },
+    { title: t("ABHA health ID"), text: t("Create or link an Ayushman Bharat Health Account and pull records from ABDM."), icon: <IconShield /> },
+    { title: t("Doctor consultations"), text: t("Book in-clinic visits or video consultations with verified doctors."), icon: <IconStethoscope /> },
+    { title: t("Lab tests at home"), text: t("Book sample collection and receive reports straight into your records."), icon: <IconFlask /> },
+    { title: t("Order medicines"), text: t("Refill prescriptions from a licensed pharmacy."), icon: <IconCart /> },
+    { title: t("Health insurance"), text: t("Keep policy cards and claims alongside your records."), icon: <IconShield /> },
   ]
 
   return (
     <div className="space-y-8">
       <PageHeader
         icon={<IconGrid className="h-5 w-5" />}
-        title="Health services"
-        subtitle="Everything for your family’s health in one place."
+        title={t("Health services")}
+        subtitle={t("Everything for your family’s health in one place.")}
       />
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-ink">In MediVara</h2>
+        <h2 className="mb-3 text-sm font-semibold text-ink">{t("In MediVara")}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {tools.filter((t) => !t.hide).map((t) => (
             <li key={t.to}>
@@ -83,12 +84,12 @@ export default function Services() {
       </section>
 
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink"><IconCalculator className="h-4 w-4" /> Health calculators</h2>
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink"><IconCalculator className="h-4 w-4" /> {t("Health calculators")}</h2>
         <BmiCalculator patientId={patientId} />
       </section>
 
       <section>
-        <h2 className="mb-1 text-sm font-semibold text-ink">Partner services</h2>
+        <h2 className="mb-1 text-sm font-semibold text-ink">{t("Partner services")}</h2>
         <p className="mb-3 text-xs text-ink-subtle">{COPY['COPY-42']}</p>
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {partners.map((s) => (
@@ -97,7 +98,7 @@ export default function Services() {
               <span className="min-w-0">
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold text-ink-muted">{s.title}</span>
-                  <Badge tone="neutral">Not available yet</Badge>
+                  <Badge tone="neutral">{t("Not available yet")}</Badge>
                 </span>
                 <span className="mt-0.5 block text-xs text-ink-subtle">{s.text}</span>
               </span>
@@ -129,25 +130,21 @@ function BmiCalculator({ patientId }: { patientId: string }) {
     <Card>
       <CardBody>
         <div className="grid gap-4 sm:grid-cols-[1fr_1fr_1.2fr] sm:items-end">
-          <Field label="Height (cm)" htmlFor="bmi-h">
+          <Field label={t("Height (cm)")} htmlFor="bmi-h">
             <Input id="bmi-h" inputMode="decimal" value={h} onChange={(e) => setHeight(e.target.value)} />
           </Field>
-          <Field label="Weight (kg)" htmlFor="bmi-w">
+          <Field label={t("Weight (kg)")} htmlFor="bmi-w">
             <Input id="bmi-w" inputMode="decimal" value={w} onChange={(e) => setWeight(e.target.value)} />
           </Field>
           <div className="rounded-xl bg-surface-muted px-4 py-2.5" aria-live="polite">
-            <p className="text-xs text-ink-subtle">Body mass index</p>
+            <p className="text-xs text-ink-subtle">{t("Body mass index")}</p>
             <p className="text-2xl font-semibold text-ink">{bmi ? bmi.toFixed(1) : '—'}</p>
           </div>
         </div>
         <details className="mt-3 text-xs text-ink-muted">
-          <summary className="cursor-pointer font-medium text-ink">{COPY['COPY-37']}: what BMI ranges mean</summary>
+          <summary className="cursor-pointer font-medium text-ink">{COPY['COPY-37']}{t(": what BMI ranges mean")}</summary>
           <p className="mt-2">
-            BMI is weight (kg) divided by height (m) squared. The World Health Organization uses these adult ranges:
-            under 18.5 underweight · 18.5–24.9 healthy · 25–29.9 overweight · 30 and above obesity. For many Asian
-            adults, guidance uses lower cut-offs (23 and 27.5). BMI doesn’t measure body fat directly and isn’t a
-            diagnosis — talk to your doctor about what’s right for you.
-          </p>
+            {t("BMI is weight (kg) divided by height (m) squared. The World Health Organization uses these adult ranges: under 18.5 underweight · 18.5–24.9 healthy · 25–29.9 overweight · 30 and above obesity. For many Asian adults, guidance uses lower cut-offs (23 and 27.5). BMI doesn’t measure body fat directly and isn’t a diagnosis — talk to your doctor about what’s right for you.")}</p>
         </details>
       </CardBody>
     </Card>

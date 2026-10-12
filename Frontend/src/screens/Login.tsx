@@ -1,5 +1,6 @@
 // SCR-02 — Login and demo entry (FR-001). Demo cards sign in through the same
 // API-02 call; there is no client-side bypass.
+import { LanguagePicker } from '../components/language-picker'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -9,6 +10,7 @@ import { Button, Card, CardBody, Field, Input } from '../components/ui'
 import { SyntheticWarning } from '../components/common'
 import { LogoFull } from '../components/brand'
 import { COPY } from '../lib/copy'
+import { t } from '../lib/i18n'
 
 export default function Login() {
   const { signIn, user, loading } = useAuth()
@@ -34,7 +36,7 @@ export default function Login() {
       else navigate(from ?? '/profiles', { replace: true })
     } catch (e) {
       if (e instanceof ApiError && e.code === 'RATE_LIMITED') setError(COPY['COPY-34f'])
-      else setError(e instanceof ApiError ? COPY['COPY-34a'] : 'Something went wrong. Try again.')
+      else setError(e instanceof ApiError ? COPY['COPY-34a'] : t("Something went wrong. Try again."))
     } finally {
       setBusy(false)
     }
@@ -42,6 +44,9 @@ export default function Login() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-hero-fade">
+      <div className="absolute right-4 top-4 z-10">
+        <LanguagePicker compact />
+      </div>
       {/* Soft animated brand orbs (decorative). */}
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="mv-orb" style={{ width: 340, height: 340, top: -80, left: -60, background: 'var(--mv-logo-1)', animationDelay: '0s' }} />
@@ -52,8 +57,7 @@ export default function Login() {
       <div className="animate-fade-up mb-6 flex flex-col items-center text-center">
         <LogoFull className="max-w-[220px] mix-blend-multiply" />
         <p className="mt-2 text-sm text-ink-muted">
-          Your medical documents, organised and explained — with sources.
-        </p>
+          {t("Your medical documents, organised and explained — with sources.")}</p>
       </div>
 
       {location.state?.sessionEnded && (
@@ -71,7 +75,7 @@ export default function Login() {
             }}
             className="space-y-4"
           >
-            <Field label="Email" htmlFor="email">
+            <Field label={t("Email")} htmlFor="email">
               <Input
                 id="email"
                 type="email"
@@ -81,7 +85,7 @@ export default function Login() {
                 aria-describedby={error ? 'login-error' : undefined}
               />
             </Field>
-            <Field label="Password" htmlFor="password">
+            <Field label={t("Password")} htmlFor="password">
               <Input
                 id="password"
                 type="password"
@@ -97,20 +101,18 @@ export default function Login() {
               </p>
             )}
             <Button type="submit" className="w-full" loading={busy} disabled={!email || !password}>
-              Sign in
-            </Button>
+              {t("Sign in")}</Button>
           </form>
           <p className="mt-4 text-center text-sm text-ink-muted">
-            New to MediVara?{' '}
+            {t("New to MediVara?")}{' '}
             <Link to="/signup" state={from ? { from } : undefined} className="font-semibold text-brand-700 hover:underline">
-              Create an account
-            </Link>
+              {t("Create an account")}</Link>
           </p>
         </CardBody>
       </Card>
 
       <div className="mt-6">
-        <h2 className="mb-2 text-sm font-semibold text-ink">Demo accounts (synthetic data)</h2>
+        <h2 className="mb-2 text-sm font-semibold text-ink">{t("Demo accounts (synthetic data)")}</h2>
         <div className="mv-stagger space-y-2">
           {DEMO_CARDS.map((card) => {
             const u = USERS.find((x) => x.id === card.user_id)!
@@ -127,17 +129,16 @@ export default function Login() {
                     size="sm"
                     variant="secondary"
                     disabled={busy}
-                    aria-label={`Sign in as ${u.display_name}, ${card.role}, synthetic demo account`}
+                    aria-label={t("Sign in as {{display_name}}, {{role}}, synthetic demo account", { display_name: u.display_name, role: card.role })}
                     onClick={() => void submit(u.email, DEMO_PASSWORD)}
                   >
-                    Sign in
-                  </Button>
+                    {t("Sign in")}</Button>
                 </CardBody>
               </Card>
             )
           })}
         </div>
-        <p className="mt-2 text-xs text-ink-subtle">All demo passwords are “{DEMO_PASSWORD}”.</p>
+        <p className="mt-2 text-xs text-ink-subtle">{t("All demo passwords are “")}{DEMO_PASSWORD}”.</p>
       </div>
 
       <div className="mt-6">

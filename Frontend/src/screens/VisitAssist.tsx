@@ -12,6 +12,7 @@ import { GLOSSARY_TONE } from '../lib/category'
 import { COPY } from '../lib/copy'
 import { formatDate } from '../lib/format'
 import { IconExternal, IconHand, IconPrint, IconSearch, IconX } from '../components/icons'
+import { t } from '../lib/i18n'
 
 const STORAGE_KEY = 'mv_visit_card_choices'
 
@@ -23,12 +24,12 @@ export default function VisitAssist() {
     <div className="space-y-4">
       <PageHeader
         icon={<IconHand className="h-5 w-5" />}
-        title="ISL Visit Assist"
-        subtitle="Help staff understand your communication needs. MediVara does not translate sign language."
+        title={t("ISL Visit Assist")}
+        subtitle={t("Help staff understand your communication needs. MediVara does not translate sign language.")}
       />
       <div className="no-print">
         <Tabs
-          tabs={[{ id: 'card', label: 'Visit Card' }, { id: 'glossary', label: 'ISL Glossary' }, { id: 'about', label: 'About' }]}
+          tabs={[{ id: 'card', label: t("Visit Card") }, { id: 'glossary', label: t("ISL Glossary") }, { id: 'about', label: t("About") }]}
           active={tab}
           onChange={(id) => setTab(id as typeof tab)}
         />
@@ -42,7 +43,7 @@ export default function VisitAssist() {
   )
 }
 
-const QUICK_PHRASES = ['Please write it down', 'Please repeat', 'Please slow down', 'I need an interpreter', 'Thank you']
+const QUICK_PHRASES = [t("Please write it down"), t("Please repeat"), t("Please slow down"), 'I need an interpreter', t("Thank you")]
 
 function loadChoices(): boolean[] {
   try {
@@ -97,7 +98,7 @@ function VisitCard({ patientId }: { patientId: string }) {
       {/* Builder */}
       <Card className="no-print">
         <CardBody>
-          <h2 className="text-sm font-semibold text-ink">Communication needs</h2>
+          <h2 className="text-sm font-semibold text-ink">{t("Communication needs")}</h2>
           <ul className="mt-2 space-y-2">
             {COPY['COPY-19'].map((statement, i) => (
               <li key={i}>
@@ -109,11 +110,11 @@ function VisitCard({ patientId }: { patientId: string }) {
             ))}
           </ul>
           <div className="mt-3">
-            <label htmlFor="vc-note" className="mb-1 block text-sm font-medium text-ink">Optional note (max 140)</label>
-            <Input id="vc-note" value={note} maxLength={140} onChange={(e) => setNote(e.target.value)} placeholder="Anything else you'd like staff to know" />
+            <label htmlFor="vc-note" className="mb-1 block text-sm font-medium text-ink">{t("Optional note (max 140)")}</label>
+            <Input id="vc-note" value={note} maxLength={140} onChange={(e) => setNote(e.target.value)} placeholder={t("Anything else you'd like staff to know")} />
           </div>
           <div className="mt-4">
-            <p className="mb-1 text-sm font-medium text-ink">Quick phrases</p>
+            <p className="mb-1 text-sm font-medium text-ink">{t("Quick phrases")}</p>
             <div className="flex flex-wrap gap-2">
               {QUICK_PHRASES.map((p) => (
                 <span key={p} className="rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-sm text-brand-800">
@@ -123,8 +124,8 @@ function VisitCard({ patientId }: { patientId: string }) {
             </div>
           </div>
           <div className="mt-3 flex gap-2">
-            <Button onClick={() => setFullScreen(true)}>Show to staff</Button>
-            <Button variant="secondary" onClick={() => window.print()}><IconPrint className="h-4 w-4" /> Print</Button>
+            <Button onClick={() => setFullScreen(true)}>{t("Show to staff")}</Button>
+            <Button variant="secondary" onClick={() => window.print()}><IconPrint className="h-4 w-4" /> {t("Print")}</Button>
           </div>
         </CardBody>
       </Card>
@@ -169,24 +170,24 @@ function CardContent({
 
       {keyFacts ? (
         <div className="border-t border-line pt-3 text-sm">
-          <p className="font-semibold text-ink">Key facts from my records</p>
+          <p className="font-semibold text-ink">{t("Key facts from my records")}</p>
           {keyFacts.medicines.length > 0 && (
-            <p className="mt-1 text-ink-muted"><span className="font-medium text-ink">Current medicines:</span> {keyFacts.medicines.join('; ')}</p>
+            <p className="mt-1 text-ink-muted"><span className="font-medium text-ink">{t("Current medicines:")}</span> {keyFacts.medicines.join('; ')}</p>
           )}
           <p className="mt-1 text-ink-muted">
-            <span className="font-medium text-ink">Allergies:</span>{' '}
-            {keyFacts.allergyStatus === 'conflicting' && <Badge tone="warn">Documents differ</Badge>}{' '}
-            {keyFacts.allergies.length ? keyFacts.allergies.join('; ') : 'None documented'}
+            <span className="font-medium text-ink">{t("Allergies:")}</span>{' '}
+            {keyFacts.allergyStatus === 'conflicting' && <Badge tone="warn">{t("Documents differ")}</Badge>}{' '}
+            {keyFacts.allergies.length ? keyFacts.allergies.join('; ') : t("None documented")}
           </p>
           {keyFacts.conditions.length > 0 && (
-            <p className="mt-1 text-ink-muted"><span className="font-medium text-ink">Conditions:</span> {keyFacts.conditions.join('; ')}</p>
+            <p className="mt-1 text-ink-muted"><span className="font-medium text-ink">{t("Conditions:")}</span> {keyFacts.conditions.join('; ')}</p>
           )}
-          {briefDate && <p className="mt-1 text-xs text-ink-subtle">From my brief, {formatDate(briefDate.slice(0, 10))}</p>}
+          {briefDate && <p className="mt-1 text-xs text-ink-subtle">{t("From my brief,")}{' '}{formatDate(briefDate.slice(0, 10))}</p>}
         </div>
       ) : noBrief && patientId ? (
         <Alert tone="info">
-          Create a brief to add your key medical facts to this card.{' '}
-          <Link to={`/p/${patientId}/brief`} className="font-medium text-brand-700 underline">Create brief</Link>
+          {t("Create a brief to add your key medical facts to this card.")}{' '}
+          <Link to={`/p/${patientId}/brief`} className="font-medium text-brand-700 underline">{t("Create brief")}</Link>
         </Alert>
       ) : null}
     </div>
@@ -209,11 +210,10 @@ function FullScreenCard({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-white p-6 text-black">
       <button
         onClick={onClose}
-        aria-label="Exit full screen"
+        aria-label={t("Exit full screen")}
         className="fixed right-4 top-4 rounded-lg border-2 border-black px-3 py-2 text-base font-bold"
       >
-        <IconX /> Exit
-      </button>
+        <IconX /> {t("Exit")}</button>
       <div className="mx-auto max-w-3xl space-y-6 pt-12">
         {statements.map((s, i) => (
           <p key={i} className="rounded-xl border-4 border-black p-4 text-[28px] font-bold leading-snug">{s}</p>
@@ -221,9 +221,9 @@ function FullScreenCard({
         {note && <p className="text-[24px] font-semibold">{note}</p>}
         {keyFacts && (keyFacts.medicines.length > 0 || keyFacts.allergies.length > 0) && (
           <div className="border-t-4 border-black pt-4 text-[22px]">
-            {keyFacts.medicines.length > 0 && <p className="font-bold">Medicines: <span className="font-normal">{keyFacts.medicines.join('; ')}</span></p>}
+            {keyFacts.medicines.length > 0 && <p className="font-bold">{t("Medicines:")}{' '}<span className="font-normal">{keyFacts.medicines.join('; ')}</span></p>}
             <p className="mt-2 font-bold">
-              Allergies: <span className="font-normal">{keyFacts.allergyStatus === 'conflicting' ? '(documents differ) ' : ''}{keyFacts.allergies.join('; ') || 'None documented'}</span>
+              {t("Allergies:")}{' '}<span className="font-normal">{keyFacts.allergyStatus === 'conflicting' ? t("(documents differ) ") : ''}{keyFacts.allergies.join('; ') || t("None documented")}</span>
             </p>
           </div>
         )}
@@ -244,22 +244,22 @@ function Glossary() {
     <div className="space-y-4">
       <div className="relative">
         <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
-        <Input className="pl-9" placeholder="Search health terms…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search glossary" />
+        <Input className="pl-9" placeholder={t("Search health terms…")} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t("Search glossary")} />
       </div>
       <div className="mv-stagger grid gap-3 sm:grid-cols-2">
-        {results.map((t) => (
-          <Card key={t.term_id} className="mv-lift">
+        {results.map((item) => (
+          <Card key={item.term_id} className="mv-lift">
             <CardBody>
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-base font-semibold text-ink">{t.term}</h3>
-                <Badge tone={GLOSSARY_TONE[t.category] ?? 'neutral'}>{t.category.replace(/_/g, ' ')}</Badge>
+                <h3 className="text-base font-semibold text-ink">{item.term}</h3>
+                <Badge tone={GLOSSARY_TONE[item.category] ?? 'neutral'}>{item.category.replace(/_/g, ' ')}</Badge>
               </div>
-              {t.notes && <p className="mt-1 text-xs text-ink-subtle">{t.notes}</p>}
+              {item.notes && <p className="mt-1 text-xs text-ink-subtle">{item.notes}</p>}
               {/* Every entry in this dummy set has no verified embeddable video → fallback. */}
               <Alert tone="info" className="mt-2">
                 {COPY['COPY-18b']}
-                <a href={t.source_url} target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-1 font-medium text-brand-700 underline">
-                  Open dictionary <IconExternal className="h-3.5 w-3.5" />
+                <a href={item.source_url} target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-1 font-medium text-brand-700 underline">
+                  {t("Open dictionary")}{' '}<IconExternal className="h-3.5 w-3.5" />
                 </a>
               </Alert>
               <p className="mt-2 text-[11px] text-ink-subtle">{COPY['COPY-18']}</p>
@@ -267,7 +267,7 @@ function Glossary() {
           </Card>
         ))}
       </div>
-      {results.length === 0 && <p className="text-sm text-ink-muted">No terms match “{query}”.</p>}
+      {results.length === 0 && <p className="text-sm text-ink-muted">{t("No terms match “")}{query}”.</p>}
     </div>
   )
 }
@@ -276,20 +276,20 @@ function About() {
   return (
     <Card>
       <CardBody className="space-y-3">
-        <h2 className="text-base font-semibold text-ink">About ISL Visit Assist</h2>
+        <h2 className="text-base font-semibold text-ink">{t("About ISL Visit Assist")}</h2>
         <Alert tone="info">{COPY['COPY-17']}</Alert>
         <div className="text-sm text-ink-muted">
-          <p className="font-medium text-ink">What this does</p>
+          <p className="font-medium text-ink">{t("What this does")}</p>
           <ul className="mt-1 list-disc space-y-1 pl-5">
-            <li>Shows staff a clear card with your communication needs and key facts.</li>
-            <li>Links to official ISL dictionary signs for selected health terms.</li>
+            <li>{t("Shows staff a clear card with your communication needs and key facts.")}</li>
+            <li>{t("Links to official ISL dictionary signs for selected health terms.")}</li>
           </ul>
-          <p className="mt-3 font-medium text-ink">What it doesn’t do</p>
+          <p className="mt-3 font-medium text-ink">{t("What it doesn’t do")}</p>
           <ul className="mt-1 list-disc space-y-1 pl-5">
-            <li>It does not translate between ISL and text or speech.</li>
-            <li>Glossary content has not yet been reviewed with ISL users (a roadmap commitment).</li>
+            <li>{t("It does not translate between ISL and text or speech.")}</li>
+            <li>{t("Glossary content has not yet been reviewed with ISL users (a roadmap commitment).")}</li>
           </ul>
-          <p className="mt-3">Glossary videos, where available, load from YouTube and come from the ISLRTC Indian Sign Language dictionary.</p>
+          <p className="mt-3">{t("Glossary videos, where available, load from YouTube and come from the ISLRTC Indian Sign Language dictionary.")}</p>
         </div>
       </CardBody>
     </Card>

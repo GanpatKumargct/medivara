@@ -16,11 +16,12 @@ import { Avatar } from '../components/shell/Sidebar'
 import { IconCheck, IconCopy, IconMail, IconUserPlus, IconUsers } from '../components/icons'
 import { COPY, fill } from '../lib/copy'
 import { formatTimestampDate, RELATIONSHIP_LABELS, SCOPE_LABELS } from '../lib/format'
+import { t } from '../lib/i18n'
 
 const SCOPE_OPTIONS: { id: Scope; label: string; hint: string; required?: boolean }[] = [
-  { id: 'view_records', label: 'View records', hint: 'Documents, timeline, brief, vitals and chat', required: true },
-  { id: 'upload_documents', label: 'Add records', hint: 'Upload documents and log vitals' },
-  { id: 'manage_reminders', label: 'Manage reminders', hint: 'Create and complete reminders' },
+  { id: 'view_records', label: t("View records"), hint: t("Documents, timeline, brief, vitals and chat"), required: true },
+  { id: 'upload_documents', label: t("Add records"), hint: t("Upload documents and log vitals") },
+  { id: 'manage_reminders', label: t("Manage reminders"), hint: t("Create and complete reminders") },
 ]
 const RELATIONSHIPS: Relationship[] = ['spouse', 'child', 'parent', 'sibling', 'grandparent', 'other']
 
@@ -43,11 +44,11 @@ export default function Family() {
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
         icon={<IconUsers className="h-5 w-5" />}
-        title="Family & sharing"
-        subtitle="Keep your family’s records together, invite people by email, and decide what they can do. Remove access any time."
+        title={t("Family & sharing")}
+        subtitle={t("Keep your family’s records together, invite people by email, and decide what they can do. Remove access any time.")}
       />
       <Tabs
-        tabs={[{ id: 'people', label: 'Family & access' }, { id: 'log', label: 'Access log' }]}
+        tabs={[{ id: 'people', label: t("Family & access") }, { id: 'log', label: t("Access log") }]}
         active={tab}
         onChange={(id) => setTab(id as typeof tab)}
       />
@@ -75,14 +76,13 @@ function ManagedProfiles() {
       <CardBody>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-ink">Family profiles</h2>
-            <p className="text-xs text-ink-subtle">Profiles you manage, and profiles others have shared with you.</p>
+            <h2 className="text-sm font-semibold text-ink">{t("Family profiles")}</h2>
+            <p className="text-xs text-ink-subtle">{t("Profiles you manage, and profiles others have shared with you.")}</p>
           </div>
           <Button size="sm" variant="secondary" onClick={() => setAdding(true)}>
-            <IconUserPlus className="h-4 w-4" /> Add family member
-          </Button>
+            <IconUserPlus className="h-4 w-4" /> {t("Add family member")}</Button>
         </div>
-        {q.isLoading && <p className="mt-3 text-sm text-ink-subtle">Loading…</p>}
+        {q.isLoading && <p className="mt-3 text-sm text-ink-subtle">{t("Loading…")}</p>}
         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
           {[...owned, ...shared].map((p) => (
             <li key={p.id}>
@@ -91,8 +91,7 @@ function ManagedProfiles() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-ink">{p.display_name}</span>
                   <span className="block truncate text-xs text-ink-subtle">
-                    {p.my_role === 'owner' ? 'You manage this' : `Shared by ${p.owner_display_name}`} · {p.stats.documents_total} documents
-                  </span>
+                    {p.my_role === 'owner' ? t("You manage this") : t("Shared by {{owner_display_name}}", { owner_display_name: p.owner_display_name })} · {p.stats.documents_total} {t("documents")}</span>
                 </span>
               </Link>
             </li>
@@ -126,13 +125,13 @@ function InviteForm({ patientId, patientName }: { patientId: string; patientName
       setError(null)
       void qc.invalidateQueries({ queryKey: ['invitations', patientId] })
       void qc.invalidateQueries({ queryKey: ['audit', patientId] })
-      toast('Invitation created')
+      toast(t("Invitation created"))
     },
     onError: (e) => {
-      if (e instanceof ApiError && e.code === 'INVITATION_EXISTS') setError('An invitation to this email is already pending.')
-      else if (e instanceof ApiError && e.code === 'GRANT_EXISTS') setError('This person already has access.')
-      else if (e instanceof ApiError && e.code === 'VALIDATION_ERROR') setError('Check the email address. You can’t invite yourself.')
-      else setError('Couldn’t create the invitation. Try again.')
+      if (e instanceof ApiError && e.code === 'INVITATION_EXISTS') setError(t("An invitation to this email is already pending."))
+      else if (e instanceof ApiError && e.code === 'GRANT_EXISTS') setError(t("This person already has access."))
+      else if (e instanceof ApiError && e.code === 'VALIDATION_ERROR') setError(t("Check the email address. You can’t invite yourself."))
+      else setError(t("Couldn’t create the invitation. Try again."))
     },
   })
 
@@ -145,29 +144,29 @@ function InviteForm({ patientId, patientName }: { patientId: string; patientName
     <Card>
       <CardBody className="space-y-4">
         <div>
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><IconMail className="h-4 w-4 text-ink-muted" /> Invite someone to {patientName}’s records</h2>
-          <p className="text-xs text-ink-subtle">They accept after signing in — or creating a free account — with this email address.</p>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><IconMail className="h-4 w-4 text-ink-muted" /> {t("Invite someone to")}{' '}{patientName}{t("’s records")}</h2>
+          <p className="text-xs text-ink-subtle">{t("They accept after signing in — or creating a free account — with this email address.")}</p>
         </div>
 
         {sent && (
           <div className="rounded-xl border border-ok-border bg-ok-bg p-3 text-sm text-ok-fg" role="status">
             <p className="font-medium">
-              {sent.emailSent ? `Invitation emailed to ${sent.email}.` : `Invitation ready for ${sent.email}.`}
+              {sent.emailSent ? t("Invitation emailed to {{email}}.", { email: sent.email }) : t("Invitation ready for {{email}}.", { email: sent.email })}
             </p>
             <p className="mt-0.5 text-xs">
               {sent.emailSent
-                ? 'You can also send them this link:'
-                : 'Email delivery isn’t set up on this server, so send them this link yourself (for example on WhatsApp):'}
+                ? t("You can also send them this link:")
+                : t("Email delivery isn’t set up on this server, so send them this link yourself (for example on WhatsApp):")}
             </p>
             <CopyLink url={sent.url} />
           </div>
         )}
 
         <div className="grid gap-3 sm:grid-cols-[1.4fr_1fr]">
-          <Field label="Email address" htmlFor="inv-email" error={email && !emailValid ? 'Enter a valid email address' : undefined}>
-            <Input id="inv-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
+          <Field label={t("Email address")} htmlFor="inv-email" error={email && !emailValid ? t("Enter a valid email address") : undefined}>
+            <Input id="inv-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("name@example.com")} />
           </Field>
-          <Field label="They are your…" htmlFor="inv-rel">
+          <Field label={t("They are your…")} htmlFor="inv-rel">
             <select
               id="inv-rel"
               value={relationship}
@@ -180,7 +179,7 @@ function InviteForm({ patientId, patientName }: { patientId: string; patientName
         </div>
 
         <fieldset>
-          <legend className="mb-1.5 text-sm font-medium text-ink">What can they do?</legend>
+          <legend className="mb-1.5 text-sm font-medium text-ink">{t("What can they do?")}</legend>
           <div className="grid gap-2 sm:grid-cols-3">
             {SCOPE_OPTIONS.map((o) => (
               <label
@@ -195,7 +194,7 @@ function InviteForm({ patientId, patientName }: { patientId: string; patientName
                   className="mt-0.5 h-4 w-4"
                 />
                 <span>
-                  <span className="block font-medium text-ink">{o.label}{o.required && <span className="font-normal text-ink-subtle"> (always)</span>}</span>
+                  <span className="block font-medium text-ink">{o.label}{o.required && <span className="font-normal text-ink-subtle"> {t("(always)")}</span>}</span>
                   <span className="block text-xs text-ink-subtle">{o.hint}</span>
                 </span>
               </label>
@@ -214,8 +213,7 @@ function InviteForm({ patientId, patientName }: { patientId: string; patientName
         {error && <p className="text-sm font-medium text-danger-fg" role="alert">{error}</p>}
         <div className="flex justify-end">
           <Button loading={invite.isPending} disabled={!emailValid || !consent} onClick={() => invite.mutate()}>
-            <IconMail className="h-4 w-4" /> Send invitation
-          </Button>
+            <IconMail className="h-4 w-4" /> {t("Send invitation")}</Button>
         </div>
       </CardBody>
     </Card>
@@ -240,7 +238,7 @@ function CopyLink({ url }: { url: string }) {
           )
         }
       >
-        {copied ? <IconCheck className="h-4 w-4" /> : <IconCopy className="h-4 w-4" />} {copied ? 'Copied' : 'Copy link'}
+        {copied ? <IconCheck className="h-4 w-4" /> : <IconCopy className="h-4 w-4" />} {copied ? t("Copied") : t("Copy link")}
       </Button>
     </div>
   )
@@ -262,9 +260,9 @@ function PendingInvitations({ patientId }: { patientId: string }) {
     mutationFn: (id: string) => api.cancelInvitation(patientId, id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['invitations', patientId] })
-      toast('Invitation cancelled')
+      toast(t("Invitation cancelled"))
     },
-    onError: () => toast('Couldn’t cancel this invitation.', 'error'),
+    onError: () => toast(t("Couldn’t cancel this invitation."), 'error'),
   })
   const recent = (q.data ?? []).filter((i) => i.status !== 'cancelled').slice(0, 10)
   if (q.isLoading || recent.length === 0) return null
@@ -272,7 +270,7 @@ function PendingInvitations({ patientId }: { patientId: string }) {
   return (
     <Card>
       <CardBody>
-        <h2 className="text-sm font-semibold text-ink">Invitations</h2>
+        <h2 className="text-sm font-semibold text-ink">{t("Invitations")}</h2>
         <ul className="mt-2 divide-y divide-line">
           {recent.map((inv) => (
             <li key={inv.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -282,8 +280,8 @@ function PendingInvitations({ patientId }: { patientId: string }) {
                   <Badge tone={STATUS_TONE[inv.status]}>{inv.status[0].toUpperCase() + inv.status.slice(1)}</Badge>
                 </p>
                 <p className="text-xs text-ink-subtle">
-                  {RELATIONSHIP_LABELS[inv.relationship]} · {inv.scopes.map((s) => SCOPE_LABELS[s] ?? s).join(', ')} · sent {formatTimestampDate(inv.created_at)}
-                  {inv.status === 'pending' && ` · expires ${formatTimestampDate(inv.expires_at)}`}
+                  {RELATIONSHIP_LABELS[inv.relationship]} · {inv.scopes.map((s) => SCOPE_LABELS[s] ?? s).join(', ')} {t("· sent")}{' '}{formatTimestampDate(inv.created_at)}
+                  {inv.status === 'pending' && t(" · expires {{formatTimestampDate}}", { formatTimestampDate: formatTimestampDate(inv.expires_at) })}
                 </p>
               </div>
               {inv.status === 'pending' && (
@@ -293,16 +291,14 @@ function PendingInvitations({ patientId }: { patientId: string }) {
                     variant="secondary"
                     onClick={() =>
                       void navigator.clipboard.writeText(absoluteUrl(inv.invite_url)).then(
-                        () => toast('Invite link copied'),
-                        () => toast('Couldn’t copy the link.', 'error'),
+                        () => toast(t("Invite link copied")),
+                        () => toast(t("Couldn’t copy the link."), 'error'),
                       )
                     }
                   >
-                    <IconCopy className="h-4 w-4" /> Copy link
-                  </Button>
+                    <IconCopy className="h-4 w-4" /> {t("Copy link")}</Button>
                   <Button size="sm" variant="ghost" loading={cancel.isPending && cancel.variables === inv.id} onClick={() => cancel.mutate(inv.id)}>
-                    Cancel
-                  </Button>
+                    {t("Cancel")}</Button>
                 </div>
               )}
             </li>
@@ -324,14 +320,14 @@ function People({ patientId, patientName }: { patientId: string; patientName: st
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['grants', patientId] })
       setRemoving(null)
-      toast('Access removed')
+      toast(t("Access removed"))
     },
   })
 
   return (
     <Card>
       <CardBody>
-        <h2 className="text-sm font-semibold text-ink">People with access to {patientName}’s records</h2>
+        <h2 className="text-sm font-semibold text-ink">{t("People with access to")}{' '}{patientName}{t("’s records")}</h2>
         {q.isLoading && <LoadingRows rows={1} />}
         {q.error && <ErrorBanner error={q.error} onRetry={q.refetch} />}
         {q.data && (
@@ -342,7 +338,7 @@ function People({ patientId, patientName }: { patientId: string; patientName: st
                   <Avatar id={g.grantee.user_id} name={g.grantee.display_name} />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-ink">
-                      {g.grantee.display_name} {g.role === 'owner' && <Badge tone="brand">Owner</Badge>}
+                      {g.grantee.display_name} {g.role === 'owner' && <Badge tone="brand">{t("Owner")}</Badge>}
                     </p>
                     <p className="truncate text-xs text-ink-subtle">{g.grantee.email}</p>
                     {g.role !== 'owner' && (
@@ -353,7 +349,7 @@ function People({ patientId, patientName }: { patientId: string; patientName: st
                   </div>
                 </div>
                 {g.role !== 'owner' && (
-                  <Button size="sm" variant="ghost" onClick={() => setRemoving(g)}>Remove</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setRemoving(g)}>{t("Remove")}</Button>
                 )}
               </li>
             ))}
@@ -365,11 +361,11 @@ function People({ patientId, patientName }: { patientId: string; patientName: st
         <Dialog
           open
           onClose={() => setRemoving(null)}
-          title="Remove access"
+          title={t("Remove access")}
           footer={
             <>
-              <Button variant="ghost" onClick={() => setRemoving(null)}>Cancel</Button>
-              <Button variant="danger" loading={revoke.isPending} onClick={() => revoke.mutate(removing.id)}>Remove</Button>
+              <Button variant="ghost" onClick={() => setRemoving(null)}>{t("Cancel")}</Button>
+              <Button variant="danger" loading={revoke.isPending} onClick={() => revoke.mutate(removing.id)}>{t("Remove")}</Button>
             </>
           }
         >
@@ -396,10 +392,10 @@ function AccessLog({ patientId }: { patientId: string }) {
                     <p className="text-sm text-ink">{e.action_label}</p>
                     <p className="text-xs text-ink-subtle">{e.actor.display_name} · {formatTimestampDate(e.at)}</p>
                   </div>
-                  {e.outcome === 'denied' && <Badge tone="danger">Denied</Badge>}
+                  {e.outcome === 'denied' && <Badge tone="danger">{t("Denied")}</Badge>}
                 </li>
               ))}
-              {q.data.items.length === 0 && <li className="py-3 text-sm text-ink-muted">No activity yet.</li>}
+              {q.data.items.length === 0 && <li className="py-3 text-sm text-ink-muted">{t("No activity yet.")}</li>}
             </ul>
           </CardBody>
         </Card>

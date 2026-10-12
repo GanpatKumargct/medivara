@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { currentLanguage, languageWasChosen, setLanguage } from '../lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import * as api from '../api/endpoints'
 import { clearSession, getCurrentUserId } from '../api/client'
@@ -23,6 +24,19 @@ interface AuthContextValue {
 
 const Ctx = createContext<AuthContextValue | null>(null)
 
+/** DEC-29: the account's language wins, unless the user picked one in this browser before
+ * signing in while the account still has the default; then the pick is saved to the account. */
+function syncLanguage(saved: string | undefined) {
+  if (!saved) return
+  const here = currentLanguage().code
+  if (saved === here) return
+  if (saved === 'en' && languageWasChosen()) {
+    void api.updatePreferences(here).catch(() => undefined)
+    return
+  }
+  setLanguage(saved)
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient()
   const [user, setUser] = useState<UserSummary | null>(null)
@@ -39,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await api.getMe()
       setUser(data.user)
       setMe(data)
+      syncLanguage(data.preferred_language)
       return data
     } catch {
       setUser(null)

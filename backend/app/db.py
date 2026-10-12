@@ -59,10 +59,48 @@ def reset_engine() -> None:
     _engine = None
 
 
+MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
+BASELINE_REVISION = "0001"
+
+
+def _alembic_config(connection):
+    from alembic.config import Config
+
+    config = Config(str(MIGRATIONS_DIR / "alembic.ini"))
+    config.set_main_option("script_location", str(MIGRATIONS_DIR))
+    config.attributes["connection"] = connection
+    return config
+
+
 def init_db() -> None:
+    """Bring the schema up to date (Alembic, migrations/versions/).
+
+    Empty database: create every table from the models and mark it as the latest revision.
+    Tables but no migration history (databases made before Alembic): mark them as the
+    baseline, then apply the newer migrations. Otherwise apply any pending migrations.
+    """
+    from alembic import command
+    from sqlalchemy import inspect
+
     import app.models  # noqa: F401  registers tables
 
-    SQLModel.metadata.create_all(get_engine())
+    engine = get_engine()
+    with engine.begin() as connection:
+        tables = set(inspect(connection).get_table_names())
+        config = _alembic_config(connection)
+        if "user" not in tables:
+            SQLModel.metadata.create_all(connection)
+            command.stamp(config, "head")
+        else:
+            if "alembic_version" not in tables:
+                command.stamp(config, BASELINE_REVISION)
+            command.upgrade(config, "head")
+
+    from app import versions
+
+    with Session(engine) as session:
+        versions.backfill(session)  # version 1 for documents that predate history
+        versions.purge_expired(session)  # Recently deleted older than 30 days
 
 
 def get_session() -> Iterator[Session]:

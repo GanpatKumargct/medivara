@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 from sqlmodel import Session, select
 
+from app.versions import visible
 from app.copy import OLDER_NOT_SEARCHED, notice
 from app.facts import fact_sort_key
 from app.models import ConsultationBrief, DocumentPage, DocumentStatus, ExtractedFact, FactStatus, MedicalDocument
@@ -78,6 +79,7 @@ def build_ask_context(session: Session, patient_id: str, cap_tokens: int) -> Con
         select(MedicalDocument).where(
             MedicalDocument.patient_id == patient_id,
             MedicalDocument.status.in_([DocumentStatus.needs_review, DocumentStatus.ready]),
+            visible(),
         )
     ).all()
     # Newest document first; undated last.

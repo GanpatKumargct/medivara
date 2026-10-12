@@ -16,6 +16,7 @@ import { PageHeader } from '../components/page-header'
 import { COPY } from '../lib/copy'
 import { formatDate, formatTimestampDate } from '../lib/format'
 import { IconBrief, IconHand, IconPrint, IconSpeaker } from '../components/icons'
+import { t } from '../lib/i18n'
 
 export default function Brief() {
   const { patientId = '' } = useParams()
@@ -68,8 +69,8 @@ export default function Brief() {
     const n = brief.overview.narrative
     if (n && n.status === 'ready') n.statements.forEach((s) => parts.push(s.text))
     else parts.push(brief.overview.templated_text)
-    brief.sections.medications.forEach((m) => parts.push(`Medicine: ${m.text}`))
-    brief.sections.points_to_clarify.forEach((f) => parts.push(`Point to clarify: ${f.text}`))
+    brief.sections.medications.forEach((m) => parts.push(t("Medicine: {{text}}", { text: m.text })))
+    brief.sections.points_to_clarify.forEach((f) => parts.push(t("Point to clarify: {{text}}", { text: f.text })))
     speak(parts.join('. '))
   }
 
@@ -77,20 +78,20 @@ export default function Brief() {
     <div className="space-y-4">
       <PageHeader
         icon={<IconBrief className="h-5 w-5" />}
-        title="Consultation Brief"
-        subtitle="A one-page, source-linked summary to take to your appointment."
+        title={t("Consultation Brief")}
+        subtitle={t("A one-page, source-linked summary to take to your appointment.")}
         className="no-print"
         actions={
           brief ? (
             <>
-              <Button size="sm" variant="secondary" onClick={() => window.print()}><IconPrint className="h-4 w-4" /> Print</Button>
+              <Button size="sm" variant="secondary" onClick={() => window.print()}><IconPrint className="h-4 w-4" /> {t("Print")}</Button>
               {supported && (
                 <Button size="sm" variant="secondary" onClick={() => (speaking ? stop() : readBriefAloud())}>
-                  <IconSpeaker className="h-4 w-4" /> {speaking ? 'Stop' : 'Read aloud'}
+                  <IconSpeaker className="h-4 w-4" /> {speaking ? t("Stop") : t("Read aloud")}
                 </Button>
               )}
               <Link to={`/p/${patientId}/visit-assist`}>
-                <Button size="sm" variant="secondary"><IconHand className="h-4 w-4" /> Visit Card</Button>
+                <Button size="sm" variant="secondary"><IconHand className="h-4 w-4" /> {t("Visit Card")}</Button>
               </Link>
             </>
           ) : undefined
@@ -102,13 +103,13 @@ export default function Brief() {
         <CardBody className="space-y-3">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[200px]">
-              <Field label="Reason for visit (optional, your words)" htmlFor="visit-reason">
-                <Input id="visit-reason" value={visitReason} onChange={(e) => setVisitReason(e.target.value)} maxLength={300} placeholder="e.g. Routine diabetes review" />
+              <Field label={t("Reason for visit (optional, your words)")} htmlFor="visit-reason">
+                <Input id="visit-reason" value={visitReason} onChange={(e) => setVisitReason(e.target.value)} maxLength={300} placeholder={t("e.g. Routine diabetes review")} />
               </Field>
             </div>
-            <Checkbox id="inc-unv" checked={includeUnverified} onChange={setIncludeUnverified} label="Include unverified items" />
+            <Checkbox id="inc-unv" checked={includeUnverified} onChange={setIncludeUnverified} label={t("Include unverified items")} />
             <Button loading={createMut.isPending} onClick={() => createMut.mutate()}>
-              {brief ? 'Create new brief' : 'Create brief'}
+              {brief ? t("Create new brief") : t("Create brief")}
             </Button>
           </div>
         </CardBody>
@@ -118,19 +119,15 @@ export default function Brief() {
       {latestQ.error && !noBrief && <ErrorBanner error={latestQ.error} onRetry={latestQ.refetch} />}
       {noBrief && !brief && (
         <EmptyState
-          title="Create your first brief"
-          message="A one-page summary of what your documents say, with sources and questions for your doctor."
-          action={<Button loading={createMut.isPending} onClick={() => createMut.mutate()}>Create brief</Button>}
+          title={t("Create your first brief")}
+          message={t("A one-page summary of what your documents say, with sources and questions for your doctor.")}
+          action={<Button loading={createMut.isPending} onClick={() => createMut.mutate()}>{t("Create brief")}</Button>}
         />
       )}
 
       {brief && <BriefBody brief={brief} narrativeLoading={narrativeMut.isPending} />}
     </div>
   )
-}
-
-function plural(n: number, word: string) {
-  return `${n} ${word}${n === 1 ? '' : 's'}`
 }
 
 function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoading: boolean }) {
@@ -144,24 +141,27 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
         <CardBody>
           <h2 className="text-lg font-semibold text-ink">{brief.header.patient_display_name}, {brief.header.age_years ?? '—'}</h2>
           <p className="text-sm text-ink-muted">
-            {plural(brief.header.documents_count, 'document')} from {plural(brief.header.providers_count, 'provider')}
+            {t('{{documents}} from {{providers}}', {
+              documents: t('{{count}} documents', { count: brief.header.documents_count }),
+              providers: t('{{count}} providers', { count: brief.header.providers_count }),
+            })}
             {brief.header.date_range && <> · {formatDate(brief.header.date_range.from)} – {formatDate(brief.header.date_range.to)}</>}
           </p>
           <p className="text-xs text-ink-subtle">
-            Created {formatTimestampDate(brief.created_at)}
-            {brief.header.unverified_items_count > 0 && ` · ${brief.header.unverified_items_count} unverified items`}
+            {t("Created")}{' '}{formatTimestampDate(brief.created_at)}
+            {brief.header.unverified_items_count > 0 && t(" · {{unverified_items_count}} unverified items", { unverified_items_count: brief.header.unverified_items_count })}
           </p>
-          {brief.visit_reason && <p className="mt-2 text-sm text-ink"><span className="font-medium">Reason for visit:</span> {brief.visit_reason}</p>}
+          {brief.visit_reason && <p className="mt-2 text-sm text-ink"><span className="font-medium">{t("Reason for visit:")}</span> {brief.visit_reason}</p>}
         </CardBody>
       </Card>
 
       {/* Overview / narrative */}
       <Card>
         <CardBody>
-          <h3 className="text-sm font-semibold text-ink">Overview</h3>
+          <h3 className="text-sm font-semibold text-ink">{t("Overview")}</h3>
           {(() => {
             const n = brief.overview.narrative
-            if (narrativeLoading && !n) return <p className="mt-2 text-sm text-ink-muted" role="status">Writing a short summary…</p>
+            if (narrativeLoading && !n) return <p className="mt-2 text-sm text-ink-muted" role="status">{t("Writing a short summary…")}</p>
             if (n && n.status === 'ready') {
               return (
                 <div className="mt-2">
@@ -192,8 +192,8 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
       </Card>
 
       {/* Medicines */}
-      <Section title={s.medications_from ? `Medicines in your most recent prescription (${s.medications_from.title})` : 'Medicines'}>
-        {s.medications.length === 0 && <p className="text-sm text-ink-muted">No medicines found in your reviewed documents.</p>}
+      <Section title={s.medications_from ? t("Medicines in your most recent prescription ({{title}})", { title: s.medications_from.title }) : t("Medicines")}>
+        {s.medications.length === 0 && <p className="text-sm text-ink-muted">{t("No medicines found in your reviewed documents.")}</p>}
         <ul className="space-y-1.5">
           {s.medications.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center gap-2 text-sm text-ink">
@@ -206,11 +206,11 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
         </ul>
         {s.other_medications_mentioned.length > 0 && (
           <details className="mt-3">
-            <summary className="cursor-pointer text-sm font-medium text-ink-muted">Also mentioned in older documents</summary>
+            <summary className="cursor-pointer text-sm font-medium text-ink-muted">{t("Also mentioned in older documents")}</summary>
             <ul className="mt-2 space-y-1 text-sm text-ink-muted">
               {s.other_medications_mentioned.map((o) => (
                 <li key={o.id} className="flex items-center gap-2">
-                  {o.name} <span className="text-xs text-ink-subtle">(last seen {formatDate(o.last_seen_date)})</span>
+                  {o.name} <span className="text-xs text-ink-subtle">{t("(last seen")}{' '}{formatDate(o.last_seen_date)})</span>
                   <CitationChips evidenceIds={o.evidence_ids} evidence={brief.evidence} />
                 </li>
               ))}
@@ -221,7 +221,7 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
 
       {/* Conditions */}
       {s.conditions.length > 0 && (
-        <Section title="Conditions (as documented)">
+        <Section title={t("Conditions (as documented)")}>
           <ul className="space-y-1.5 text-sm text-ink">
             {s.conditions.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center gap-2">
@@ -235,22 +235,22 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
 
       {/* Results over time */}
       {s.results_over_time.length > 0 && (
-        <Section title="Test results over time">
+        <Section title={t("Test results over time")}>
           <div className="space-y-4">
             {s.results_over_time.map((row) => (
               <div key={row.id}>
                 <p className="text-sm font-medium text-ink">
                   {row.test_name}{' '}
-                  {row.reference_range_as_written && <span className="font-normal text-ink-subtle">(reference {row.reference_range_as_written})</span>}
+                  {row.reference_range_as_written && <span className="font-normal text-ink-subtle">{t("(reference")}{' '}{row.reference_range_as_written})</span>}
                 </p>
                 <div className="mt-1 overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="text-left text-xs text-ink-subtle">
-                        <th className="py-1 pr-4 font-medium">Date</th>
-                        <th className="py-1 pr-4 font-medium">Value</th>
-                        <th className="py-1 pr-4 font-medium">Flag (as written)</th>
-                        <th className="py-1 font-medium">Source</th>
+                        <th className="py-1 pr-4 font-medium">{t("Date")}</th>
+                        <th className="py-1 pr-4 font-medium">{t("Value")}</th>
+                        <th className="py-1 pr-4 font-medium">{t("Flag (as written)")}</th>
+                        <th className="py-1 font-medium">{t("Source")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -272,7 +272,7 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
       )}
 
       {/* Allergies */}
-      <Section title="Allergies">
+      <Section title={t("Allergies")}>
         {s.allergies.status === 'conflicting' && <div className="mb-2"><DocumentsDifferBadge /></div>}
         {s.allergies.items.length === 0 ? (
           <p className="text-sm text-ink-muted">{COPY['COPY-30a']}</p>
@@ -290,12 +290,12 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
 
       {/* Points to clarify */}
       {s.points_to_clarify.length > 0 && (
-        <Section title="Points to clarify">
+        <Section title={t("Points to clarify")}>
           <ul className="space-y-3">
             {s.points_to_clarify.map((f) => (
               <li key={f.id} className="rounded-lg border border-warn-border bg-warn-bg p-3">
                 <p className="text-sm text-warn-fg">{f.text}<CitationChips evidenceIds={f.evidence_ids} evidence={brief.evidence} /></p>
-                {f.suggested_question && <p className="mt-1 text-xs font-medium text-ink">Ask your doctor: “{f.suggested_question}”</p>}
+                {f.suggested_question && <p className="mt-1 text-xs font-medium text-ink">{t("Ask your doctor: “")}{f.suggested_question}”</p>}
               </li>
             ))}
           </ul>
@@ -304,12 +304,12 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
 
       {/* Missing information */}
       {s.missing_information.length > 0 && (
-        <Section title="Missing information">
+        <Section title={t("Missing information")}>
           <ul className="space-y-3">
             {s.missing_information.map((f) => (
               <li key={f.id} className="rounded-lg border border-line bg-surface-muted p-3">
                 <p className="text-sm text-ink-muted">{f.text}<CitationChips evidenceIds={f.evidence_ids} evidence={brief.evidence} /></p>
-                {f.suggested_question && <p className="mt-1 text-xs font-medium text-ink">Ask your doctor: “{f.suggested_question}”</p>}
+                {f.suggested_question && <p className="mt-1 text-xs font-medium text-ink">{t("Ask your doctor: “")}{f.suggested_question}”</p>}
               </li>
             ))}
           </ul>
@@ -318,7 +318,7 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
 
       {/* Questions for the doctor */}
       {s.questions_for_doctor.length > 0 && (
-        <Section title="Questions for your doctor">
+        <Section title={t("Questions for your doctor")}>
           <ol className="list-decimal space-y-1 pl-5 text-sm text-ink">
             {s.questions_for_doctor.map((qd, i) => <li key={i}>{qd}</li>)}
           </ol>
@@ -326,8 +326,8 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
       )}
 
       {/* Sources */}
-      <Section title="Sources">
-        {brief.sources.length === 0 && <p className="text-sm text-ink-muted">No reviewed documents yet.</p>}
+      <Section title={t("Sources")}>
+        {brief.sources.length === 0 && <p className="text-sm text-ink-muted">{t("No reviewed documents yet.")}</p>}
         <ul className="space-y-1 text-sm text-ink-muted">
           {brief.sources.map((src) => <li key={src.document_id}>{src.title}</li>)}
         </ul>
@@ -335,8 +335,7 @@ function BriefBody({ brief, narrativeLoading }: { brief: BriefType; narrativeLoa
 
       <Disclaimer />
       <p className="hidden text-[10px] text-ink-subtle print:block">
-        Created with MediVara (prototype) · synthetic data · not medical advice
-      </p>
+        {t("Created with MediVara (prototype) · synthetic data · not medical advice")}</p>
     </div>
   )
 }

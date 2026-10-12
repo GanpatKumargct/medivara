@@ -1,7 +1,7 @@
 // SCR-06 — Document viewer and extraction review (FR-016..021, FR-031, FR-040).
 // Left: the original document (rendered from synthetic page text in dummy mode).
 // Right: banners, document details, bulk confirm, and per-fact review actions.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Fact } from '../api/types'
@@ -10,11 +10,14 @@ import { useToast } from '../context/ToastContext'
 import { Alert, Badge, Button, Card, CardBody, Dialog, Field, Input, Tabs } from '../components/ui'
 import { ErrorBanner, LoadingRows } from '../components/states'
 import { FlagBadge } from '../components/common'
+import { HistoryPanel } from '../components/document-history'
+import { ApiError } from '../api/types'
 import { cn } from '../lib/cn'
 import { categoryOf } from '../lib/category'
 import { COPY, PROCESSING_STAGE_LABELS } from '../lib/copy'
 import { DOCUMENT_TYPE_LABELS, FACT_TYPE_LABELS, UNCERTAINTY_LABELS, formatDate } from '../lib/format'
 import { IconCheck, IconEdit, IconUndo, IconWarn, IconX } from '../components/icons'
+import { t } from '../lib/i18n'
 
 const FACT_ORDER: Fact['fact_type'][] = [
   'medication', 'lab_result', 'condition', 'allergy', 'procedure', 'vital_sign', 'follow_up', 'instruction',
@@ -29,6 +32,9 @@ export default function DocumentReview() {
   const [mobileTab, setMobileTab] = useState<'document' | 'found'>('found')
   const [correcting, setCorrecting] = useState<Fact | null>(null)
   const [editingDetails, setEditingDetails] = useState(false)
+  const [showHistory, setShowHistory] = useState(params.get('history') === '1')
+  const [versionError, setVersionError] = useState<string | null>(null)
+  const newFileInput = useRef<HTMLInputElement>(null)
 
   const patientQ = useQuery({ queryKey: ['patient', patientId], queryFn: () => api.getPatient(patientId) })
   const canEdit = patientQ.data ? patientQ.data.my_role === 'owner' || patientQ.data.scopes.includes('upload_documents') : false
@@ -50,6 +56,47 @@ export default function DocumentReview() {
     void qc.invalidateQueries({ queryKey: ['document', patientId, documentId] })
     void qc.invalidateQueries({ queryKey: ['documents', patientId] })
     void qc.invalidateQueries({ queryKey: ['patient', patientId] })
+    void qc.invalidateQueries({ queryKey: ['history', patientId, documentId] })
+  }
+
+  // Files of this document, to link an older file to the one in use and to notice a new
+  // file that is still being read (polls until it finishes).
+  const filesQ = useQuery({
+    queryKey: ['history', patientId, documentId],
+    queryFn: () => api.getDocumentHistory(patientId, documentId),
+    refetchInterval: (query) =>
+      (query.state.data?.files ?? []).some((f) => !f.is_current && (f.status === 'queued' || f.status === 'processing'))
+        ? 2000
+        : false,
+  })
+  const files = filesQ.data?.files ?? []
+  const currentFile = files.find((f) => f.is_current)
+  const pendingFile = files.find((f) => !f.is_current && (f.status === 'queued' || f.status === 'processing'))
+  const wasPending = useRef(false)
+  useEffect(() => {
+    // When a new file finishes being read, refresh what this page shows.
+    if (wasPending.current && !pendingFile) {
+      void qc.invalidateQueries({ queryKey: ['document', patientId, documentId] })
+      void qc.invalidateQueries({ queryKey: ['documents', patientId] })
+    }
+    wasPending.current = Boolean(pendingFile)
+  }, [pendingFile, qc, patientId, documentId])
+
+  const newVersionMut = useMutation({
+    mutationFn: (file: File) => api.uploadNewVersion(patientId, documentId, file),
+    onSuccess: () => {
+      setVersionError(null)
+      invalidate()
+      toast(t("New file uploaded. It replaces this one once it has been read."))
+    },
+    onError: (e) => setVersionError(e instanceof ApiError ? t(e.message) : t("Upload failed. Try again.")),
+  })
+  function chooseNewFile(list: FileList | null) {
+    const file = list?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) return setVersionError(COPY['COPY-34b'])
+    if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') return setVersionError(COPY['COPY-34c'])
+    newVersionMut.mutate(file)
   }
 
   const factMut = useMutation({
@@ -57,14 +104,14 @@ export default function DocumentReview() {
       api.patchFact(patientId, factId, action, fields),
     onSuccess: (_d, v) => {
       invalidate()
-      toast(v.action === 'correct' ? 'Saved correction' : v.action === 'reject' ? 'Rejected' : v.action === 'undo_reject' ? 'Restored' : 'Confirmed')
+      toast(v.action === 'correct' ? t("Saved correction") : v.action === 'reject' ? 'Rejected' : v.action === 'undo_reject' ? 'Restored' : 'Confirmed')
     },
   })
   const bulkMut = useMutation({
     mutationFn: () => api.bulkReview(patientId, documentId),
     onSuccess: (r) => {
       invalidate()
-      toast(`Confirmed ${r.confirmed_fact_ids.length} items`)
+      toast(t("Confirmed {{length}} items", { length: r.confirmed_fact_ids.length }))
     },
   })
   const detailsMut = useMutation({
@@ -72,7 +119,7 @@ export default function DocumentReview() {
     onSuccess: () => {
       invalidate()
       setEditingDetails(false)
-      toast('Saved')
+      toast(t("Saved"))
     },
   })
 
@@ -82,6 +129,10 @@ export default function DocumentReview() {
   const { document: doc, facts } = q.data!
   const pageLines = doc.pages?.[0]?.lines ?? []
   const unverifiedHigh = facts.filter((f) => f.status === 'unverified' && f.confidence === 'high').length
+  const isOlderFile = doc.is_current === false
+  const isDeleted = Boolean(doc.deleted_at)
+  // Changes go only to the file in use, and not while the document is in Recently deleted.
+  const editable = canEdit && !isOlderFile && !isDeleted
 
   if (doc.status === 'processing' || doc.status === 'queued') {
     return (
@@ -90,7 +141,7 @@ export default function DocumentReview() {
           <p className="text-sm font-medium text-ink" role="status">
             {PROCESSING_STAGE_LABELS[doc.stage] ?? 'Processing…'}
           </p>
-          <p className="mt-1 text-xs text-ink-subtle">This updates automatically.</p>
+          <p className="mt-1 text-xs text-ink-subtle">{t("This updates automatically.")}</p>
         </CardBody>
       </Card>
     )
@@ -99,9 +150,9 @@ export default function DocumentReview() {
   const docPane = (
     <Card className="print-page">
       <CardBody>
-        <h2 className="mb-2 text-sm font-semibold text-ink-muted">Original document</h2>
+        <h2 className="mb-2 text-sm font-semibold text-ink-muted">{t("Original document")}</h2>
         <div className="rounded-lg border border-line bg-surface-muted p-3 font-mono text-[12px] leading-relaxed">
-          {pageLines.length === 0 && <p className="text-ink-subtle">No readable text layer.</p>}
+          {pageLines.length === 0 && <p className="text-ink-subtle">{t("No readable text layer.")}</p>}
           {pageLines.map((l) => (
             <p
               key={l.line_id}
@@ -118,9 +169,28 @@ export default function DocumentReview() {
 
   const reviewPane = (
     <div className="space-y-4">
+      {/* Version banners (DEC-27) */}
+      {isOlderFile && (
+        <Alert tone="info" icon={<IconWarn />} title={t("An older file (file {{file_version}}) of this document", { file_version: doc.file_version ?? 1 })}>
+          {t("It's kept in the history and can't be changed.")}{' '}
+          {currentFile && (
+            <Link className="font-medium underline" to={`/p/${patientId}/records/${currentFile.document_id}`}>{t("Open the file in use")}</Link>
+          )}
+        </Alert>
+      )}
+      {isDeleted && (
+        <Alert tone="warn" icon={<IconWarn />} title={t("In Recently deleted")}>
+          {t("This document is hidden from Records, the timeline, briefs and Ask. The owner can restore it from Records.")}</Alert>
+      )}
+      {pendingFile && (
+        <Alert tone="info">{t("A new file (file")}{' '}{pendingFile.file_version}{t(") is being read. It replaces this one if it's read successfully.")}</Alert>
+      )}
+      {versionError && <Alert tone="danger">{versionError}</Alert>}
+      {showHistory && <HistoryPanel patientId={patientId} documentId={documentId} canRestore={canEdit} />}
+
       {/* Banners */}
       {doc.flags.includes('suspicious_instructions') && (
-        <Alert tone="danger" icon={<IconWarn />} title="Suspicious content">{COPY['COPY-13']}</Alert>
+        <Alert tone="danger" icon={<IconWarn />} title={t("Suspicious content")}>{COPY['COPY-13']}</Alert>
       )}
       {doc.flags.includes('date_ambiguous') && (
         <Alert tone="warn" icon={<IconWarn />}>
@@ -135,30 +205,29 @@ export default function DocumentReview() {
       <Card>
         <CardBody>
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink">Document details</h2>
-            {canEdit && (
+            <h2 className="text-sm font-semibold text-ink">{t("Document details")}</h2>
+            {editable && (
               <Button size="sm" variant="ghost" onClick={() => setEditingDetails(true)}>
-                <IconEdit className="h-4 w-4" /> Edit
-              </Button>
+                <IconEdit className="h-4 w-4" /> {t("Edit")}</Button>
             )}
           </div>
           <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <Detail label="Type" value={DOCUMENT_TYPE_LABELS[doc.document_type]} />
-            <Detail label="Date" value={doc.document_date ? formatDate(doc.document_date) : 'Unknown'} />
-            <Detail label="Facility" value={doc.facility_name ?? '—'} />
-            <Detail label="Clinician" value={doc.clinician_name ?? '—'} />
+            <Detail label={t("Type")} value={DOCUMENT_TYPE_LABELS[doc.document_type]} />
+            <Detail label={t("Date")} value={doc.document_date ? formatDate(doc.document_date) : t("Unknown")} />
+            <Detail label={t("Facility")} value={doc.facility_name ?? '—'} />
+            <Detail label={t("Clinician")} value={doc.clinician_name ?? '—'} />
           </dl>
         </CardBody>
       </Card>
 
       {/* Bulk confirm */}
-      {canEdit && unverifiedHigh > 0 && (
+      {editable && unverifiedHigh > 0 && (
         <Button loading={bulkMut.isPending} onClick={() => bulkMut.mutate()}>
-          <IconCheck className="h-4 w-4" /> Confirm all high-confidence items ({unverifiedHigh})
+          <IconCheck className="h-4 w-4" /> {t("Confirm all high-confidence items (")}{unverifiedHigh})
         </Button>
       )}
       {!canEdit && (
-        <Alert tone="info">You have view-only access, so you can read these facts but not change them.</Alert>
+        <Alert tone="info">{t("You have view-only access, so you can read these facts but not change them.")}</Alert>
       )}
 
       {/* Facts grouped by type */}
@@ -178,7 +247,7 @@ export default function DocumentReview() {
                 <li key={f.id}>
                   <FactCard
                     fact={f}
-                    canEdit={canEdit}
+                    canEdit={editable}
                     busy={factMut.isPending}
                     onShow={() => { setHighlight(f.source.line_ids[0]); setMobileTab('document'); document.getElementById(`line-${f.source.line_ids[0]}`)?.scrollIntoView({ block: 'center' }) }}
                     onConfirm={() => factMut.mutate({ factId: f.id, action: 'confirm' })}
@@ -194,7 +263,7 @@ export default function DocumentReview() {
       })}
 
       {facts.length === 0 && (
-        <Alert tone="info">Nothing could be read reliably from this document.</Alert>
+        <Alert tone="info">{t("Nothing could be read reliably from this document.")}</Alert>
       )}
     </div>
   )
@@ -204,13 +273,28 @@ export default function DocumentReview() {
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <Link to={`/p/${patientId}/records`} className="text-sm text-brand-700 hover:underline">
-            ← Records
-          </Link>
+            {t("← Records")}</Link>
           <h1 className="truncate text-lg font-semibold text-ink">{doc.title}</h1>
         </div>
-        <div className="flex items-center gap-1">
-          {doc.status === 'needs_review' && <Badge tone="warn">Needs review</Badge>}
-          {doc.status === 'ready' && <Badge tone="ok">Reviewed</Badge>}
+        <div className="flex flex-wrap items-center justify-end gap-1">
+          <Button size="sm" variant={showHistory ? 'secondary' : 'ghost'} aria-pressed={showHistory} onClick={() => setShowHistory((v) => !v)}>
+            {t("History")}</Button>
+          {editable && !pendingFile && (
+            <>
+              <Button size="sm" variant="ghost" loading={newVersionMut.isPending} onClick={() => newFileInput.current?.click()}>
+                {t("Upload new version")}</Button>
+              <input
+                ref={newFileInput}
+                type="file"
+                accept="application/pdf,.pdf"
+                className="sr-only"
+                aria-label={t("Choose the new file")}
+                onChange={(e) => { chooseNewFile(e.target.files); e.target.value = '' }}
+              />
+            </>
+          )}
+          {doc.status === 'needs_review' && <Badge tone="warn">{t("Needs review")}</Badge>}
+          {doc.status === 'ready' && <Badge tone="ok">{t("Reviewed")}</Badge>}
           {doc.flags.map((f) => <FlagBadge key={f} flag={f} />)}
         </div>
       </div>
@@ -218,7 +302,7 @@ export default function DocumentReview() {
       {/* Mobile tabs */}
       <div className="lg:hidden">
         <Tabs
-          tabs={[{ id: 'found', label: 'What we found' }, { id: 'document', label: 'Document' }]}
+          tabs={[{ id: 'found', label: t("What we found") }, { id: 'document', label: t("Document") }]}
           active={mobileTab}
           onChange={(id) => setMobileTab(id as 'document' | 'found')}
         />
@@ -289,7 +373,7 @@ function FactCard({
 }) {
   const rejected = fact.status === 'rejected'
   return (
-    <article className={cn('rounded-lg border p-3', rejected ? 'border-line bg-surface-muted opacity-70' : 'border-line bg-white')}>
+    <article className={cn('rounded-lg border p-3', rejected ? "border-line bg-surface-muted opacity-70" : "border-line bg-white")}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-ink">{fact.display_text}</p>
         <ConfidenceBadge confidence={fact.confidence} />
@@ -307,7 +391,7 @@ function FactCard({
         {fact.source.lines[0]?.text}
       </blockquote>
       <button onClick={onShow} className="mt-1 text-xs font-medium text-brand-700 hover:underline">
-        Show in document (page {fact.source.page})
+        {t("Show in document (page")}{' '}{fact.source.page})
       </button>
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -316,21 +400,17 @@ function FactCard({
           <>
             {fact.status !== 'confirmed' && (
               <Button size="sm" variant="secondary" disabled={busy} onClick={onConfirm}>
-                <IconCheck className="h-4 w-4" /> Confirm
-              </Button>
+                <IconCheck className="h-4 w-4" /> {t("Confirm")}</Button>
             )}
             <Button size="sm" variant="ghost" disabled={busy} onClick={onCorrect}>
-              <IconEdit className="h-4 w-4" /> Correct
-            </Button>
+              <IconEdit className="h-4 w-4" /> {t("Correct")}</Button>
             <Button size="sm" variant="ghost" disabled={busy} onClick={onReject}>
-              <IconX className="h-4 w-4" /> Reject
-            </Button>
+              <IconX className="h-4 w-4" /> {t("Reject")}</Button>
           </>
         )}
         {canEdit && rejected && (
           <Button size="sm" variant="secondary" disabled={busy} onClick={onUndo}>
-            <IconUndo className="h-4 w-4" /> Undo
-          </Button>
+            <IconUndo className="h-4 w-4" /> {t("Undo")}</Button>
         )}
       </div>
     </article>
@@ -338,7 +418,7 @@ function FactCard({
 }
 
 function ConfidenceBadge({ confidence }: { confidence: Fact['confidence'] }) {
-  const map = { high: { tone: 'ok' as const, label: 'High' }, medium: { tone: 'warn' as const, label: 'Medium' }, low: { tone: 'danger' as const, label: 'Low' } }
+  const map = { high: { tone: 'ok' as const, label: t("High") }, medium: { tone: 'warn' as const, label: t("Medium") }, low: { tone: 'danger' as const, label: t("Low") } }
   const c = map[confidence]
   return <Badge tone={c.tone}>{c.label} confidence</Badge>
 }
@@ -348,11 +428,11 @@ function FactStatusBadge({ fact }: { fact: Fact }) {
     case 'unverified':
       return <Badge tone="warn" title={COPY['COPY-12']}>{COPY['COPY-12-label']}</Badge>
     case 'confirmed':
-      return <Badge tone="ok">Confirmed</Badge>
+      return <Badge tone="ok">{t("Confirmed")}</Badge>
     case 'corrected':
-      return <Badge tone="info">Corrected by you</Badge>
+      return <Badge tone="info">{t("Corrected by you")}</Badge>
     case 'rejected':
-      return <Badge tone="neutral">Rejected</Badge>
+      return <Badge tone="neutral">{t("Rejected")}</Badge>
   }
 }
 
@@ -365,11 +445,11 @@ function CorrectDialog({ fact, busy, onClose, onSave }: { fact: Fact; busy: bool
     <Dialog
       open
       onClose={onClose}
-      title="Correct this item"
+      title={t("Correct this item")}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} onClick={() => onSave(values)}>Save</Button>
+          <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
+          <Button loading={busy} onClick={() => onSave(values)}>{t("Save")}</Button>
         </>
       }
     >
@@ -390,22 +470,22 @@ function EditDetailsDialog({ current, busy, onClose, onSave }: { current: { docu
     <Dialog
       open
       onClose={onClose}
-      title="Edit document details"
+      title={t("Edit document details")}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} onClick={() => onSave(v)}>Save</Button>
+          <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
+          <Button loading={busy} onClick={() => onSave(v)}>{t("Save")}</Button>
         </>
       }
     >
       <div className="space-y-3">
-        <Field label="Date (YYYY-MM-DD)" htmlFor="d-date" hint="Setting the date clears the ambiguity flag.">
+        <Field label={t("Date (YYYY-MM-DD)")} htmlFor="d-date" hint={t("Setting the date clears the ambiguity flag.")}>
           <Input id="d-date" type="date" value={v.document_date} onChange={(e) => setV({ ...v, document_date: e.target.value })} />
         </Field>
-        <Field label="Facility" htmlFor="d-fac">
+        <Field label={t("Facility")} htmlFor="d-fac">
           <Input id="d-fac" value={v.facility_name} onChange={(e) => setV({ ...v, facility_name: e.target.value })} />
         </Field>
-        <Field label="Clinician" htmlFor="d-clin">
+        <Field label={t("Clinician")} htmlFor="d-clin">
           <Input id="d-clin" value={v.clinician_name} onChange={(e) => setV({ ...v, clinician_name: e.target.value })} />
         </Field>
       </div>

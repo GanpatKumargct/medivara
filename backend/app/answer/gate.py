@@ -9,6 +9,9 @@ import re
 from dataclasses import dataclass, field
 
 EMERGENCY = [
+    # Explicit calls for help (also the phrase behind the "emergency" sign, DEC-28).
+    r"\bneed\s+(urgent\s+|emergency\s+)?(medical\s+)?help\s+now\b|\bneed\s+emergency\s+help\b",
+    r"\bthis\s+is\s+an\s+emergency\b",
     r"chest\s+pain",
     r"chest\s+(hurts?|hurting|is\s+hurting|feels\s+tight|tightness)",
     r"heart\s+attack",

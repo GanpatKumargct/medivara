@@ -487,7 +487,8 @@ Use these strings verbatim. Placeholders appear in `{braces}`. Strings that also
 | COPY-24 | Medication reminder attestation | "I am entering this schedule exactly as my doctor or pharmacist told me. MediVara will not change my medicines or doses." |
 | COPY-25 | Sharing consent | "I agree to share {patient}'s MediVara records with {name} ({email}) with the permissions ticked above. I can remove their access at any time, and they will lose access immediately." |
 | COPY-26 | Revoke confirmation | "Remove {name}'s access to {patient}'s records? They will lose access immediately. You can share again later." |
-| COPY-26b | Delete document confirmation | "Delete \"{title}\" from {patient}'s records? The file and everything read from it will be removed. Earlier briefs will be marked out of date. This can't be undone." |
+| COPY-26b | Delete document confirmation | "Delete \"{title}\" from {patient}'s records? It is hidden from Records, the timeline, briefs and Ask at once. You can restore it from Recently deleted for 30 days." |
+| COPY-26c | Delete permanently confirmation | "Delete \"{title}\" permanently? The file, everything read from it and its history are removed now. This can't be undone." |
 | COPY-27 | Access denied page | Title: "You don't have access to this profile." Body: "This profile hasn't been shared with you, or access was removed. Ask the profile owner to share it with you." |
 | COPY-28 | Ambiguous date | "The date {as_written} was read as {DD Mon YYYY} (day first). Please check it." |
 | COPY-29 | Documents differ: dose | "Your documents list different strengths for {medicine}: {strength A} ({document type A}, {date A}) and {strength B} ({document type B}, {date B}). The most recent document lists {latest strength}. Please confirm your current dose with your doctor." |
@@ -506,6 +507,8 @@ Use these strings verbatim. Placeholders appear in `{braces}`. Strings that also
 | COPY-34d | Upload duplicate | "This file is already in {patient}'s records." |
 | COPY-34e | Upload too many pages | "This PDF has more than 10 pages. Please split it into smaller files." |
 | COPY-34f | Sign-in rate limited | "Too many sign-in attempts. Please wait a few minutes and try again." |
+| COPY-47 | Camera consent for signing | "Signing uses your camera. The video stays on this device: MediVara looks only for hand and body positions here and never sends or saves the video. Only the question you confirm is sent. You can turn this off at any time in Settings." |
+| COPY-48 | Sign-assisted questions notice | "Experimental: sign to choose a question. MediVara knows only a few signs it has been shown and can be wrong, so check the question before you send it. It does not translate sign language." |
 | COPY-35 | Sample badge | "Synthetic sample" |
 | COPY-36 | Processing stages | queued: "Waiting to be read" · reading_text: "Reading text" · screening: "Checking content" · extracting: "Extracting information" · validating: "Checking results" |
 | COPY-37 | Explanation label | "General information — not from your documents" |

@@ -17,7 +17,7 @@ router = APIRouter(prefix=API_PREFIX, tags=["ask"])
 
 class AskRequest(BaseModel):
     question: str
-    input_mode: Literal["text", "voice"] = "text"
+    input_mode: Literal["text", "voice", "sign"] = "text"
 
     @field_validator("question")
     @classmethod

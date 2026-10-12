@@ -1,16 +1,16 @@
-// Chat composer. Type, dictate (browser speech-to-text, en-IN), or build a question
-// from signs & phrases — every method fills an editable box the user confirms; nothing
-// is auto-sent (FR-056, COPY-17). The paperclip uploads a PDF into this profile's
-// records, and the waveform button opens two-way voice mode.
+// Chat composer. Type, dictate (browser speech-to-text, en-IN), or build a question in
+// sign mode (camera button, DEC-28) — every method fills an editable box the user confirms;
+// nothing is auto-sent except emergency signs (FR-056, COPY-17). The paperclip uploads a PDF
+// into this profile's records, and the waveform button opens two-way voice mode.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import * as api from '../../api/endpoints'
-import { GLOSSARY } from '../../dummy-data/glossary'
 import { cn } from '../../lib/cn'
 import { COPY } from '../../lib/copy'
+import { SignMode } from '../sign-camera'
 import { useSpeechInput } from '../../lib/useSpeechInput'
-import { IconArrowUp, IconHand, IconMic, IconPaperclip, IconWaveform, IconX } from '../icons'
+import { IconArrowUp, IconCamera, IconMic, IconPaperclip, IconWaveform, IconX } from '../icons'
 import { Spinner } from '../ui'
+import { t } from '../../lib/i18n'
 
 const MAX_LEN = 500
 const DICTATION_ACK_KEY = 'mv_dictation_ack'
@@ -34,12 +34,13 @@ export interface ComposerProps {
   patientId: string
   value: string
   onChange: (v: string) => void
-  onSubmit: (text: string, usedVoice: boolean) => void
+  onSubmit: (text: string, inputMode: 'text' | 'voice' | 'sign') => void
   busy: boolean
   canAttach: boolean
   onAttach: (file: File) => void
   onVoiceMode: () => void
-  examples: string[]
+  /** Shown in sign mode's header ("Meera Raman's records"). */
+  patientName?: string
   placeholder?: string
   autoFocus?: boolean
   size?: 'hero' | 'docked'
@@ -54,16 +55,17 @@ export function Composer({
   canAttach,
   onAttach,
   onVoiceMode,
-  examples,
-  placeholder = 'Ask about your health records…',
+  patientName = '',
+  placeholder = t("Ask about your health records…"),
   autoFocus,
   size = 'docked',
 }: ComposerProps) {
   const textRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const voiceUsed = useRef(false)
+  const signUsed = useRef(false)
   const consentRecorded = useRef(false)
-  const [phrasesOpen, setPhrasesOpen] = useState(false)
+  const [signOpen, setSignOpen] = useState(false)
   const [showDisclosure, setShowDisclosure] = useState(false)
   const valueRef = useRef(value)
   valueRef.current = value
@@ -89,8 +91,9 @@ export function Composer({
   function submit() {
     const text = value.trim()
     if (!text || busy) return
-    onSubmit(text, voiceUsed.current)
+    onSubmit(text, signUsed.current ? 'sign' : voiceUsed.current ? 'voice' : 'text')
     voiceUsed.current = false
+    signUsed.current = false
   }
 
   async function toggleDictation() {
@@ -114,15 +117,21 @@ export function Composer({
 
   return (
     <div className="relative">
-      {phrasesOpen && (
-        <PhrasesPanel
+      {signOpen && (
+        <SignMode
           patientId={patientId}
-          examples={examples}
-          onClose={() => setPhrasesOpen(false)}
-          onInsert={(t) => {
-            onChange((value ? `${value} ${t}` : t).slice(0, MAX_LEN))
+          patientName={patientName}
+          onClose={() => {
+            setSignOpen(false)
             textRef.current?.focus()
           }}
+          onQuestion={(q) => {
+            // Shown in the box: the user checks it and presses Send (DEC-28).
+            signUsed.current = true
+            onChange(q.slice(0, MAX_LEN))
+          }}
+          // Emergency signs don't wait: the safety check answers with the fixed emergency card.
+          onEmergency={(phrase) => onSubmit(phrase, 'sign')}
         />
       )}
 
@@ -135,7 +144,7 @@ export function Composer({
               writeFlag(DICTATION_ACK_KEY)
               setShowDisclosure(false)
             }}
-            aria-label="Dismiss"
+            aria-label={t("Dismiss")}
             className="shrink-0 rounded p-0.5 text-ink-subtle hover:bg-canvas-hover hover:text-ink"
           >
             <IconX className="h-4 w-4" />
@@ -146,7 +155,7 @@ export function Composer({
       <div
         className={cn(
           'rounded-[26px] border border-canvas-border bg-white shadow-composer transition-colors focus-within:border-brand-300',
-          size === 'hero' ? 'px-4 pb-3 pt-4' : 'px-3 pb-2.5 pt-3',
+          size === 'hero' ? "px-4 pb-3 pt-4" : "px-3 pb-2.5 pt-3",
         )}
       >
         <textarea
@@ -154,15 +163,18 @@ export function Composer({
           rows={size === 'hero' ? 2 : 1}
           value={value}
           maxLength={MAX_LEN}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            onChange(e.target.value)
+            if (!e.target.value) signUsed.current = false
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault()
               submit()
             }
           }}
-          placeholder={speech.listening ? 'Listening… speak now' : placeholder}
-          aria-label="Your question"
+          placeholder={speech.listening ? t("Listening… speak now") : placeholder}
+          aria-label={t("Your question")}
           className="block max-h-[260px] w-full resize-none bg-transparent px-1 text-[15px] leading-relaxed text-ink placeholder:text-ink-subtle focus:outline-none focus-visible:outline-none"
         />
         {speech.listening && speech.interim && (
@@ -176,7 +188,7 @@ export function Composer({
           <div className="flex items-center gap-1">
             {canAttach && (
               <>
-                <ToolButton label="Add a PDF to your records" onClick={() => fileRef.current?.click()}>
+                <ToolButton label={t("Add a PDF to your records")} onClick={() => fileRef.current?.click()}>
                   <IconPaperclip className="h-[18px] w-[18px]" />
                 </ToolButton>
                 <input
@@ -193,8 +205,8 @@ export function Composer({
                 />
               </>
             )}
-            <ToolButton label="Signs & phrases" onClick={() => setPhrasesOpen((o) => !o)} active={phrasesOpen}>
-              <IconHand className="h-[18px] w-[18px]" />
+            <ToolButton label={t("Sign with the camera (experimental)")} onClick={() => setSignOpen(true)} active={signOpen}>
+              <IconCamera className="h-[18px] w-[18px]" />
             </ToolButton>
             {value.length > MAX_LEN - 100 && (
               <span className="ml-1 text-xs text-ink-subtle">{value.length}/{MAX_LEN}</span>
@@ -204,7 +216,7 @@ export function Composer({
           <div className="flex items-center gap-1.5">
             {speech.supported && (
               <ToolButton
-                label={speech.listening ? 'Stop dictation' : 'Dictate (speech to text)'}
+                label={speech.listening ? t("Stop dictation") : t("Dictate (speech to text)")}
                 onClick={() => void toggleDictation()}
                 active={speech.listening}
                 danger={speech.listening}
@@ -221,8 +233,8 @@ export function Composer({
               <button
                 onClick={submit}
                 disabled={!hasText || busy}
-                aria-label="Send"
-                title="Send (Enter)"
+                aria-label={t("Send")}
+                title={t("Send (Enter)")}
                 className="mv-press flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-ink-subtle/40"
               >
                 {busy ? <Spinner className="h-4 w-4" /> : <IconArrowUp className="h-[18px] w-[18px]" />}
@@ -230,12 +242,12 @@ export function Composer({
             ) : (
               <button
                 onClick={onVoiceMode}
-                aria-label="Start voice conversation"
-                title="Voice conversation"
+                aria-label={t("Start voice conversation")}
+                title={t("Voice conversation")}
                 className="mv-press flex h-9 items-center gap-1.5 rounded-full bg-ink px-3 text-sm font-medium text-white transition-colors hover:bg-ink/85"
               >
                 <IconWaveform className="h-[18px] w-[18px]" />
-                <span className="hidden sm:inline">Voice</span>
+                <span className="hidden sm:inline">{t("Voice")}</span>
               </button>
             )}
           </div>
@@ -273,62 +285,5 @@ function ToolButton({
     >
       {children}
     </button>
-  )
-}
-
-function PhrasesPanel({
-  patientId,
-  examples,
-  onInsert,
-  onClose,
-}: {
-  patientId: string
-  examples: string[]
-  onInsert: (t: string) => void
-  onClose: () => void
-}) {
-  const terms = GLOSSARY.slice(0, 12)
-  return (
-    <div className="animate-scale-in absolute bottom-full left-0 right-0 z-20 mb-2 max-h-[55vh] overflow-y-auto rounded-2xl border border-canvas-border bg-white p-3 shadow-pop mv-scroll">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs text-ink-muted">
-          MediVara doesn’t translate sign language. Tap a question or a health term to add it, then send.
-          For a conversation with staff, <Link to={`/p/${patientId}/visit-assist`} className="font-medium text-brand-700 underline">open your Visit Card</Link>.
-        </p>
-        <button onClick={onClose} aria-label="Close signs and phrases" className="shrink-0 rounded p-0.5 text-ink-subtle hover:bg-canvas-hover">
-          <IconX className="h-4 w-4" />
-        </button>
-      </div>
-      {examples.length > 0 && (
-        <div className="mt-3">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">Common questions</p>
-          <div className="grid gap-1.5 sm:grid-cols-2">
-            {examples.map((ex) => (
-              <button
-                key={ex}
-                onClick={() => onInsert(ex)}
-                className="rounded-xl border border-canvas-border px-3 py-2 text-left text-sm text-ink transition-colors hover:border-brand-200 hover:bg-brand-50"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      <div className="mt-3">
-        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">Health terms</p>
-        <div className="flex flex-wrap gap-1.5">
-          {terms.map((t) => (
-            <button
-              key={t.term_id}
-              onClick={() => onInsert(t.term)}
-              className="rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-sm text-brand-800 hover:bg-brand-100"
-            >
-              {t.term}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
   )
 }

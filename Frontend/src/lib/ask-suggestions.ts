@@ -1,6 +1,7 @@
 // Example questions for SCR-08, built from what this profile's documents actually contain
 // (timeline events), so every suggestion can be answered. Deterministic: no model call.
 import type { TimelineEvent, TimelineResponse } from '../api/types'
+import { t } from './i18n'
 
 const MAX_SUGGESTIONS = 5
 
@@ -31,20 +32,20 @@ export function buildAskSuggestions(timeline: TimelineResponse | undefined): str
     for (const l of labs) counts.set(shortName(l.title), (counts.get(shortName(l.title)) ?? 0) + 1)
     const repeated = [...counts.entries()].find(([, n]) => n > 1)?.[0]
     const latest = shortName(labs[0].title)
-    out.push(`What was my most recent ${latest}?`)
-    if (repeated) out.push(`How has my ${repeated} changed over time?`)
+    out.push(t("What was my most recent {{latest}}?", { latest: latest }))
+    if (repeated) out.push(t("How has my {{repeated}} changed over time?", { repeated: repeated }))
   }
 
   const meds = of('medication')
-  if (meds.length) out.push('Which medicines are listed in my most recent document?')
-  if (of('allergy').length) out.push('Do I have any allergies in my records?')
-  if (of('condition').length) out.push('Which conditions are documented in my records?')
-  if (of('follow_up').length) out.push('When was my follow-up advised?')
-  if (of('instruction').length) out.push('What advice did my doctor write down for me?')
-  if (of('procedure').length) out.push('Which procedures are mentioned in my records?')
+  if (meds.length) out.push(t("Which medicines are listed in my most recent document?"))
+  if (of('allergy').length) out.push(t("Do I have any allergies in my records?"))
+  if (of('condition').length) out.push(t("Which conditions are documented in my records?"))
+  if (of('follow_up').length) out.push(t("When was my follow-up advised?"))
+  if (of('instruction').length) out.push(t("What advice did my doctor write down for me?"))
+  if (of('procedure').length) out.push(t("Which procedures are mentioned in my records?"))
 
   const picked = out.slice(0, MAX_SUGGESTIONS - (meds.length ? 1 : 0))
   // One medicine-change question shows that MediVara redirects advice to the doctor.
-  if (meds.length) picked.push(`Should I stop taking ${shortName(meds[0].title).toLowerCase()}?`)
+  if (meds.length) picked.push(t("Should I stop taking {{value}}?", { value: shortName(meds[0].title).toLowerCase() }))
   return picked
 }

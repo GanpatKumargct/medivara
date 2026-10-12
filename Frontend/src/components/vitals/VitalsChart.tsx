@@ -2,7 +2,9 @@
 // 8px end markers with a 2px surface ring; hairline grid; a crosshair that snaps to the
 // nearest reading on hover or arrow keys. Two series (blood pressure) get a legend and
 // end labels. Values are shown exactly as entered — nothing is coloured as good or bad.
+import { dateLocale } from '../../lib/format'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { t } from '../../lib/i18n'
 
 export interface SeriesSpec {
   name: string
@@ -39,8 +41,8 @@ function fmtValue(v: number) {
 
 function fmtDate(t: number, withTime = false) {
   const d = new Date(t)
-  const date = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-  return withTime ? `${date}, ${d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : date
+  const date = d.toLocaleDateString(dateLocale(), { day: '2-digit', month: 'short', year: 'numeric' })
+  return withTime ? `${date}, ${d.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' })}` : date
 }
 
 export function VitalsChart({
@@ -109,14 +111,19 @@ export function VitalsChart({
 
   const hover = active !== null ? points[active] : null
   const tipLeft = hover ? Math.min(Math.max(x(hover.t) + 12, 8), width - 180) : 0
-  const summary = `${title}: ${points.length} reading${points.length === 1 ? '' : 's'} from ${fmtDate(points[0].t)} to ${fmtDate(last.t)}. Latest ${series
-    .map((s, i) => `${s.name.toLowerCase()} ${fmtValue(last.values[i])}`)
-    .join(', ')} ${unit}. Use the left and right arrow keys to move between readings.`
+  const summary = t('{{title}}: {{readings}} from {{from}} to {{to}}. Latest {{latest}} {{unit}}. Use the left and right arrow keys to move between readings.', {
+    title,
+    readings: t('{{count}} readings', { count: points.length }),
+    from: fmtDate(points[0].t),
+    to: fmtDate(last.t),
+    latest: series.map((s, i) => `${s.name.toLowerCase()} ${fmtValue(last.values[i])}`).join(', '),
+    unit,
+  })
 
   return (
     <div>
       {series.length > 1 && (
-        <ul className="mb-2 flex flex-wrap gap-4 text-xs text-ink-muted" aria-label="Legend">
+        <ul className="mb-2 flex flex-wrap gap-4 text-xs text-ink-muted" aria-label={t("Legend")}>
           {series.map((s) => (
             <li key={s.name} className="flex items-center gap-1.5">
               <span className="inline-block h-0.5 w-4 rounded-full" style={{ background: s.color }} aria-hidden="true" />

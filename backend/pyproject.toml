@@ -3,6 +3,7 @@ name = "medivara-api"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
+    "alembic==1.20.0",
     "argon2-cffi==25.1.0",
     "fastapi==0.143.0",
     "filetype==1.2.0",

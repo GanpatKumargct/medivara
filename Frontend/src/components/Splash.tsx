@@ -1,8 +1,9 @@
 // Branded full-screen loading splash (hackathon-ready). A spinning multi-hue ring
 // around the Medivara mark, with the wordmark, tagline and an indeterminate bar.
 import { LogoMark } from './brand'
+import { t } from '../lib/i18n'
 
-export function Splash({ label = 'Loading your records…' }: { label?: string }) {
+export function Splash({ label = t("Loading your records…") }: { label?: string }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-hero-fade">
       {/* floating brand orbs */}
@@ -27,8 +28,8 @@ export function Splash({ label = 'Loading your records…' }: { label?: string }
           </div>
         </div>
 
-        <p className="mt-6 text-2xl font-extrabold tracking-tight text-brand-900">Medivara</p>
-        <p className="mt-1 text-sm text-ink-muted">Your Health History. Clearer Decisions.</p>
+        <p className="mt-6 text-2xl font-extrabold tracking-tight text-brand-900">{t("Medivara")}</p>
+        <p className="mt-1 text-sm text-ink-muted">{t("Your Health History. Clearer Decisions.")}</p>
 
         {/* indeterminate bar */}
         <div className="mv-progress mt-5 w-48" aria-hidden="true" />

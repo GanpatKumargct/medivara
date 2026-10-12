@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
-from app import audit
+from app import audit, versions
 from app.access import PatientAccess, load_owned, require_access
 from app.db import get_session
 from app.errors import ApiError
@@ -15,7 +15,7 @@ from app.models import DocumentPage, ExtractedFact, MedicalDocument, utcnow
 from app.pipeline.normalize import parse_date
 from app.review import REVIEWABLE, TRANSITIONS, append_history, refresh_document_status
 from app.routers import API_PREFIX
-from app.routers.documents import fact_out
+from app.routers.documents import fact_out, require_editable
 
 router = APIRouter(prefix=API_PREFIX, tags=["facts"])
 
@@ -34,6 +34,10 @@ class FactPatch(BaseModel):
     note: str | None = Field(None, max_length=200)
 
 
+FACT_VERSION_ACTIONS = {"confirm": "fact_confirmed", "correct": "fact_corrected", "reject": "fact_rejected",
+                        "undo_reject": "fact_unrejected"}
+
+
 def _field_error(field: str, issue: str) -> ApiError:
     return ApiError(422, "VALIDATION_ERROR", "Some fields need attention.", {"fields": [{"field": field, "issue": issue}]})
 
@@ -48,6 +52,7 @@ def patch_fact(
 ) -> dict:
     fact = load_owned(session, ExtractedFact, fact_id, access.patient.id)
     doc = session.get(MedicalDocument, fact.document_id)
+    require_editable(doc)
     if doc.status not in REVIEWABLE:
         raise ApiError(409, "INVALID_STATE", "This document is still being read.")
 
@@ -91,6 +96,8 @@ def patch_fact(
     session.add(fact)
     session.flush()
     refresh_document_status(session, doc)
+    versions.record_change(session, doc, FACT_VERSION_ACTIONS[body.action], user_id=access.current.user.id,
+                           session_id=access.current.auth_session.id)
     session.commit()
     session.refresh(fact)
     session.refresh(doc)

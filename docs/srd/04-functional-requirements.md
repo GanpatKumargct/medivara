@@ -654,8 +654,8 @@ Gemini transcription and TTS models for consistent cross-browser voice, Indian-l
 - **Acceptance criteria:** The flag is stored and displayed; the "Simulated" label is present.
 - **Dependencies:** SCR-13 · API-32 · FE-9.4 · BE-11.2.
 
-### FR-064 Experimental isolated-sign recognition — P2 · Future (not built in the hackathon)
-On-device recognition of a handful of isolated ISL signs, using open datasets such as INCLUDE. Requires co-design and validation with Deaf signers before any public demo.
+### FR-064 Experimental isolated-sign recognition — P1 · Experimental (DEC-28)
+On-device recognition of a handful of isolated ISL signs that pick a question about the user's records, which the user confirms before sending; emergency signs go straight to the fixed emergency card. Matching against recorded examples (the team pack and the user's own); INCLUDE lacks health signs. Requires co-design and validation with Deaf signers before any claim beyond "experimental". Specification: [09-multimodal-accessibility.md](09-multimodal-accessibility.md) §4.7.
 
 ### FR-065 ISL sentence translation or signing avatar — Future
 Two-way translation between ISL and text or speech. A research-level problem that requires the Deaf community, linguists and large datasets. MediVara will not claim it.

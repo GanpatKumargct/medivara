@@ -12,6 +12,16 @@ FastAPI service for the MediVara hackathon prototype. Specs: `../docs/srd/11-api
 6. `uv run uvicorn app.main:app --reload --port 8000 --no-access-log` (our own allow-list log replaces uvicorn's, which would print raw paths and query strings)
 7. Open Swagger at http://localhost:8000/api/v1/docs, call `POST /auth/login` with `meera.demo@medivara.test` / `MediVara-Demo-2026`, then use **Authorize** with the token.
 
+## Database migrations
+
+Schema changes are Alembic migrations in `migrations/versions/` and run automatically at start-up
+(`app/db.py:init_db`). An empty database is created from the models; a database made before
+Alembic is marked as the baseline (`0001`) and upgraded, keeping its data. To change the schema:
+edit `app/models.py`, then
+`uv run alembic -c migrations/alembic.ini revision --autogenerate -m "what changed"`,
+review the file (add server defaults or a data step for existing rows), and restart.
+`uv run alembic -c migrations/alembic.ini check` confirms the models and migrations agree.
+
 ## Test
 
 `uv run pytest` runs on throwaway SQLite files (fast). To run the same suite on PostgreSQL:

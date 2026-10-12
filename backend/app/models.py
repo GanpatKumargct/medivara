@@ -4,7 +4,7 @@ from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import JSON, Column, Index, text
+from sqlalchemy import JSON, Column, Index, UniqueConstraint, text
 from sqlmodel import Field, SQLModel
 
 from app.ids import new_id
@@ -51,6 +51,9 @@ class ConsentType(str, Enum):
     sharing = "sharing"
     voice_input = "voice_input"
     notifications = "notifications"
+    # Camera for sign-assisted questions (DEC-28). Video stays on the device; only the
+    # confirmed question text is sent.
+    camera_input = "camera_input"
 
 
 class AuditOutcome(str, Enum):
@@ -67,6 +70,10 @@ class User(SQLModel, table=True):
     is_demo: bool = False
     created_at: datetime = Field(default_factory=utcnow)
     last_login_at: datetime | None = None
+    # The sign-in before the latest one: "since your last visit" starts here.
+    previous_login_at: datetime | None = None
+    # Interface and answer language (DEC-29): en, hi, bn, ta, te, mr, gu, kn, ml, or, pa.
+    preferred_language: str = "en"
 
 
 class AuthSession(SQLModel, table=True):
@@ -260,9 +267,42 @@ class MedicalDocument(SQLModel, table=True):
     model_id: str | None = None
     prompt_version: str | None = None
     discarded_fact_count: int = 0
+    # Versioning (app/versions.py). One logical document = one series; each uploaded file is a
+    # row in it. Only the current, non-deleted row is used by Records, timeline, brief and Ask.
+    series_id: str = Field(default="", index=True)
+    file_version: int = 1
+    is_current: bool = True
+    superseded_at: datetime | None = None
+    # Soft delete ("Recently deleted", 30 days); set on every row of the series.
+    deleted_at: datetime | None = Field(default=None, index=True)
+    deleted_by_user_id: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
     processed_at: datetime | None = None
+
+    def model_post_init(self, __context) -> None:
+        if not self.series_id:
+            self.series_id = self.id
+
+
+class RecordVersion(SQLModel, table=True):
+    """One saved state of a document (series) after a change. Append-only; restoring writes a
+    new version. Holds record content (like facts): patient-scoped and never logged."""
+
+    __tablename__ = "record_version"
+    __table_args__ = (UniqueConstraint("series_id", "version_no", name="uq_record_version_no"),)
+
+    id: str = Field(default_factory=lambda: new_id("rv"), primary_key=True)
+    patient_id: str = Field(foreign_key="patient_profile.id", index=True)
+    series_id: str = Field(index=True)
+    document_id: str  # the file row at that time
+    version_no: int
+    action: str
+    actor_user_id: str | None = None  # None for automatic steps (reading the document)
+    session_id: str | None = None  # the sign-in the change was made in
+    snapshot: dict[str, Any] = _json_dict()
+    summary: list[dict[str, Any]] = _json_list()
+    at: datetime = Field(default_factory=utcnow, index=True)
 
 
 class DocumentPage(SQLModel, table=True):

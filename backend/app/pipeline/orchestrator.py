@@ -8,7 +8,7 @@ Every failure ends as `failed` with a failure code and copy-deck text.
 import logging
 import time
 
-from sqlmodel import Session, delete
+from sqlmodel import Session, delete, select
 
 from app import storage
 from app.db import get_engine
@@ -22,6 +22,7 @@ from app.models import (
     FactType,
     FailureCode,
     MedicalDocument,
+    RecordVersion,
     utcnow,
 )
 from app.pipeline import extraction, golden_cache, lines, screening, validation
@@ -147,6 +148,30 @@ def _store_facts(
         session.commit()
 
 
+def _record_version(document_id: str) -> None:
+    """Save the result of reading as a version (app/versions.py). A new file of an existing
+    document becomes current only if it was read; otherwise the previous file stays."""
+    from app import versions
+
+    try:
+        with Session(get_engine()) as session:
+            doc = session.get(MedicalDocument, document_id)
+            if doc is None:
+                return
+            if not doc.is_current:
+                versions.finish_new_file(session, doc)
+                return
+            earlier = session.exec(
+                select(RecordVersion.id).where(RecordVersion.series_id == doc.series_id,
+                                               RecordVersion.action.in_(["read", "read_again"]))
+            ).first()
+            action = "read_failed" if doc.status == DocumentStatus.failed else ("read_again" if earlier else "read")
+            versions.record_change(session, doc, action)
+            session.commit()
+    except Exception as exc:  # noqa: BLE001  history must never break processing
+        log.error("version_record_error", extra={"document_id": document_id, "exc_type": type(exc).__name__})
+
+
 def process_document(document_id: str) -> None:
     start = time.perf_counter()
     code: FailureCode | None = None
@@ -223,6 +248,7 @@ def process_document(document_id: str) -> None:
             failure_message=FAILURE_MESSAGES[code],
             processed_at=utcnow(),
         )
+    _record_version(document_id)
     log.info(
         "document_processed",
         extra={

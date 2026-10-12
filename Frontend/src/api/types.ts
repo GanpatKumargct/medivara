@@ -53,6 +53,8 @@ export interface MeResponse {
   current_policy_version: string
   onboarding_required: boolean
   consents: Record<string, ConsentState | null>
+  /** Interface language (DEC-29); older backends omit it. */
+  preferred_language?: string
 }
 
 export interface LoginResponse {
@@ -134,6 +136,12 @@ export interface DocumentSummary {
   fact_counts: FactCounts
   created_at: string
   processed_at: string | null
+  // Versioning (DEC-27). Older backends omit these; treat missing as a single current file.
+  series_id?: string
+  file_version?: number
+  is_current?: boolean
+  deleted_at?: string | null
+  new_file_pending?: boolean
 }
 
 export type FactType =
@@ -524,7 +532,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   kind: 'question' | 'answer' | 'attachment'
   text: string | null
-  input_mode: 'text' | 'voice' | null
+  input_mode: 'text' | 'voice' | 'sign' | null
   answer: AskResponse | null
   document: {
     id: string
@@ -696,4 +704,89 @@ export class ApiError extends Error {
     this.details = body.details
     this.request_id = body.request_id
   }
+}
+
+// Document history and versions (DEC-27, API-34..39, API-68) ----------------------------
+
+export type VersionAction =
+  | 'existing' | 'uploaded' | 'read' | 'read_again' | 'read_failed' | 'details_edited'
+  | 'fact_confirmed' | 'fact_corrected' | 'fact_rejected' | 'fact_unrejected' | 'bulk_confirmed'
+  | 'deleted' | 'undeleted' | 'restored' | 'new_file_version' | 'new_file_failed'
+
+export interface VersionChange {
+  kind: string
+  [key: string]: string | number | boolean | null | undefined
+}
+
+export interface VersionItem {
+  version_no: number
+  action: VersionAction
+  actor: { id: string; display_name: string } | null
+  by_me: boolean
+  this_session?: boolean
+  at: string
+  file_version: number
+  summary: VersionChange[]
+}
+
+export interface DocumentFile {
+  document_id: string
+  file_version: number
+  original_filename: string
+  is_current: boolean
+  status: DocumentStatus
+  uploaded_at: string
+}
+
+export interface DocumentHistory {
+  document: DocumentSummary
+  files: DocumentFile[]
+  versions: VersionItem[]
+  latest_version: number
+}
+
+export interface VersionState {
+  document_id: string
+  file_version: number
+  status: DocumentStatus
+  deleted: boolean
+  header: {
+    document_type: DocumentType
+    document_date: string | null
+    document_date_text: string | null
+    facility_name: string | null
+    clinician_name: string | null
+    title: string
+  }
+  facts: { id: string; fact_type: FactType; status: FactStatus; confidence: Confidence; text: string }[]
+}
+
+export interface VersionDetail {
+  version: VersionItem
+  state: VersionState
+}
+
+export interface DeletedDocument extends DocumentSummary {
+  deleted_by: { id: string | null; display_name: string }
+  purge_after: string
+}
+
+export interface ChangesResponse {
+  since: string | null
+  items: {
+    document: { id: string; series_id: string; title: string; deleted: boolean; is_new: boolean }
+    changes: VersionItem[]
+  }[]
+  counts: { documents: number; changes: number }
+}
+
+export interface LoginItem {
+  session_id: string
+  at: string
+  current: boolean
+}
+
+export interface RecordsAsOf {
+  at: string
+  documents: (VersionState & { series_id: string; version_no: number })[]
 }

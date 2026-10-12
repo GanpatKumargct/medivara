@@ -6,6 +6,7 @@ from sqlalchemy import case
 from sqlmodel import Session, func, select
 
 from app import audit
+from app.versions import visible
 from app.access import PatientAccess, effective_scopes, require_access
 from app.auth import CurrentUser, current_user
 from app.db import get_session
@@ -37,7 +38,7 @@ def patient_stats(session: Session, patient_id: str) -> dict:
     by_status = dict(
         session.exec(
             select(MedicalDocument.status, func.count())
-            .where(MedicalDocument.patient_id == patient_id)
+            .where(MedicalDocument.patient_id == patient_id, visible())
             .group_by(MedicalDocument.status)
         ).all()
     )

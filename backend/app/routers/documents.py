@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlmodel import Session, delete, func, select
 
-from app import audit, storage
+from app import audit, storage, versions
 from app.access import PatientAccess, load_owned, require_access
 from app.consents import require_ai_consent
 from app.db import get_session
@@ -93,7 +93,21 @@ def document_summary(doc: MedicalDocument, fact_counts: dict) -> dict:
         "fact_counts": fact_counts,
         "created_at": iso_z(doc.created_at),
         "processed_at": iso_z(doc.processed_at),
+        # Versioning (DEC-27): the logical document, which file this is, and its state.
+        "series_id": doc.series_id,
+        "file_version": doc.file_version,
+        "is_current": doc.is_current,
+        "deleted_at": iso_z(doc.deleted_at),
+        "new_file_pending": False,
     }
+
+
+def require_editable(doc: MedicalDocument) -> None:
+    """Changes go to the current file of a document that is not in Recently deleted."""
+    if doc.deleted_at is not None:
+        raise ApiError(409, "INVALID_STATE", "This document is in Recently deleted. Restore it to make changes.")
+    if not doc.is_current:
+        raise ApiError(409, "INVALID_STATE", "This is an older version of the document. Restore it to make changes.")
 
 
 def fact_out(fact: ExtractedFact, lines_by_id: dict[str, dict], document_date=None) -> dict:
@@ -181,6 +195,43 @@ def _split_filter(raw: str | None, allowed: set[str], field: str) -> list[str]:
 # --- Endpoints -------------------------------------------------------------------------
 
 
+def _refuse_duplicate(session: Session, access: PatientAccess, digest: str) -> None:
+    existing = session.exec(
+        select(MedicalDocument).where(MedicalDocument.patient_id == access.patient.id, MedicalDocument.sha256 == digest)
+    ).first()
+    if existing is None:
+        return
+    current = versions.current_row(session, existing.series_id) or existing
+    details = {"existing_document_id": current.id}
+    if existing.deleted_at is not None:
+        details["deleted"] = True
+        message = f"This file is in {access.patient.display_name}'s Recently deleted. Restore it from there."
+    elif not existing.is_current:
+        details["older_version"] = True
+        message = f"This file is an older version of a document in {access.patient.display_name}'s records."
+    else:
+        message = f"This file is already in {access.patient.display_name}'s records."
+    raise ApiError(409, "DUPLICATE_DOCUMENT", message, details)
+
+
+def read_upload(file: UploadFile) -> tuple[bytes, str, int]:
+    """Size, type and page checks shared by API-08 and API-37. Returns (data, mime, pages)."""
+    data = file.file.read(MAX_BYTES + 1)
+    if len(data) > MAX_BYTES:
+        raise ApiError(413, "FILE_TOO_LARGE", "This file is larger than 10 MB. Please choose a smaller file.")
+    kind = filetype.guess(data)
+    if kind is None or kind.mime != "application/pdf":
+        raise ApiError(415, "UNSUPPORTED_FILE_TYPE", "Only PDF files can be added in this prototype.")
+    try:
+        pages = count_pages(data)
+    except UnreadablePdf:
+        # Stored and failed by the pipeline with UNREADABLE_PDF, so the user sees why.
+        pages = 0
+    if pages > MAX_PAGES:
+        raise ApiError(422, "TOO_MANY_PAGES", "This PDF has more than 10 pages. Please split it into smaller files.")
+    return data, kind.mime, pages
+
+
 @router.post("/patients/{patient_id}/documents", status_code=202)
 def upload_document(
     request: Request,
@@ -199,38 +250,16 @@ def upload_document(
             {"fields": [{"field": "document_type_hint", "issue": "unknown document type"}]},
         )
 
-    data = file.file.read(MAX_BYTES + 1)
-    if len(data) > MAX_BYTES:
-        raise ApiError(413, "FILE_TOO_LARGE", "This file is larger than 10 MB. Please choose a smaller file.")
-    kind = filetype.guess(data)
-    if kind is None or kind.mime != "application/pdf":
-        raise ApiError(415, "UNSUPPORTED_FILE_TYPE", "Only PDF files can be added in this prototype.")
-    try:
-        pages = count_pages(data)
-    except UnreadablePdf:
-        # Stored and failed by the pipeline with UNREADABLE_PDF, so the user sees why.
-        pages = 0
-    if pages > MAX_PAGES:
-        raise ApiError(422, "TOO_MANY_PAGES", "This PDF has more than 10 pages. Please split it into smaller files.")
-
+    data, mime, pages = read_upload(file)
     digest = hashlib.sha256(data).hexdigest()
-    existing = session.exec(
-        select(MedicalDocument).where(MedicalDocument.patient_id == access.patient.id, MedicalDocument.sha256 == digest)
-    ).first()
-    if existing is not None:
-        raise ApiError(
-            409,
-            "DUPLICATE_DOCUMENT",
-            f"This file is already in {access.patient.display_name}'s records.",
-            {"existing_document_id": existing.id},
-        )
+    _refuse_duplicate(session, access, digest)
 
     filename = sanitize_filename(file.filename)
     doc = MedicalDocument(
         patient_id=access.patient.id,
         uploaded_by_user_id=access.current.user.id,
         original_filename=filename,
-        mime_type=kind.mime,
+        mime_type=mime,
         size_bytes=len(data),
         sha256=digest,
         storage_key=storage.save(data),
@@ -239,6 +268,8 @@ def upload_document(
         document_type_hint=document_type_hint,
     )
     session.add(doc)
+    versions.record_change(session, doc, "uploaded", user_id=access.current.user.id,
+                           session_id=access.current.auth_session.id)
     session.commit()
     session.refresh(doc)
     audit.write(
@@ -264,7 +295,7 @@ def list_documents(
     access: PatientAccess = Depends(require_access("view_records")),
     session: Session = Depends(get_session),
 ) -> dict:
-    where = [MedicalDocument.patient_id == access.patient.id]
+    where = [MedicalDocument.patient_id == access.patient.id, versions.visible()]
     if statuses := _split_filter(status, STATUS_VALUES, "status"):
         where.append(MedicalDocument.status.in_([DocumentStatus(s) for s in statuses]))
     if types := _split_filter(document_type, TYPE_VALUES, "document_type"):
@@ -283,8 +314,23 @@ def list_documents(
         .limit(limit)
     ).all()
     counts = _fact_counts(session, [d.id for d in docs])
+    # Series with a newer file still being read (API-37).
+    pending = set(
+        session.exec(
+            select(MedicalDocument.series_id).where(
+                MedicalDocument.series_id.in_([d.series_id for d in docs]),
+                MedicalDocument.is_current.is_(False),
+                MedicalDocument.status.in_([DocumentStatus.queued, DocumentStatus.processing]),
+            )
+        ).all()
+    )
+    items = []
+    for d in docs:
+        item = document_summary(d, counts[d.id])
+        item["new_file_pending"] = d.series_id in pending
+        items.append(item)
     return {
-        "items": [document_summary(d, counts[d.id]) for d in docs],
+        "items": items,
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -344,6 +390,7 @@ def reprocess_document(
     session: Session = Depends(get_session),
 ) -> dict:
     doc = load_owned(session, MedicalDocument, document_id, access.patient.id)
+    require_editable(doc)
     retryable = doc.status == DocumentStatus.failed or (
         doc.status == DocumentStatus.needs_review and not has_reviewed_facts(session, doc.id)
     )
@@ -379,34 +426,41 @@ def reprocess_document(
 def delete_document(
     document_id: str,
     request: Request,
+    permanent: bool = Query(False),
     access: PatientAccess = Depends(require_access(None, owner_only=True)),
     session: Session = Depends(get_session),
 ) -> Response:
-    """API-22 (BE-4.6, FR-023): removes the file, pages and facts. Briefs that used the document
-    turn stale through the fingerprint. Reminders made from its facts are kept, unlinked."""
+    """API-22 (BE-4.6, FR-023, DEC-27). Default: move the document (every file of it) to Recently
+    deleted for 30 days; it disappears from Records, the timeline, briefs and Ask at once.
+    `permanent=true`: remove the files, pages, facts and history now (also from Recently deleted).
+    Reminders made from its facts are kept and unlinked when the facts are removed."""
     doc = load_owned(session, MedicalDocument, document_id, access.patient.id)
-    if doc.status in (DocumentStatus.queued, DocumentStatus.processing):
+    rows = versions.series_rows(session, doc.series_id)
+    if any(d.status in (DocumentStatus.queued, DocumentStatus.processing) for d in rows):
         raise ApiError(409, "INVALID_STATE", "This document is still being read. Try again when it has finished.")
-    fact_ids = select(ExtractedFact.id).where(ExtractedFact.document_id == doc.id)
-    for reminder in session.exec(
-        select(Reminder).where(Reminder.patient_id == access.patient.id, Reminder.source_fact_id.in_(fact_ids))
-    ).all():
-        reminder.source_fact_id = None
-        reminder.updated_at = utcnow()
-        session.add(reminder)
-    session.exec(delete(ExtractedFact).where(ExtractedFact.document_id == doc.id))
-    session.exec(delete(DocumentPage).where(DocumentPage.document_id == doc.id))
-    storage_key = doc.storage_key
-    session.delete(doc)
-    session.commit()
-    try:
-        storage.path_for(storage_key).unlink(missing_ok=True)
-    except (OSError, ValueError) as exc:
-        # The database delete stands; the orphaned file is noted for clean-up (IDs only).
-        log.error("document_file_not_removed", extra={"document_id": document_id, "exc_type": type(exc).__name__})
+    if permanent:
+        keys = versions.purge_series(session, doc.series_id)
+        session.commit()
+        versions.remove_files(keys)
+        action = "document.purged"
+    else:
+        if doc.deleted_at is not None:
+            raise ApiError(409, "INVALID_STATE", "This document is already in Recently deleted.")
+        if not doc.is_current:
+            raise ApiError(409, "INVALID_STATE", "Delete the document from its current version.")
+        now = utcnow()
+        for row in rows:
+            row.deleted_at = now
+            row.deleted_by_user_id = access.current.user.id
+            row.updated_at = now
+            session.add(row)
+        versions.record_change(session, doc, "deleted", user_id=access.current.user.id,
+                               session_id=access.current.auth_session.id)
+        session.commit()
+        action = "document.deleted"
     audit.write(
         request,
-        "document.deleted",
+        action,
         actor_user_id=access.current.user.id,
         patient_id=access.patient.id,
         resource_type="document",
@@ -451,6 +505,7 @@ def patch_document(
             422, "VALIDATION_ERROR", "Some fields need attention.",
             {"fields": [{"field": "body", "issue": "at least one field is required"}]},
         )
+    require_editable(doc)
     if doc.status not in REVIEWABLE:
         raise ApiError(409, "INVALID_STATE", "This document is still being read.")
     today = today_ist()
@@ -479,6 +534,8 @@ def patch_document(
     doc.title = build_title(doc.document_type.value, doc.facility_name, doc.document_date)
     doc.updated_at = utcnow()
     session.add(doc)
+    versions.record_change(session, doc, "details_edited", user_id=access.current.user.id,
+                           session_id=access.current.auth_session.id)
     session.commit()
     session.refresh(doc)
     audit.write(
@@ -506,6 +563,7 @@ def bulk_review(
     session: Session = Depends(get_session),
 ) -> dict:
     doc = load_owned(session, MedicalDocument, document_id, access.patient.id)
+    require_editable(doc)
     if doc.status not in REVIEWABLE:
         raise ApiError(409, "INVALID_STATE", "This document is still being read.")
     user_id = access.current.user.id
@@ -527,6 +585,9 @@ def bulk_review(
         session.add(fact)
     session.flush()
     refresh_document_status(session, doc)
+    if eligible:
+        versions.record_change(session, doc, "bulk_confirmed", user_id=user_id,
+                               session_id=access.current.auth_session.id)
     session.commit()
     session.refresh(doc)
     remaining = _fact_counts(session, [doc.id])[doc.id]["unverified"]

@@ -1,0 +1,39 @@
+{
+  "note": "Machine-translated (Gemini 2.5 Flash). Safety and medical messages below need a native speaker's review before release.",
+  "reviewed": {
+    "hi": false,
+    "bn": false,
+    "ta": false,
+    "te": false,
+    "mr": false,
+    "gu": false,
+    "kn": false,
+    "ml": false,
+    "or": false,
+    "pa": false
+  },
+  "safety_keys": [
+    "Ambulance 108",
+    "Blood group, allergies and emergency contacts.",
+    "Call 112",
+    "Can’t breathe",
+    "Chest pain",
+    "Created with MediVara (prototype) · synthetic data · not medical advice",
+    "Emergency",
+    "Emergency contacts",
+    "Feeling low, anxious or overwhelmed for more than two weeks after birth is common and treatable — tell your doctor. If you have thoughts of harming yourself or your baby, call Tele-MANAS on 14416 (free, 24×7) or 112 now. For heavy bleeding, fever or severe pain, call 108.",
+    "I am entering this schedule exactly as my doctor or pharmacist told me. MediVara will not change my medicines or doses.",
+    "I can’t advise you to start, stop or change any medicine or dose. Only your doctor can decide that with you. Here is what your documents say, so you can discuss it with them.",
+    "If you have bleeding, severe pain, a severe headache or blurred vision, fits, a fever, leaking fluid, or your baby is moving less than usual, call 108 or go to the nearest hospital now. MediVara doesn’t give pregnancy advice — follow the check-up schedule your doctor or health worker gives you.",
+    "If you or someone else may be in danger or need urgent medical help, call 112 (emergency) or 108 (ambulance) now, or go to the nearest emergency department. If you are thinking about harming yourself, call Tele-MANAS on 14416 (free, 24×7). MediVara cannot help in an emergency.",
+    "Key details for an emergency or a new doctor. You enter these yourself; keep them up to date.",
+    "Medical ID · In an emergency call 112",
+    "MediVara helps you organise your medical documents, see your history on a timeline, and prepare questions for your doctor. It shows where every piece of information came from. MediVara does not diagnose, treat or give medical advice, and it can make mistakes. Always check important information with a qualified healthcare professional. In an emergency, call 112.",
+    "MediVara organises what your documents say. It is not medical advice. Check important information with your doctor.",
+    "Refill prescriptions from a licensed pharmacy.",
+    "These send straight away and show who to call.",
+    "This updates automatically.",
+    "Urgent",
+    "Voice conversation streams your microphone audio to ElevenLabs, a third-party voice AI service, which turns your speech into text and speaks answers back. ElevenLabs also receives your first names, a list of this profile’s documents (type, clinic and date — not their contents) and the answers it reads out. Answers about your records still come only from MediVara’s checked answers, and each one is saved to this chat. Use synthetic data only. In an emergency, call 112."
+  ]
+}

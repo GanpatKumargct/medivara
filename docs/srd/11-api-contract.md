@@ -129,7 +129,7 @@ These objects appear in several responses. Field meanings are in [07-data-model.
 | API-19 | `GET /patients/{patient_id}/briefs/latest` | Latest brief | `view_records` | P0 | SCR-04, SCR-09, SCR-11 | BE-7.2 | FE-4.4, FE-8.1 |
 | API-20 | `POST /patients/{patient_id}/briefs/{brief_id}/narrative` | Generate validated narrative | `view_records` | P0 | SCR-09 | BE-7.5 | FE-4.5 |
 | API-21 | `POST /patients/{patient_id}/ask` | Grounded question answering | `view_records` | P0 | SCR-08 | BE-7.6, BE-8.1, BE-8.2 | FE-5.1–5.3 |
-| API-22 | `DELETE /patients/{patient_id}/documents/{document_id}` | Delete a document | Owner | P1 | SCR-06 | BE-4.6 | FE-3.8 |
+| API-22 | `DELETE /patients/{patient_id}/documents/{document_id}` | Delete a document (Recently deleted; `?permanent=true` removes it) | Owner | P1 | SCR-05, SCR-06 | BE-4.6 | FE-3.8 |
 | API-23 | `GET /patients/{patient_id}/access` | List grants | Owner | P1 | SCR-14 | BE-9.1 | FE-6.2 |
 | API-24 | `POST /patients/{patient_id}/access` | Grant caregiver access | Owner | P1 | SCR-14 | BE-9.1 | FE-6.2 |
 | API-25 | `DELETE /patients/{patient_id}/access/{grant_id}` | Revoke or leave | Owner, or the grantee | P1 | SCR-14 | BE-9.1 | FE-6.2 |
@@ -141,8 +141,16 @@ These objects appear in several responses. Field meanings are in [07-data-model.
 | API-31 | `GET /patients/{patient_id}/appointment-suggestions` | Specialty suggestions + simulated providers | `view_records` | P1 | SCR-13 | BE-11.1 | FE-9.4 |
 | API-32 | `POST /patients/{patient_id}/appointments` | Simulated booking | `manage_reminders` | P1 | SCR-13 | BE-11.2 | FE-9.4 |
 | API-33 | `GET /patients/{patient_id}/appointments` | List simulated appointments | `view_records` | P1 | SCR-13 | BE-11.2 | FE-9.4 |
+| API-34 | `GET /patients/{patient_id}/documents/{document_id}/history` | Versions of a document, newest first | `view_records` | P1 | SCR-06 | DEC-27 | DEC-27 |
+| API-35 | `GET /patients/{patient_id}/documents/{document_id}/history/{version_no}` | One version: state and what changed | `view_records` | P1 | SCR-06 | DEC-27 | DEC-27 |
+| API-36 | `POST /patients/{patient_id}/documents/{document_id}/history/{version_no}/restore` | Restore a version (saved as a new version) | `upload_documents` | P1 | SCR-06 | DEC-27 | DEC-27 |
+| API-37 | `POST /patients/{patient_id}/documents/{document_id}/versions` | Upload a new file of a document | `upload_documents` | P1 | SCR-06 | DEC-27 | DEC-27 |
+| API-38 | `GET /patients/{patient_id}/documents/deleted` · `POST …/documents/{document_id}/undelete` | Recently deleted: list, restore | Owner | P1 | SCR-05 | DEC-27 | DEC-27 |
+| API-39 | `GET /patients/{patient_id}/changes?since=last_login` | Changes since the caller's previous sign-in (or a time) | `view_records` | P1 | SCR-04, SCR-05 | DEC-27 | DEC-27 |
+| API-69 | `PATCH /me/preferences` `{ preferred_language }` → `{ preferred_language }` (en · hi · bn · ta · te · mr · gu · kn · ml · or · pa; 422 otherwise). API-04 returns `preferred_language` | Signed in | P1 | Settings, Login | DEC-29 | DEC-29 |
+| API-68 | `GET /patients/{patient_id}/records-as-of?at=` · `GET /me/logins` | Documents as they were at a time; the caller's sign-ins | `view_records` · signed in | P1 | Visit history | DEC-27 | DEC-27 |
 
-Voice and sign language need **no endpoints** in the MVP. Speech runs in the browser. The ISL glossary is static content shipped with the frontend. The only backend touchpoints are `input_mode` on API-21 and the `voice_input` consent type on API-05.
+Voice and sign language need **no endpoints** in the MVP. Speech runs in the browser. The ISL glossary is static content shipped with the frontend. The only backend touchpoints are `input_mode` on API-21 (and API-52) and the `voice_input` and `camera_input` consent types on API-05. Sign recognition (DEC-28) also runs in the browser; the backend only receives the confirmed question text.
 
 ---
 
@@ -263,7 +271,7 @@ Fixture: `contracts/API-04.200.json`
 
 | Field | Type | Validation |
 |---|---|---|
-| consent_type | enum | `terms_and_disclaimer` · `ai_processing` · `voice_input` · `notifications`. (`sharing` is recorded only by API-24.) |
+| consent_type | enum | `terms_and_disclaimer` · `ai_processing` · `voice_input` · `notifications` · `camera_input` (sign-assisted questions, DEC-28). (`sharing` is recorded only by API-24.) |
 | granted | boolean | Required. `false` records a withdrawal. |
 | policy_version | string | Must equal `current_policy_version` from API-04 |
 
@@ -1100,7 +1108,7 @@ Single-turn. There is no conversation memory on the server; the frontend keeps t
 | Field | Type | Validation |
 |---|---|---|
 | question | string | Required; 1–500 chars after trimming |
-| input_mode | enum | `text` (default) · `voice` |
+| input_mode | enum | `text` (default) · `voice` · `sign` (a question built from recognised signs and confirmed by the user, DEC-28) |
 
 Pipeline: AG-09 gate → AG-10 context → AG-11 generator → AG-12 validator (see [08-ai-rag-design.md](08-ai-rag-design.md)). Hard time limit: 20 seconds, then the evidence-only fallback.
 
@@ -1230,7 +1238,7 @@ Fixture: `contracts/API-21.200.degraded.json`
 
 ### API-22 `DELETE /patients/{patient_id}/documents/{document_id}` — P1
 
-Owner only. Deletes the file, pages and facts. Briefs that used the document become `stale` automatically through the fingerprint. Returns **204**. Status codes: 204 · 403 `OWNER_ONLY` · 404 · 409 `INVALID_STATE` (while processing).
+Owner only. Since 1.5.0 (DEC-27) the default moves the document, with every file of it, to **Recently deleted** for 30 days: it disappears at once from API-10, the timeline, briefs (they become `stale` through the fingerprint) and Ask, and API-38 can restore it. `?permanent=true` removes the files, pages, facts and version history now, also for a document already in Recently deleted; reminders made from its facts are kept and unlinked. Documents left in Recently deleted are removed after 30 days. Returns **204**. Status codes: 204 · 403 `OWNER_ONLY` · 404 · 409 `INVALID_STATE` (while processing; already deleted; called on an older file).
 
 ### API-23 `GET /patients/{patient_id}/access` — P1
 
@@ -1507,6 +1515,7 @@ Returns `{ items: [appointment…], total, limit, offset }`, using the same obje
 
 ## 5b. Redesign extensions (API-40 to API-67)
 
+> Added in contract 1.2.0 for the frontend redesign. **Additive only**: no existing route or response shape changes (one API-04 behaviour note below). 22 endpoints, API-40 to API-61. Every path is under `/api/v1`, uses the §2 error envelope and follows §1 (UTC `Z` timestamps, `YYYY-MM-DD` dates, documented keys never omitted). Data lives in new tables only (`profile_details`, `vital_reading`, `chat_session`, `chat_message`, `invitation`), so existing databases need no migration. Every route except API-40 needs a bearer token (401 `UNAUTHENTICATED` otherwise).
 > Added in contract 1.2.0 for the frontend redesign (API-40 to API-61); contract 1.4.0 adds women's health, API-62 to API-67. **Additive only**: no existing route or response shape changes (one API-04 behaviour note below). 28 endpoints, API-40 to API-67. Every path is under `/api/v1`, uses the §2 error envelope and follows §1 (UTC `Z` timestamps, `YYYY-MM-DD` dates, documented keys never omitted). Data lives in new tables only (`profile_details`, `vital_reading`, `chat_session`, `chat_message`, `invitation`, `womens_health_settings`, `period_log`), so existing databases need no migration. Every route except API-40 needs a bearer token (401 `UNAUTHENTICATED` otherwise).
 
 **API-04 behaviour note.** `owned_patient_id` is the user's **first-created** owned profile (by `created_at`, then `id`), so family profiles from API-41 never replace it.
@@ -1674,7 +1683,7 @@ Saved Ask conversations. A chat is **private to the user who created it**: a car
 - **API-49** `GET /patients/{patient_id}/chats/{chat_id}` → **200** `{ "chat": Chat, "messages": [ChatMessage] }`, oldest message first.
 - **API-50** `PATCH /patients/{patient_id}/chats/{chat_id}` with `{ "title": "Sugar log" }` (trimmed, 1–80) → **200** `{ "chat": Chat }`.
 - **API-51** `DELETE /patients/{patient_id}/chats/{chat_id}` → **204**; its messages are deleted too. Audit `chat.deleted`.
-- **API-52** `POST /patients/{patient_id}/chats/{chat_id}/messages` with `{ "question": "What was my most recent HbA1c?", "input_mode": "text" }` (question trimmed 1–500; `input_mode` `text` · `voice`, default `text`). Runs **exactly the API-21 pipeline** (emergency and advice gate, grounded context, validator), stores a `user`/`question` and an `assistant`/`answer` message, and moves the chat to the top. While the title is still `"New chat"` it becomes the question (first 60 characters, cut at a word boundary, plus "…" when cut). As in API-21, AI problems never become HTTP errors: the answer's `status` carries them. **201** `{ "user_message": ChatMessage, "assistant_message": ChatMessage, "chat": Chat }`. Audit `ask.answered` with meta `{ status, input_mode, chat_id }`.
+- **API-52** `POST /patients/{patient_id}/chats/{chat_id}/messages` with `{ "question": "What was my most recent HbA1c?", "input_mode": "text" }` (question trimmed 1–500; `input_mode` `text` · `sign` (DEC-28) · `voice`, default `text`). Runs **exactly the API-21 pipeline** (emergency and advice gate, grounded context, validator), stores a `user`/`question` and an `assistant`/`answer` message, and moves the chat to the top. While the title is still `"New chat"` it becomes the question (first 60 characters, cut at a word boundary, plus "…" when cut). As in API-21, AI problems never become HTTP errors: the answer's `status` carries them. **201** `{ "user_message": ChatMessage, "assistant_message": ChatMessage, "chat": Chat }`. Audit `ask.answered` with meta `{ status, input_mode, chat_id }`.
 - **API-53** `POST /patients/{patient_id}/chats/{chat_id}/attachments` with `{ "document_id": "doc_…" }` → **201** `{ "message": ChatMessage, "chat": Chat }`. The document must belong to this profile (404 `NOT_FOUND` otherwise). While the title is still `"New chat"` it becomes `"Document: "` plus the document title (60 characters, "…" when cut). Attaching is a marker in the conversation; Ask always searches all of the profile's documents.
 
 API-52 **201** example (answer object shortened; it is the full API-21 response):
@@ -1940,6 +1949,21 @@ Errors: 403 `SCOPE_REQUIRED` · 409 `PERIOD_OVERLAP` · 422 (fields `start_date`
 
 `upload_documents`. **204**. 404 `NOT_FOUND` when the period isn't this profile's. Audit `period.deleted`.
 
+---
+
+### Document history and versions (API-34 to API-39, API-68) — P1, DEC-27
+
+A logical document is a **series** (`series_id`); each uploaded file is a document row in it (`file_version` 1, 2, …), and exactly one is `is_current`. Every change is saved as a numbered **version** of the series with the full state after the change and what changed. API-10, the timeline, briefs and Ask use only the current, non-deleted file. Document objects gain `series_id`, `file_version`, `is_current`, `deleted_at` and (API-10) `new_file_pending`. Changes to an older file or a deleted document return 409 `INVALID_STATE`.
+
+Version object: `{ version_no, action, actor: {id, display_name} | null (automatic steps), by_me, this_session (API-39), at, file_version, summary: [change…] }`. Actions: `existing` (saved before history began), `uploaded`, `read`, `read_again`, `read_failed`, `details_edited`, `fact_confirmed`, `fact_corrected`, `fact_rejected`, `fact_unrejected`, `bulk_confirmed`, `deleted`, `undeleted`, `restored`, `new_file_version`, `new_file_failed`. Change kinds: `created`, `file`, `deleted`, `undeleted`, `header`, `status`, `fact_added`, `fact_removed`, `fact_status`, `fact_corrected`, `facts_count`, `restored_from`, `carried_over`, `file_failed`; values appear as written.
+
+- **API-34** returns `{ document (current file), files: [{document_id, file_version, original_filename, is_current, status, uploaded_at}], versions: [version…], latest_version }`. Any file of the series may be named in the path.
+- **API-35** returns `{ version, state: { document_id, file_version, status, deleted, header: {document_type, document_date, document_date_text, facility_name, clinician_name, title}, facts: [{id, fact_type, status, confidence, text}] } }`. 404 for an unknown version.
+- **API-36** applies a version's state (header, items and their review status, and which file is in use) and saves it as a new version `restored`; earlier versions are unchanged. Returns `{ document }`. 409 while a file is being read or the document is in Recently deleted.
+- **API-37** (multipart `file`) checks the file like API-08 and returns **202** `{ document }` for the new, not-yet-current file. It becomes current only if it is read successfully (`new_file_version`; review decisions carry over for identical items); otherwise the previous file stays (`new_file_failed`). 409 `DUPLICATE_DOCUMENT` if the bytes match a file of this series or another document; 409 `INVALID_STATE` while a newer file is still being read.
+- **API-38** `GET` returns `{ items: [document + {deleted_by, purge_after}], retention_days: 30 }`; `POST …/undelete` returns `{ document }`. Owner only. API-08 answers a re-upload of a deleted file with 409 `DUPLICATE_DOCUMENT` and `details.deleted: true` (of an older file: `details.older_version: true`).
+- **API-39** returns `{ since, items: [{ document: {id, series_id, title, deleted, is_new}, changes: [version…] }], counts: {documents, changes} }`. `since=last_login` (default) uses the caller's previous sign-in, so each person sees their own; `since` is null on a first visit. `this_session` marks changes made in the current sign-in (or automatic steps they caused).
+- **API-68** `records-as-of?at=` returns `{ at, documents: [state + {series_id, version_no}] }`: for each document, its latest version saved at or before `at` (documents deleted at that time are left out). `GET /me/logins` returns `{ items: [{session_id, at, current}] }`, newest first.
 
 ---
 
@@ -1952,5 +1976,7 @@ Errors: 403 `SCOPE_REQUIRED` · 409 `PERIOD_OVERLAP` · 422 (fields `start_date`
 | 1.2.0 | 2026-10-10 | §5b redesign extensions, API-40 to API-61: registration, family profiles, Medical ID, vitals, saved chats, email invitations and voice sessions. New codes `EMAIL_TAKEN`, `PROFILE_LIMIT`, `INVITATION_EXISTS`, `VOICE_UNAVAILABLE`. API-04 `owned_patient_id` is now the first-created owned profile. No existing response shape changes. | Additive | B (owner); A to acknowledge |
 | 1.3.0 | 2026-10-11 | API-61 `dynamic_variables` gains `patient_name`, `patient_age`, `access_role`, `today`, `document_count`, `documents_summary` and `latest_document` (document metadata only). | Additive | B (owner); A to acknowledge |
 | 1.4.0 | 2026-10-11 | Women's health, API-62 to API-67: tracker settings with a calculated summary, and a period log. API-40 and API-41 accept an optional `sex` (stored in the Medical ID). API-61 `dynamic_variables` gains `patient_sex`, `womens_health_mode` and `womens_health_context`, and the response gains `overrides` (a TTS voice for female profiles when `ELEVENLABS_FEMALE_VOICE_ID` is set, else `null`). New code `PERIOD_OVERLAP`. New tables `womens_health_settings`, `period_log`. | Additive | B (owner); A to acknowledge |
+| 1.5.0 | 2026-10-11 | DEC-27 document versions: API-34…39 and API-68; document objects add `series_id`, `file_version`, `is_current`, `deleted_at`, `new_file_pending`; API-22 moves to Recently deleted by default (`permanent=true` for immediate removal); API-08 duplicate details add `deleted` / `older_version` ; DEC-28: API-05 accepts consent type `camera_input` (reported by API-04), and API-21 / API-52 accept `input_mode: "sign"` | Additive, API-22 behaviour change | B (owner); A to acknowledge |
+| 1.6.0 | 2026-10-11 | DEC-29: API-69 `PATCH /me/preferences`; API-04 adds `preferred_language` | Additive | B (owner); A to acknowledge |
 
 Rules for entries are in [../hackathon/integration-plan.md](../hackathon/integration-plan.md) §5. Additive changes increase the minor version (1.1.0). Breaking changes increase the major version and need Person A's acknowledgement.

@@ -3,16 +3,23 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "MediVara frontend — patient medical-records, Consultation Brief and ISL Visit Assist (prototype, synthetic data only)",
+  "description": "MediVara frontend \u2014 patient medical-records, Consultation Brief and ISL Visit Assist (prototype, synthetic data only)",
   "scripts": {
+    "predev": "node scripts/fetch-mediapipe.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/fetch-mediapipe.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:signs": "node scripts/test-signs.mjs",
+    "i18n:extract": "node scripts/i18n-extract.mjs",
+    "i18n:check": "node scripts/i18n-extract.mjs --check"
   },
   "dependencies": {
     "@elevenlabs/react": "1.15.2",
+    "@mediapipe/tasks-vision": "1.0.1",
     "@tanstack/react-query": "^5.59.0",
+    "i18next": "26.4.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.0",

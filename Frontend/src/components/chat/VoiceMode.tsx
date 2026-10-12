@@ -16,6 +16,7 @@ import { COPY } from '../../lib/copy'
 import { formatDate } from '../../lib/format'
 import { IconMic, IconMicOff, IconPhoneOff, IconWaveform, IconX } from '../icons'
 import { Button, Spinner } from '../ui'
+import { t } from '../../lib/i18n'
 
 export interface VoiceModeProps {
   patientId: string
@@ -52,13 +53,13 @@ function toolResult(answer: AskResponse): string {
 
 function startErrorText(e: unknown): string {
   if (e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) return COPY['COPY-22']
-  if (e instanceof DOMException && e.name === 'NotFoundError') return 'No microphone was found on this device.'
+  if (e instanceof DOMException && e.name === 'NotFoundError') return t("No microphone was found on this device.")
   if (e instanceof ApiError) {
     if (e.code === 'VOICE_UNAVAILABLE' && e.status === 503) return COPY['COPY-40']
-    if (e.code === 'CONSENT_REQUIRED') return 'Voice needs your permission first. Try starting again.'
-    return e.message
+    if (e.code === 'CONSENT_REQUIRED') return t("Voice needs your permission first. Try starting again.")
+    return t(e.message)
   }
-  return 'Voice conversation couldn’t start. Try again, or type your question.'
+  return t("Voice conversation couldn’t start. Try again, or type your question.")
 }
 
 let captionSeq = 0
@@ -79,9 +80,9 @@ function VoiceModeInner({ patientId, patientName, onClose, askRecords }: VoiceMo
       captionSeq += 1
       setCaptions((c) => [...c.slice(-30), { id: captionSeq, role, text: message }])
     },
-    onError: (message) => setError(message || 'The voice connection had a problem.'),
+    onError: (message) => setError(message || t("The voice connection had a problem.")),
     onDisconnect: (details) => {
-      if (details.reason === 'error') setError('The voice connection dropped. You can start again.')
+      if (details.reason === 'error') setError(t("The voice connection dropped. You can start again."))
     },
   })
   const convRef = useRef(conversation)
@@ -169,23 +170,23 @@ function VoiceModeInner({ patientId, patientName, onClose, askRecords }: VoiceMo
   const status = !live
     ? connecting
       ? 'Connecting…'
-      : 'Talk with MediVara'
+      : t("Talk with MediVara")
     : conversation.isSpeaking
       ? 'MediVara is speaking'
       : checking
-        ? 'Checking your documents…'
+        ? t("Checking your documents…")
         : 'Listening'
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Voice conversation" className="animate-fade-in fixed inset-0 z-50 flex flex-col bg-canvas">
+    <div role="dialog" aria-modal="true" aria-label={t("Voice conversation")} className="animate-fade-in fixed inset-0 z-50 flex flex-col bg-canvas">
       <header className="flex items-center justify-between px-4 py-3 sm:px-6">
         <div className="flex items-center gap-2 text-sm text-ink-muted">
           <IconWaveform className="h-4 w-4" />
-          <span className="font-medium text-ink">Voice</span>
+          <span className="font-medium text-ink">{t("Voice")}</span>
           <span aria-hidden="true">·</span>
-          <span className="truncate">{patientName}’s records</span>
+          <span className="truncate">{patientName}{t("’s records")}</span>
         </div>
-        <button onClick={close} aria-label="Close voice mode" className="rounded-full p-2 text-ink-muted hover:bg-canvas-hover hover:text-ink">
+        <button onClick={close} aria-label={t("Close voice mode")} className="rounded-full p-2 text-ink-muted hover:bg-canvas-hover hover:text-ink">
           <IconX />
         </button>
       </header>
@@ -206,21 +207,21 @@ function VoiceModeInner({ patientId, patientName, onClose, askRecords }: VoiceMo
             {connecting && <Spinner className="absolute h-8 w-8 text-white" />}
           </div>
           <p className="mt-6 font-serif text-2xl text-ink" role="status" aria-live="polite">{status}</p>
-          {live && <p className="mt-1 text-sm text-ink-subtle">Ask about your documents, medicines or results.</p>}
+          {live && <p className="mt-1 text-sm text-ink-subtle">{t("Ask about your documents, medicines or results.")}</p>}
         </div>
 
         {captions.length > 0 && (
-          <div className="mb-4 max-h-56 w-full max-w-xl overflow-y-auto rounded-2xl border border-canvas-border bg-white/80 p-3 mv-scroll" aria-live="polite" aria-label="Live captions">
+          <div className="mb-4 max-h-56 w-full max-w-xl overflow-y-auto rounded-2xl border border-canvas-border bg-white/80 p-3 mv-scroll" aria-live="polite" aria-label={t("Live captions")}>
             <ul className="space-y-2">
               {captions.map((c) => (
                 <li key={c.id} className={cn('flex', c.role === 'user' ? 'justify-end' : 'justify-start')}>
                   <span
                     className={cn(
                       'max-w-[85%] rounded-2xl px-3 py-1.5 text-sm',
-                      c.role === 'user' ? 'bg-canvas-bubble text-ink' : 'bg-brand-50 text-brand-900',
+                      c.role === 'user' ? "bg-canvas-bubble text-ink" : "bg-brand-50 text-brand-900",
                     )}
                   >
-                    <span className="sr-only">{c.role === 'user' ? 'You said: ' : 'MediVara said: '}</span>
+                    <span className="sr-only">{c.role === 'user' ? t("You said: ") : t("MediVara said: ")}</span>
                     {c.text}
                   </span>
                 </li>
@@ -238,24 +239,24 @@ function VoiceModeInner({ patientId, patientName, onClose, askRecords }: VoiceMo
           {unavailable ? (
             <>
               <p className="text-center text-sm text-ink-muted">{COPY['COPY-40']}</p>
-              <Button variant="secondary" onClick={close}>Back to chat</Button>
+              <Button variant="secondary" onClick={close}>{t("Back to chat")}</Button>
             </>
           ) : live ? (
             <div className="flex items-center gap-4">
               <button
                 onClick={() => conversation.setMuted(!conversation.isMuted)}
                 aria-pressed={conversation.isMuted}
-                aria-label={conversation.isMuted ? 'Unmute microphone' : 'Mute microphone'}
+                aria-label={conversation.isMuted ? t("Unmute microphone") : t("Mute microphone")}
                 className={cn(
                   'flex h-14 w-14 items-center justify-center rounded-full border transition-colors',
-                  conversation.isMuted ? 'border-danger-border bg-danger-bg text-danger-fg' : 'border-canvas-border bg-white text-ink hover:bg-canvas-hover',
+                  conversation.isMuted ? "border-danger-border bg-danger-bg text-danger-fg" : "border-canvas-border bg-white text-ink hover:bg-canvas-hover",
                 )}
               >
                 {conversation.isMuted ? <IconMicOff className="h-6 w-6" /> : <IconMic className="h-6 w-6" />}
               </button>
               <button
                 onClick={close}
-                aria-label="End voice conversation"
+                aria-label={t("End voice conversation")}
                 className="flex h-14 w-14 items-center justify-center rounded-full bg-danger-fg text-white transition-opacity hover:opacity-90"
               >
                 <IconPhoneOff className="h-6 w-6" />
@@ -266,9 +267,8 @@ function VoiceModeInner({ patientId, patientName, onClose, askRecords }: VoiceMo
               <p className="text-center text-xs leading-relaxed text-ink-subtle">{COPY['COPY-39']}</p>
               <div className="flex items-center gap-2">
                 <Button onClick={() => void start()} loading={connecting} disabled={configQ.isLoading}>
-                  <IconMic className="h-4 w-4" /> Start conversation
-                </Button>
-                <Button variant="ghost" onClick={close}>Type instead</Button>
+                  <IconMic className="h-4 w-4" /> {t("Start conversation")}</Button>
+                <Button variant="ghost" onClick={close}>{t("Type instead")}</Button>
               </div>
             </>
           )}

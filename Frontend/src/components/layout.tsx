@@ -17,6 +17,7 @@ import { LogoMark } from './brand'
 import { PageTransition } from './motion'
 import { Sidebar } from './shell/Sidebar'
 import { IconMenu, IconPlus } from './icons'
+import { t } from '../lib/i18n'
 
 export function PatientLayout() {
   const { patientId = '' } = useParams()
@@ -62,7 +63,7 @@ export function PatientLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-canvas">
-      <a href="#main" className="skip-link">Skip to main content</a>
+      <a href="#main" className="skip-link">{t("Skip to main content")}</a>
       {side === 'left' && sidebar}
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -109,7 +110,7 @@ function MobileDrawer({ side, onClose, children }: { side: 'left' | 'right'; onC
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
   return (
-    <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+    <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label={t("Menu")}>
       <div className="animate-fade-in absolute inset-0 bg-ink/40" onClick={onClose} aria-hidden="true" />
       <div
         ref={panel}
@@ -134,7 +135,7 @@ function TopBar({ patient, patientId, onMenu }: { patient?: PatientSummary; pati
   })
 
   const menuButton = (
-    <button onClick={onMenu} aria-label="Open menu" className="rounded-lg p-1.5 text-ink-muted hover:bg-canvas-hover md:hidden">
+    <button onClick={onMenu} aria-label={t("Open menu")} className="rounded-lg p-1.5 text-ink-muted hover:bg-canvas-hover md:hidden">
       <IconMenu />
     </button>
   )
@@ -147,7 +148,7 @@ function TopBar({ patient, patientId, onMenu }: { patient?: PatientSummary; pati
         <span className="hidden min-w-0 items-center gap-2 sm:flex">
           <span className="truncate text-sm font-medium text-ink">{patient.display_name}</span>
           <Badge tone={patient.my_role === 'owner' ? 'neutral' : 'info'}>
-            {patient.my_role === 'owner' ? 'Your profile' : 'Shared with you'}
+            {patient.my_role === 'owner' ? t("Your profile") : t("Shared with you")}
           </Badge>
         </span>
       )}
@@ -158,14 +159,14 @@ function TopBar({ patient, patientId, onMenu }: { patient?: PatientSummary; pati
       </div>
       {api.API_MODE === 'dummy' && (
         <Badge tone="warn" className="whitespace-nowrap" title={COPY['COPY-32']}>
-          <span className="sm:hidden">MOCK DATA</span>
+          <span className="sm:hidden">{t("MOCK DATA")}</span>
           <span className="hidden sm:inline">{COPY['COPY-32']}</span>
         </Badge>
       )}
       <button
         onClick={() => navigate(`/p/${patientId}`)}
-        aria-label="New chat"
-        title="New chat"
+        aria-label={t("New chat")}
+        title={t("New chat")}
         className="rounded-lg p-1.5 text-ink-muted hover:bg-canvas-hover md:hidden"
       >
         <IconPlus />

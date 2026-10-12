@@ -22,6 +22,7 @@ from app.routers import (
     patients,
     reminders,
     timeline,
+    versions,
     vitals,
     voice,
     womens_health,
@@ -49,6 +50,7 @@ def create_app() -> FastAPI:
         health,
         auth,
         patients,
+        versions,  # before documents: /documents/deleted must not match /documents/{id}
         documents,
         facts,
         timeline,

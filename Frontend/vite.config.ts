@@ -20,7 +20,8 @@ export default defineConfig({
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'Referrer-Policy': 'no-referrer',
-      'Permissions-Policy': 'camera=(), geolocation=(), microphone=(self)',
+      // camera and microphone: this app only (sign mode, dictation); never embedded third parties.
+      'Permissions-Policy': 'camera=(self), geolocation=(), microphone=(self)',
     },
     proxy: {
       '/api/v1': {

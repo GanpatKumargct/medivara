@@ -350,8 +350,8 @@ export function Tabs({
           className={cn(
             'px-4 py-2 text-sm font-medium border-b-2 -mb-px',
             active === t.id
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-ink-muted hover:text-ink',
+              ? "border-brand-600 text-brand-700"
+              : "border-transparent text-ink-muted hover:text-ink",
           )}
         >
           {t.label}

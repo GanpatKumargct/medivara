@@ -12,13 +12,14 @@ import { IconTimeline } from '../components/icons'
 import { cn } from '../lib/cn'
 import { categoryOf } from '../lib/category'
 import { formatDate, FACT_TYPE_LABELS } from '../lib/format'
+import { t } from '../lib/i18n'
 
 const TYPE_CHIPS = [
-  { id: 'medication', label: 'Medicines' },
-  { id: 'lab_result', label: 'Test results' },
-  { id: 'condition', label: 'Conditions' },
-  { id: 'allergy', label: 'Allergies' },
-  { id: 'follow_up', label: 'Follow-up' },
+  { id: 'medication', label: t("Medicines") },
+  { id: 'lab_result', label: t("Test results") },
+  { id: 'condition', label: t("Conditions") },
+  { id: 'allergy', label: t("Allergies") },
+  { id: 'follow_up', label: t("Follow-up") },
 ]
 
 export default function Timeline() {
@@ -45,8 +46,8 @@ export default function Timeline() {
     <div className="space-y-5">
       <PageHeader
         icon={<IconTimeline className="h-5 w-5" />}
-        title="Timeline"
-        subtitle="Your history in order, built from your documents. Every item opens its source."
+        title={t("Timeline")}
+        subtitle={t("Your history in order, built from your documents. Every item opens its source.")}
       />
 
       {/* Filters */}
@@ -59,7 +60,7 @@ export default function Timeline() {
               onClick={() => toggleType(c.id)}
               className={cn(
                 'rounded-full border px-3 py-1 text-sm',
-                types.includes(c.id) ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-ink-muted hover:bg-surface-muted',
+                types.includes(c.id) ? "border-brand-500 bg-brand-50 text-brand-700" : "border-line text-ink-muted hover:bg-surface-muted",
               )}
             >
               {c.label}
@@ -68,11 +69,10 @@ export default function Timeline() {
           <span className="mx-1 w-px self-stretch bg-line" />
           <label className="flex items-center gap-2 text-sm text-ink">
             <input type="checkbox" checked={includeUnverified} onChange={(e) => setIncludeUnverified(e.target.checked)} className="h-4 w-4" />
-            Include unverified
-          </label>
+            {t("Include unverified")}</label>
           <span className="mx-1 w-px self-stretch bg-line" />
           <Button size="sm" variant="secondary" onClick={() => setOrder((o) => (o === 'desc' ? 'asc' : 'desc'))}>
-            {order === 'desc' ? 'Newest first' : 'Oldest first'}
+            {order === 'desc' ? t("Newest first") : t("Oldest first")}
           </Button>
         </CardBody>
       </Card>
@@ -82,9 +82,9 @@ export default function Timeline() {
 
       {q.data && !hasEvents && (
         <EmptyState
-          title={types.length ? 'No events match these filters' : 'Your timeline will appear after your first document is read'}
-          message={types.length ? 'Try clearing the filters.' : 'Upload a document to build your history.'}
-          action={types.length ? <Button variant="secondary" onClick={() => setTypes([])}>Clear filters</Button> : undefined}
+          title={types.length ? t("No events match these filters") : t("Your timeline will appear after your first document is read")}
+          message={types.length ? t("Try clearing the filters.") : t("Upload a document to build your history.")}
+          action={types.length ? <Button variant="secondary" onClick={() => setTypes([])}>{t("Clear filters")}</Button> : undefined}
         />
       )}
 
@@ -107,8 +107,7 @@ export default function Timeline() {
           {q.data.undated.length > 0 && (
             <li>
               <div className="-ml-[26px] mb-2 inline-block rounded-full bg-ink-subtle px-3 py-0.5 text-xs font-semibold text-white">
-                Date unknown
-              </div>
+                {t("Date unknown")}</div>
               <ul className="space-y-2">
                 {q.data.undated.map((e) => (
                   <li key={e.id}><EventCard event={e} onOpen={() => openEvent(e)} /></li>
@@ -142,7 +141,7 @@ function EventCard({ event, onOpen }: { event: TimelineEvent; onOpen: () => void
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
               {!isDoc && <Badge tone={cat.tone}>{FACT_TYPE_LABELS[event.event_type] ?? event.event_type}</Badge>}
-              {event.status === 'unverified' && <Badge tone="warn">Unverified</Badge>}
+              {event.status === 'unverified' && <Badge tone="warn">{t("Unverified")}</Badge>}
             </div>
           </div>
           {event.change && <ChangeMarker change={event.change} />}
@@ -156,7 +155,7 @@ function EventCard({ event, onOpen }: { event: TimelineEvent; onOpen: () => void
 function ChangeMarker({ change }: { change: TimelineChange }) {
   const prev = change.kind === 'dose_change' ? change.previous.strength : `${change.previous.value} ${change.previous.unit ?? ''}`.trim()
   const cur = change.kind === 'dose_change' ? change.current.strength : `${change.current.value} ${change.current.unit ?? ''}`.trim()
-  const label = change.kind === 'dose_change' ? 'Strength changed' : 'Value changed'
+  const label = change.kind === 'dose_change' ? t("Strength changed") : t("Value changed")
   return (
     <div className="mt-2 rounded-md border border-line bg-surface-muted px-2 py-1 text-xs text-ink-muted">
       {label}: <span className="font-medium text-ink">{prev}</span> ({formatDate(change.previous.date)}) →{' '}

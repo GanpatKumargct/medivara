@@ -17,6 +17,7 @@ import { AddFamilyMemberDialog } from '../family/AddFamilyMemberDialog'
 import {
   IconAsk,
   IconBell,
+  IconUndo,
   IconBrief,
   IconCheck,
   IconChevronDown,
@@ -43,6 +44,7 @@ import {
   IconX,
 } from '../icons'
 import { Button, Dialog } from '../ui'
+import { t } from '../../lib/i18n'
 
 interface NavItem {
   key: string
@@ -57,19 +59,20 @@ interface NavItem {
 
 function navItems(base: string): NavItem[] {
   return [
-    { key: 'chat', to: base, label: 'Chat', icon: <IconAsk /> },
-    { key: 'overview', to: `${base}/overview`, label: 'Overview', icon: <IconHome /> },
-    { key: 'records', to: `${base}/records`, label: 'Records', icon: <IconDoc /> },
-    { key: 'timeline', to: `${base}/timeline`, label: 'Timeline', icon: <IconTimeline /> },
-    { key: 'vitals', to: `${base}/vitals`, label: 'Vitals', icon: <IconHeartPulse /> },
-    { key: 'medicines', to: `${base}/medicines`, label: 'Medicines', icon: <IconPill /> },
-    { key: 'womens-health', to: `${base}/womens-health`, label: 'Women’s health', icon: <IconFlower />, womens: true },
-    { key: 'reminders', to: `${base}/reminders`, label: 'Reminders', icon: <IconBell />, more: true },
-    { key: 'brief', to: `${base}/brief`, label: 'Doctor visit brief', icon: <IconBrief />, more: true },
-    { key: 'visit-assist', to: `${base}/visit-assist`, label: 'Visit Assist (ISL)', icon: <IconHand />, more: true },
-    { key: 'medical-id', to: `${base}/medical-id`, label: 'Medical ID', icon: <IconIdCard />, more: true },
-    { key: 'family', to: `${base}/family`, label: 'Family & sharing', icon: <IconUsers />, ownerOnly: true, more: true },
-    { key: 'services', to: `${base}/services`, label: 'Health services', icon: <IconGrid />, more: true },
+    { key: 'chat', to: base, label: t("Chat"), icon: <IconAsk /> },
+    { key: 'overview', to: `${base}/overview`, label: t("Overview"), icon: <IconHome /> },
+    { key: 'records', to: `${base}/records`, label: t("Records"), icon: <IconDoc /> },
+    { key: 'timeline', to: `${base}/timeline`, label: t("Timeline"), icon: <IconTimeline /> },
+    { key: 'vitals', to: `${base}/vitals`, label: t("Vitals"), icon: <IconHeartPulse /> },
+    { key: 'medicines', to: `${base}/medicines`, label: t("Medicines"), icon: <IconPill /> },
+    { key: 'womens-health', to: `${base}/womens-health`, label: t("Women’s health"), icon: <IconFlower />, womens: true },
+    { key: 'reminders', to: `${base}/reminders`, label: t("Reminders"), icon: <IconBell />, more: true },
+    { key: 'history', to: `${base}/history`, label: t("Visit history"), icon: <IconUndo />, more: true },
+    { key: 'brief', to: `${base}/brief`, label: t("Doctor visit brief"), icon: <IconBrief />, more: true },
+    { key: 'visit-assist', to: `${base}/visit-assist`, label: t("Visit Assist (ISL)"), icon: <IconHand />, more: true },
+    { key: 'medical-id', to: `${base}/medical-id`, label: t("Medical ID"), icon: <IconIdCard />, more: true },
+    { key: 'family', to: `${base}/family`, label: t("Family & sharing"), icon: <IconUsers />, ownerOnly: true, more: true },
+    { key: 'services', to: `${base}/services`, label: t("Health services"), icon: <IconGrid />, more: true },
   ]
 }
 
@@ -151,16 +154,16 @@ export function Sidebar({
   if (collapsed && !mobile) {
     return (
       <aside
-        aria-label="Main navigation"
+        aria-label={t("Main navigation")}
         className={cn(
           'mv-sidebar no-print flex h-full w-[60px] shrink-0 flex-col items-center gap-1 bg-canvas-sidebar py-3',
-          side === 'right' ? 'border-l border-canvas-border' : 'border-r border-canvas-border',
+          side === 'right' ? "border-l border-canvas-border" : "border-r border-canvas-border",
         )}
       >
-        <RailButton label="Expand sidebar" onClick={() => prefs.setSidebarCollapsed(false)}>
+        <RailButton label={t("Expand sidebar")} onClick={() => prefs.setSidebarCollapsed(false)}>
           <ToggleIcon />
         </RailButton>
-        <RailButton label="New chat" onClick={() => navigate(base)} accent>
+        <RailButton label={t("New chat")} onClick={() => navigate(base)} accent>
           <IconPlus />
         </RailButton>
         <div className="my-1 h-px w-8 bg-canvas-border" />
@@ -177,22 +180,22 @@ export function Sidebar({
 
   return (
     <aside
-      aria-label="Main navigation"
+      aria-label={t("Main navigation")}
       className={cn(
         'mv-sidebar no-print flex h-full w-[280px] shrink-0 flex-col bg-canvas-sidebar',
-        !mobile && (side === 'right' ? 'border-l border-canvas-border' : 'border-r border-canvas-border'),
+        !mobile && (side === 'right' ? "border-l border-canvas-border" : "border-r border-canvas-border"),
       )}
     >
       <div className="flex items-center justify-between px-3 pb-2 pt-3">
-        <Link to={base} onClick={onClose} aria-label="MediVara — new chat" className="rounded-lg px-1.5 py-1">
+        <Link to={base} onClick={onClose} aria-label={t("MediVara — new chat")} className="rounded-lg px-1.5 py-1">
           <LogoLockup markSize={26} />
         </Link>
         {mobile ? (
-          <IconButton label="Close menu" onClick={() => onClose?.()}>
+          <IconButton label={t("Close menu")} onClick={() => onClose?.()}>
             <IconX />
           </IconButton>
         ) : (
-          <IconButton label="Collapse sidebar" onClick={() => prefs.setSidebarCollapsed(true)}>
+          <IconButton label={t("Collapse sidebar")} onClick={() => prefs.setSidebarCollapsed(true)}>
             <ToggleIcon />
           </IconButton>
         )}
@@ -209,8 +212,7 @@ export function Sidebar({
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-600 text-white">
             <IconPlus className="h-4 w-4" />
           </span>
-          New chat
-        </button>
+          {t("New chat")}</button>
       </div>
 
       <div className="px-3 pt-2">
@@ -218,7 +220,7 @@ export function Sidebar({
       </div>
 
       <div className="mv-scroll mt-2 min-h-0 flex-1 overflow-y-auto px-3 pb-3">
-        <nav aria-label="Sections" className="space-y-0.5">
+        <nav aria-label={t("Sections")} className="space-y-0.5">
           {items
             .filter((i) => !i.more || moreOpen)
             .map((i) => (
@@ -230,7 +232,7 @@ export function Sidebar({
                 aria-current={isActive(i) ? 'page' : undefined}
                 className={cn(
                   'flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors [&_svg]:h-[18px] [&_svg]:w-[18px]',
-                  isActive(i) ? 'bg-canvas-active font-medium text-ink' : 'text-ink-muted hover:bg-canvas-hover hover:text-ink',
+                  isActive(i) ? "bg-canvas-active font-medium text-ink" : "text-ink-muted hover:bg-canvas-hover hover:text-ink",
                 )}
               >
                 {i.icon}
@@ -244,7 +246,7 @@ export function Sidebar({
               className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-ink-subtle transition-colors hover:bg-canvas-hover hover:text-ink"
             >
               <IconChevronDown className={cn('h-[18px] w-[18px] transition-transform', moreOpen && 'rotate-180')} />
-              {moreOpen ? 'Less' : 'More'}
+              {moreOpen ? t("Less") : t("More")}
             </button>
           )}
         </nav>
@@ -280,7 +282,7 @@ function RailButton({ label, onClick, accent, children }: { label: string; onCli
       title={label}
       className={cn(
         'flex h-10 w-10 items-center justify-center rounded-xl transition-colors [&_svg]:h-5 [&_svg]:w-5',
-        accent ? 'bg-brand-600 text-white hover:bg-brand-700' : 'text-ink-muted hover:bg-canvas-hover hover:text-ink',
+        accent ? "bg-brand-600 text-white hover:bg-brand-700" : "text-ink-muted hover:bg-canvas-hover hover:text-ink",
       )}
     >
       {children}
@@ -297,7 +299,7 @@ function RailLink({ to, label, active, children }: { to: string; label: string; 
       aria-current={active ? 'page' : undefined}
       className={cn(
         'flex h-10 w-10 items-center justify-center rounded-xl transition-colors [&_svg]:h-5 [&_svg]:w-5',
-        active ? 'bg-canvas-active text-ink' : 'text-ink-muted hover:bg-canvas-hover hover:text-ink',
+        active ? "bg-canvas-active text-ink" : "text-ink-muted hover:bg-canvas-hover hover:text-ink",
       )}
     >
       {children}
@@ -328,14 +330,14 @@ function ProfileSwitcher({ patientId, patient, onNavigate }: { patientId: string
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium text-ink">{name}</span>
           <span className="block truncate text-[11px] text-ink-subtle">
-            {patient ? (patient.my_role === 'owner' ? 'Profile you manage' : `Shared by ${patient.owner_display_name}`) : ' '}
+            {patient ? (patient.my_role === 'owner' ? t("Profile you manage") : t("Shared by {{owner_display_name}}", { owner_display_name: patient.owner_display_name })) : ' '}
           </span>
         </span>
         <IconChevronDown className={cn('h-4 w-4 shrink-0 text-ink-subtle transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
         <div role="menu" className="animate-scale-in absolute left-0 right-0 top-full z-40 mt-1 rounded-xl border border-canvas-border bg-white p-1 shadow-pop">
-          <p className="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">Switch profile</p>
+          <p className="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">{t("Switch profile")}</p>
           <ul className="max-h-64 overflow-y-auto mv-scroll">
             {(patientsQ.data?.items ?? []).map((p) => (
               <li key={p.id}>
@@ -352,7 +354,7 @@ function ProfileSwitcher({ patientId, patient, onNavigate }: { patientId: string
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-ink">{p.display_name}</span>
                     <span className="block truncate text-[11px] text-ink-subtle">
-                      {p.my_role === 'owner' ? 'You manage this' : `Shared by ${p.owner_display_name}`}
+                      {p.my_role === 'owner' ? t("You manage this") : t("Shared by {{owner_display_name}}", { owner_display_name: p.owner_display_name })}
                     </span>
                   </span>
                   {p.id === patientId && <IconCheck className="h-4 w-4 text-brand-600" />}
@@ -369,8 +371,7 @@ function ProfileSwitcher({ patientId, patient, onNavigate }: { patientId: string
             }}
             className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-ink hover:bg-canvas-hover"
           >
-            <IconUserPlus className="h-4 w-4 text-ink-muted" /> Add family member
-          </button>
+            <IconUserPlus className="h-4 w-4 text-ink-muted" /> {t("Add family member")}</button>
           <button
             role="menuitem"
             onClick={() => {
@@ -380,8 +381,7 @@ function ProfileSwitcher({ patientId, patient, onNavigate }: { patientId: string
             }}
             className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-ink hover:bg-canvas-hover"
           >
-            <IconUsers className="h-4 w-4 text-ink-muted" /> All profiles &amp; invitations
-          </button>
+            <IconUsers className="h-4 w-4 text-ink-muted" /> {t("All profiles &amp; invitations")}</button>
         </div>
       )}
       <AddFamilyMemberDialog open={adding} onClose={() => setAdding(false)} />
@@ -395,7 +395,7 @@ export function Avatar({ id, name, small }: { id: string; name: string; small?: 
       aria-hidden="true"
       className={cn(
         'flex shrink-0 items-center justify-center rounded-full font-semibold',
-        small ? 'h-7 w-7 text-[11px]' : 'h-8 w-8 text-xs',
+        small ? "h-7 w-7 text-[11px]" : "h-8 w-8 text-xs",
         avatarTint(id),
       )}
     >
@@ -445,7 +445,7 @@ function Recents({ patientId, onNavigate }: { patientId: string; onNavigate?: ()
       setList((items) => items.map((c) => (c.id === chat.id ? chat : c)))
       qc.setQueryData(['chat', patientId, chat.id], (old: { chat: Chat } | undefined) => (old ? { ...old, chat } : old))
     },
-    onError: () => toast('Couldn’t rename this chat.', 'error'),
+    onError: () => toast(t("Couldn’t rename this chat."), 'error'),
   })
 
   const remove = useMutation({
@@ -455,21 +455,21 @@ function Recents({ patientId, onNavigate }: { patientId: string; onNavigate?: ()
       qc.removeQueries({ queryKey: ['chat', patientId, id] })
       setDeleting(null)
       if (location.pathname.endsWith(`/chat/${id}`)) navigate(`/p/${patientId}`)
-      toast('Chat deleted')
+      toast(t("Chat deleted"))
     },
-    onError: () => toast('Couldn’t delete this chat.', 'error'),
+    onError: () => toast(t("Couldn’t delete this chat."), 'error'),
   })
 
   return (
-    <section aria-label="Recent chats" className="mt-5">
+    <section aria-label={t("Recent chats")} className="mt-5">
       <div className="flex items-center justify-between px-2 pb-1">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">Recents</h2>
+        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">{t("Recents")}</h2>
         <button
           onClick={() => {
             setSearching((s) => !s)
             setQuery('')
           }}
-          aria-label={searching ? 'Close search' : 'Search chats'}
+          aria-label={searching ? t("Close search") : t("Search chats")}
           aria-expanded={searching}
           className="rounded p-1 text-ink-subtle hover:bg-canvas-hover hover:text-ink"
         >
@@ -481,21 +481,20 @@ function Recents({ patientId, onNavigate }: { patientId: string; onNavigate?: ()
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search your chats"
-          aria-label="Search your chats"
+          placeholder={t("Search your chats")}
+          aria-label={t("Search your chats")}
           className="mb-2 w-full rounded-lg border border-canvas-border bg-white px-2.5 py-1.5 text-sm text-ink placeholder:text-ink-subtle focus:border-brand-300 focus:outline-none"
         />
       )}
 
-      {chatsQ.isLoading && <p className="px-2 py-1 text-xs text-ink-subtle">Loading chats…</p>}
+      {chatsQ.isLoading && <p className="px-2 py-1 text-xs text-ink-subtle">{t("Loading chats…")}</p>}
       {chatsQ.error && (
         <button onClick={() => void chatsQ.refetch()} className="px-2 py-1 text-xs text-danger-fg underline">
-          Couldn’t load chats. Retry
-        </button>
+          {t("Couldn’t load chats. Retry")}</button>
       )}
       {chatsQ.data && filtered.length === 0 && (
         <p className="px-2 py-1 text-xs leading-relaxed text-ink-subtle">
-          {query ? 'No chats match your search.' : 'No chats yet. Your conversations will appear here.'}
+          {query ? t("No chats match your search.") : t("No chats yet. Your conversations will appear here.")}
         </p>
       )}
 
@@ -526,17 +525,16 @@ function Recents({ patientId, onNavigate }: { patientId: string; onNavigate?: ()
         <Dialog
           open
           onClose={() => setDeleting(null)}
-          title="Delete chat?"
+          title={t("Delete chat?")}
           footer={
             <>
-              <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
-              <Button variant="danger" loading={remove.isPending} onClick={() => remove.mutate(deleting.id)}>Delete</Button>
+              <Button variant="ghost" onClick={() => setDeleting(null)}>{t("Cancel")}</Button>
+              <Button variant="danger" loading={remove.isPending} onClick={() => remove.mutate(deleting.id)}>{t("Delete")}</Button>
             </>
           }
         >
           <p className="text-sm text-ink">
-            “{deleting.title}” and its answers will be deleted. Documents you added in this chat stay in your records.
-          </p>
+            “{deleting.title}{t("” and its answers will be deleted. Documents you added in this chat stay in your records.")}</p>
         </Dialog>
       )}
     </section>
@@ -572,7 +570,7 @@ function ChatRow({
           autoFocus
           value={draft}
           maxLength={80}
-          aria-label="Chat name"
+          aria-label={t("Chat name")}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => onRename(draft.trim())}
           onKeyDown={(e) => {
@@ -605,12 +603,12 @@ function ChatRow({
       </NavLink>
       <button
         onClick={() => setMenu((m) => !m)}
-        aria-label={`Options for ${chat.title}`}
+        aria-label={t("Options for {{title}}", { title: chat.title })}
         aria-haspopup="menu"
         aria-expanded={menu}
         className={cn(
           'absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-ink-subtle transition-opacity hover:bg-canvas-active hover:text-ink focus:opacity-100',
-          menu ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+          menu ? 'opacity-100' : "opacity-0 group-hover:opacity-100",
         )}
       >
         <IconDots className="h-4 w-4" />
@@ -626,8 +624,7 @@ function ChatRow({
             }}
             className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-ink hover:bg-canvas-hover"
           >
-            <IconPencil className="h-4 w-4" /> Rename
-          </button>
+            <IconPencil className="h-4 w-4" /> {t("Rename")}</button>
           <button
             role="menuitem"
             onClick={() => {
@@ -636,8 +633,7 @@ function ChatRow({
             }}
             className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-danger-fg hover:bg-danger-bg"
           >
-            <IconTrash className="h-4 w-4" /> Delete
-          </button>
+            <IconTrash className="h-4 w-4" /> {t("Delete")}</button>
         </div>
       )}
     </li>
@@ -663,11 +659,11 @@ function AccountMenu({ compact, onNavigate }: { compact?: boolean; onNavigate?: 
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={compact ? `Account: ${name}` : undefined}
+        aria-label={compact ? t("Account: {{name}}", { name: name }) : undefined}
         title={compact ? name : undefined}
         className={cn(
           'flex items-center gap-2.5 rounded-xl text-left transition-colors hover:bg-canvas-hover',
-          compact ? 'h-10 w-10 justify-center' : 'w-full px-2 py-1.5',
+          compact ? "h-10 w-10 justify-center" : "w-full px-2 py-1.5",
         )}
       >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">
@@ -685,7 +681,7 @@ function AccountMenu({ compact, onNavigate }: { compact?: boolean; onNavigate?: 
           role="menu"
           className={cn(
             'animate-scale-in absolute bottom-full z-40 mb-1 w-60 rounded-xl border border-canvas-border bg-white p-1 shadow-pop',
-            compact ? (prefs.sidebarSide === 'right' ? 'right-0' : 'left-0') : 'left-0 right-0 w-auto',
+            compact ? (prefs.sidebarSide === 'right' ? 'right-0' : 'left-0') : "left-0 right-0 w-auto",
           )}
         >
           <p className="truncate px-2 pb-1 pt-1.5 text-xs text-ink-subtle">{user?.email}</p>
@@ -698,8 +694,7 @@ function AccountMenu({ compact, onNavigate }: { compact?: boolean; onNavigate?: 
                 navigate(`${settingsPath}/settings`)
               }}
             >
-              Settings
-            </MenuItem>
+              {t("Settings")}</MenuItem>
           )}
           <MenuItem
             icon={prefs.sidebarSide === 'right' ? <IconSidebarLeft className="h-4 w-4" /> : <IconSidebar className="h-4 w-4" />}
@@ -708,15 +703,14 @@ function AccountMenu({ compact, onNavigate }: { compact?: boolean; onNavigate?: 
               prefs.setSidebarSide(prefs.sidebarSide === 'right' ? 'left' : 'right')
             }}
           >
-            Move sidebar to the {prefs.sidebarSide === 'right' ? 'left' : 'right'}
+            {t("Move sidebar to the")}{' '}{prefs.sidebarSide === 'right' ? 'left' : 'right'}
           </MenuItem>
           <div className="my-1 h-px bg-canvas-border" />
           <MenuItem
             icon={<IconLogout className="h-4 w-4" />}
             onClick={() => void signOut().then(() => navigate('/login'))}
           >
-            Sign out
-          </MenuItem>
+            {t("Sign out")}</MenuItem>
         </div>
       )}
     </div>

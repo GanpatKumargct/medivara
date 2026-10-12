@@ -6,10 +6,11 @@ import { ApiError } from '../api/types'
 import { Alert, Button, Card, CardBody, Skeleton } from './ui'
 import { IconInfo, IconLock, IconWarn } from './icons'
 import { COPY } from '../lib/copy'
+import { t } from '../lib/i18n'
 
 export function LoadingRows({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-3" aria-busy="true" aria-label="Loading">
+    <div className="space-y-3" aria-busy="true" aria-label={t("Loading")}>
       {Array.from({ length: rows }).map((_, i) => (
         <Card key={i}>
           <CardBody>
@@ -50,14 +51,13 @@ export function ErrorBanner({ error, onRetry }: { error: unknown; onRetry?: () =
       tone="danger"
       role="alert"
       icon={<IconWarn />}
-      title="Something went wrong. Try again."
+      title={t("Something went wrong. Try again.")}
     >
-      {requestId && <p className="text-xs opacity-80">Reference: {requestId}</p>}
+      {requestId && <p className="text-xs opacity-80">{t("Reference:")}{' '}{requestId}</p>}
       {onRetry && (
         <div className="mt-2">
           <Button size="sm" variant="secondary" onClick={onRetry}>
-            Try again
-          </Button>
+            {t("Try again")}</Button>
         </div>
       )}
     </Alert>
@@ -75,7 +75,7 @@ export function AccessDeniedPage() {
       <p className="mx-auto mt-2 max-w-sm text-sm text-ink-muted">{COPY['COPY-27']}</p>
       <div className="mt-6">
         <Link to="/profiles">
-          <Button>Go to my profiles</Button>
+          <Button>{t("Go to my profiles")}</Button>
         </Link>
       </div>
     </div>
@@ -88,10 +88,10 @@ export function NotFoundPage() {
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface-sunken text-ink-muted">
         <IconInfo />
       </div>
-      <h1 className="text-xl font-semibold text-ink">We couldn’t find that.</h1>
+      <h1 className="text-xl font-semibold text-ink">{t("We couldn’t find that.")}</h1>
       <div className="mt-6">
         <Link to="/profiles">
-          <Button variant="secondary">Go to my profiles</Button>
+          <Button variant="secondary">{t("Go to my profiles")}</Button>
         </Link>
       </div>
     </div>

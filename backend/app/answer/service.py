@@ -10,6 +10,7 @@ import time
 
 from sqlmodel import Session, select
 
+from app.versions import visible_document_ids
 from app.answer import gate, generator, validator
 from app.answer.context import Context, EvidenceEntry, build_ask_context, build_narrative_context
 from app.config import get_settings
@@ -36,6 +37,7 @@ def patient_medicines(session: Session, patient_id: str) -> list[str]:
             ExtractedFact.patient_id == patient_id,
             ExtractedFact.fact_type == FactType.medication,
             ExtractedFact.status != FactStatus.rejected,
+            ExtractedFact.document_id.in_(visible_document_ids(patient_id)),
         )
     ).all()
     names = []

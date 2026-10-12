@@ -19,26 +19,29 @@ import { IconBaby, IconBell, IconCalendar, IconFlower, IconHeartPulse, IconPlus,
 import { cn } from '../lib/cn'
 import { COPY } from '../lib/copy'
 import { formatDate } from '../lib/format'
+import { t } from '../lib/i18n'
 
 const SYMPTOMS: { id: PeriodSymptom; label: string }[] = [
-  { id: 'cramps', label: 'Cramps' },
-  { id: 'headache', label: 'Headache' },
-  { id: 'bloating', label: 'Bloating' },
-  { id: 'mood_changes', label: 'Mood changes' },
-  { id: 'fatigue', label: 'Tiredness' },
-  { id: 'acne', label: 'Acne' },
-  { id: 'back_pain', label: 'Back pain' },
-  { id: 'tender_breasts', label: 'Tender breasts' },
-  { id: 'nausea', label: 'Nausea' },
+  { id: 'cramps', label: t("Cramps") },
+  { id: 'headache', label: t("Headache") },
+  { id: 'bloating', label: t("Bloating") },
+  { id: 'mood_changes', label: t("Mood changes") },
+  { id: 'fatigue', label: t("Tiredness") },
+  { id: 'acne', label: t("Acne") },
+  { id: 'back_pain', label: t("Back pain") },
+  { id: 'tender_breasts', label: t("Tender breasts") },
+  { id: 'nausea', label: t("Nausea") },
 ]
 const FLOW_LABEL: Record<PeriodFlow, string> = { light: 'Light', medium: 'Medium', heavy: 'Heavy' }
 const MODES: { id: Exclude<WomensHealthMode, 'off'>; label: string; icon: ReactNode }[] = [
-  { id: 'cycle', label: 'Periods', icon: <IconFlower className="h-4 w-4" /> },
-  { id: 'pregnancy', label: 'Pregnancy', icon: <IconHeartPulse className="h-4 w-4" /> },
-  { id: 'postpartum', label: 'After birth', icon: <IconBaby className="h-4 w-4" /> },
+  { id: 'cycle', label: t("Periods"), icon: <IconFlower className="h-4 w-4" /> },
+  { id: 'pregnancy', label: t("Pregnancy"), icon: <IconHeartPulse className="h-4 w-4" /> },
+  { id: 'postpartum', label: t("After birth"), icon: <IconBaby className="h-4 w-4" /> },
 ]
 
-const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
+// Translated counts (DEC-29): each unit has its own plural forms in the language catalogs.
+const plural = (n: number, unit: 'day' | 'week') =>
+  unit === 'day' ? t('{{count}} days', { count: n }) : t('{{count}} weeks', { count: n })
 const addDays = (s: string, n: number) => new Date(new Date(`${s}T00:00:00Z`).getTime() + n * 86_400_000).toISOString().slice(0, 10)
 
 function settings(wh: WH, patch: Partial<WomensHealthSettingsInput>): WomensHealthSettingsInput {
@@ -75,7 +78,7 @@ export default function WomensHealth() {
       qc.setQueryData(['womens-health', patientId], wh)
       setSetup(null)
     },
-    onError: () => toast('Couldn’t save. Check the dates and try again.', 'error'),
+    onError: () => toast(t("Couldn’t save. Check the dates and try again."), 'error'),
   })
 
   if (whQ.isLoading || patientQ.isLoading) return <LoadingRows rows={3} />
@@ -94,11 +97,11 @@ export default function WomensHealth() {
     <div className="mx-auto max-w-5xl space-y-5">
       <PageHeader
         icon={<IconFlower className="h-5 w-5" />}
-        title="Women’s health"
-        subtitle={`Periods, pregnancy and life after birth for ${p?.display_name ?? 'this profile'} — with reminders.`}
+        title={t("Women’s health")}
+        subtitle={t("Periods, pregnancy and life after birth for {{display_name}} — with reminders.", { display_name: p?.display_name ?? 'this profile' })}
         actions={
           wh.mode !== 'off' && canWrite && (
-            <Button variant="ghost" size="sm" onClick={() => save.mutate(settings(wh, { mode: 'off' }))}>Turn off tracking</Button>
+            <Button variant="ghost" size="sm" onClick={() => save.mutate(settings(wh, { mode: 'off' }))}>{t("Turn off tracking")}</Button>
           )
         }
       />
@@ -106,7 +109,7 @@ export default function WomensHealth() {
       {wh.mode === 'off' ? (
         <ModePicker onPick={chooseMode} disabled={!canWrite} />
       ) : (
-        <div role="tablist" aria-label="Tracking mode" className="inline-flex rounded-xl bg-surface-sunken p-1">
+        <div role="tablist" aria-label={t("Tracking mode")} className="inline-flex rounded-xl bg-surface-sunken p-1">
           {MODES.map((m) => (
             <button
               key={m.id}
@@ -116,7 +119,7 @@ export default function WomensHealth() {
               onClick={() => chooseMode(m.id)}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50',
-                wh.mode === m.id ? 'bg-white text-brand-800 shadow-sm' : 'text-ink-muted hover:text-ink',
+                wh.mode === m.id ? "bg-white text-brand-800 shadow-sm" : "text-ink-muted hover:text-ink",
               )}
             >
               {m.icon}
@@ -178,7 +181,7 @@ export default function WomensHealth() {
             setLogStart(null)
             void qc.invalidateQueries({ queryKey: ['periods', patientId] })
             void qc.invalidateQueries({ queryKey: ['womens-health', patientId] })
-            toast('Period logged')
+            toast(t("Period logged"))
           }}
         />
       )}
@@ -190,9 +193,9 @@ export default function WomensHealth() {
 
 function ModePicker({ onPick, disabled }: { onPick: (m: WomensHealthMode) => void; disabled: boolean }) {
   const options = [
-    { id: 'cycle' as const, title: 'Track my periods', text: 'Log periods and symptoms, see your cycle and get a reminder before the next one.', icon: <IconFlower /> },
-    { id: 'pregnancy' as const, title: 'I’m pregnant', text: 'See your week and trimester, your due date and reminders for check-ups and scans.', icon: <IconHeartPulse /> },
-    { id: 'postpartum' as const, title: 'I’ve had a baby', text: 'Track weeks since birth, add reminders for your check-ups and your baby’s vaccines.', icon: <IconBaby /> },
+    { id: 'cycle' as const, title: t("Track my periods"), text: t("Log periods and symptoms, see your cycle and get a reminder before the next one."), icon: <IconFlower /> },
+    { id: 'pregnancy' as const, title: t("I’m pregnant"), text: t("See your week and trimester, your due date and reminders for check-ups and scans."), icon: <IconHeartPulse /> },
+    { id: 'postpartum' as const, title: t("I’ve had a baby"), text: t("Track weeks since birth, add reminders for your check-ups and your baby’s vaccines."), icon: <IconBaby /> },
   ]
   return (
     <div className="grid gap-3 sm:grid-cols-3">
@@ -210,7 +213,7 @@ function ModePicker({ onPick, disabled }: { onPick: (m: WomensHealthMode) => voi
           </span>
         </button>
       ))}
-      {disabled && <p className="text-sm text-ink-muted sm:col-span-3">Only people who can add records to this profile can turn on tracking.</p>}
+      {disabled && <p className="text-sm text-ink-muted sm:col-span-3">{t("Only people who can add records to this profile can turn on tracking.")}</p>}
     </div>
   )
 }
@@ -245,7 +248,7 @@ function CycleView({
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['periods', patientId] })
       void qc.invalidateQueries({ queryKey: ['womens-health', patientId] })
-      toast('Period end saved')
+      toast(t("Period end saved"))
     },
   })
   const remove = useMutation({
@@ -259,7 +262,7 @@ function CycleView({
 
   const d = c.days_until_next_period
   const nextLine =
-    d === null ? null : d > 0 ? `Next period in about ${plural(d, 'day')}` : d === 0 ? 'Next period expected today' : `Period is ${plural(-d, 'day')} late`
+    d === null ? null : d > 0 ? t('Next period in about {{count}} days', { count: d }) : d === 0 ? t('Next period expected today') : t('Period {{count}} days late', { count: -d })
 
   return (
     <div className="space-y-4">
@@ -270,24 +273,24 @@ function CycleView({
             {nextLine ? (
               <div>
                 <p className="text-base font-semibold text-ink">{nextLine}</p>
-                <p className="text-sm text-ink-muted">around {shortDate(c.next_period_estimate)}</p>
+                <p className="text-sm text-ink-muted">{t("around")}{' '}{shortDate(c.next_period_estimate)}</p>
                 {c.fertile_window_start && (
                   <p className="mt-1 text-xs text-ink-subtle">
-                    Fertile window estimate: {shortDate(c.fertile_window_start)} – {shortDate(c.fertile_window_end)}
+                    {t("Fertile window estimate:")}{' '}{shortDate(c.fertile_window_start)} – {shortDate(c.fertile_window_end)}
                   </p>
                 )}
               </div>
             ) : (
               <p className="text-sm text-ink-muted">
-                {c.logged_periods === 0 ? 'Log your period to see your cycle.' : 'Log one more period, or set your usual cycle length below, to see estimates.'}
+                {c.logged_periods === 0 ? t("Log your period to see your cycle.") : t("Log one more period, or set your usual cycle length below, to see estimates.")}
               </p>
             )}
             {canWrite && (
               <div className="flex flex-wrap justify-center gap-2">
                 {ongoing ? (
-                  <Button loading={end.isPending} onClick={() => end.mutate()}>Period ended today</Button>
+                  <Button loading={end.isPending} onClick={() => end.mutate()}>{t("Period ended today")}</Button>
                 ) : (
-                  <Button onClick={() => onLog(today)}><IconPlus className="h-4 w-4" /> Log period</Button>
+                  <Button onClick={() => onLog(today)}><IconPlus className="h-4 w-4" /> {t("Log period")}</Button>
                 )}
               </div>
             )}
@@ -296,15 +299,15 @@ function CycleView({
         <Card>
           <CardBody>
             <CycleCalendar cycle={c} periods={periods} onPickDay={canWrite ? onLog : undefined} />
-            {canWrite && <p className="mt-2 text-xs text-ink-subtle">Tap a day to log a period that started then.</p>}
+            {canWrite && <p className="mt-2 text-xs text-ink-subtle">{t("Tap a day to log a period that started then.")}</p>}
           </CardBody>
         </Card>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="Average cycle" value={c.average_cycle_days ? `${c.average_cycle_days} days` : '—'} />
-        <Stat label="Average period" value={c.average_period_days ? `${c.average_period_days} days` : '—'} />
-        <Stat label="Periods logged" value={String(c.logged_periods)} />
+        <Stat label={t("Average cycle")} value={c.average_cycle_days ? `${c.average_cycle_days} days` : '—'} />
+        <Stat label={t("Average period")} value={c.average_period_days ? `${c.average_period_days} days` : '—'} />
+        <Stat label={t("Periods logged")} value={String(c.logged_periods)} />
       </div>
 
       <p className="flex items-start gap-2 text-xs text-ink-muted"><IconWarn className="mt-0.5 h-3.5 w-3.5 shrink-0" />{COPY['COPY-43']}</p>
@@ -312,14 +315,14 @@ function CycleView({
       {periods.length > 0 && (
         <Card>
           <CardBody>
-            <h2 className="text-sm font-semibold text-ink">Period history</h2>
+            <h2 className="text-sm font-semibold text-ink">{t("Period history")}</h2>
             <ul className="mt-2 divide-y divide-line">
               {periods.map((per) => (
                 <li key={per.id} className="flex items-start justify-between gap-3 py-2.5">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-ink">
                       {formatDate(per.start_date)}
-                      {per.end_date ? ` – ${formatDate(per.end_date)}` : ' – ongoing'}
+                      {per.end_date ? ` – ${formatDate(per.end_date)}` : t(" – ongoing")}
                       {per.length_days && <span className="font-normal text-ink-subtle"> · {plural(per.length_days, 'day')}</span>}
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
@@ -329,7 +332,7 @@ function CycleView({
                     {per.notes && <p className="mt-1 text-xs text-ink-muted">{per.notes}</p>}
                   </div>
                   {canWrite && (
-                    <button onClick={() => setRemoving(per)} aria-label={`Delete period from ${formatDate(per.start_date)}`} className="rounded p-1 text-ink-subtle hover:bg-danger-bg hover:text-danger-fg">
+                    <button onClick={() => setRemoving(per)} aria-label={t("Delete period from {{formatDate}}", { formatDate: formatDate(per.start_date) })} className="rounded p-1 text-ink-subtle hover:bg-danger-bg hover:text-danger-fg">
                       <IconTrash className="h-4 w-4" />
                     </button>
                   )}
@@ -346,15 +349,15 @@ function CycleView({
         <Dialog
           open
           onClose={() => setRemoving(null)}
-          title="Delete this period?"
+          title={t("Delete this period?")}
           footer={
             <>
-              <Button variant="ghost" onClick={() => setRemoving(null)}>Cancel</Button>
-              <Button variant="danger" loading={remove.isPending} onClick={() => remove.mutate(removing.id)}>Delete</Button>
+              <Button variant="ghost" onClick={() => setRemoving(null)}>{t("Cancel")}</Button>
+              <Button variant="danger" loading={remove.isPending} onClick={() => remove.mutate(removing.id)}>{t("Delete")}</Button>
             </>
           }
         >
-          <p className="text-sm text-ink">The period that started {formatDate(removing.start_date)} will be removed and estimates recalculated.</p>
+          <p className="text-sm text-ink">{t("The period that started")}{' '}{formatDate(removing.start_date)} {t("will be removed and estimates recalculated.")}</p>
         </Dialog>
       )}
     </div>
@@ -379,16 +382,16 @@ function CycleSettings({ wh, onSave }: { wh: WH; onSave: (patch: Partial<WomensH
   const periodBad = periodN !== null && (!Number.isInteger(periodN) || periodN < 2 || periodN > 10)
   return (
     <details className="rounded-2xl border border-canvas-border bg-white p-4">
-      <summary className="cursor-pointer text-sm font-semibold text-ink">Your usual cycle (optional)</summary>
-      <p className="mt-1 text-xs text-ink-subtle">Used for estimates until you’ve logged a few periods.</p>
+      <summary className="cursor-pointer text-sm font-semibold text-ink">{t("Your usual cycle (optional)")}</summary>
+      <p className="mt-1 text-xs text-ink-subtle">{t("Used for estimates until you’ve logged a few periods.")}</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-        <Field label="Cycle length (days)" htmlFor="wh-cycle" error={cycleBad ? '21 to 45 days' : undefined}>
+        <Field label={t("Cycle length (days)")} htmlFor="wh-cycle" error={cycleBad ? t("21 to 45 days") : undefined}>
           <Input id="wh-cycle" inputMode="numeric" value={cycle} onChange={(e) => setCycle(e.target.value)} placeholder="e.g. 28" />
         </Field>
-        <Field label="Period length (days)" htmlFor="wh-period" error={periodBad ? '2 to 10 days' : undefined}>
+        <Field label={t("Period length (days)")} htmlFor="wh-period" error={periodBad ? t("2 to 10 days") : undefined}>
           <Input id="wh-period" inputMode="numeric" value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="e.g. 5" />
         </Field>
-        <Button variant="secondary" disabled={cycleBad || periodBad} onClick={() => onSave({ cycle_length_days: cycleN, period_length_days: periodN })}>Save</Button>
+        <Button variant="secondary" disabled={cycleBad || periodBad} onClick={() => onSave({ cycle_length_days: cycleN, period_length_days: periodN })}>{t("Save")}</Button>
       </div>
     </details>
   )
@@ -409,32 +412,32 @@ function PeriodDialog({ patientId, start, onClose, onSaved }: { patientId: strin
       api.createPeriod(patientId, { start_date: startDate, end_date: endDate || null, flow, symptoms, notes: notes.trim() || null }),
     onSuccess: onSaved,
     onError: (e) =>
-      setError(e instanceof ApiError && e.code === 'PERIOD_OVERLAP' ? 'This overlaps a period you’ve already logged.' : 'Couldn’t save. Check the dates and try again.'),
+      setError(e instanceof ApiError && e.code === 'PERIOD_OVERLAP' ? t('This overlaps a period you’ve already logged.') : t('Couldn’t save. Check the dates and try again.')),
   })
 
   return (
     <Dialog
       open
       onClose={onClose}
-      title="Log a period"
+      title={t("Log a period")}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button loading={create.isPending} disabled={!startDate || startDate > today || endBad} onClick={() => create.mutate()}>Save</Button>
+          <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
+          <Button loading={create.isPending} disabled={!startDate || startDate > today || endBad} onClick={() => create.mutate()}>{t("Save")}</Button>
         </>
       }
     >
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Started" htmlFor="pd-start">
+          <Field label={t("Started")} htmlFor="pd-start">
             <Input id="pd-start" type="date" max={today} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </Field>
-          <Field label="Ended (optional)" htmlFor="pd-end" error={endBad ? 'Within 14 days of the start, not in the future' : undefined}>
+          <Field label={t("Ended (optional)")} htmlFor="pd-end" error={endBad ? t("Within 14 days of the start, not in the future") : undefined}>
             <Input id="pd-end" type="date" min={startDate} max={today} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </Field>
         </div>
         <fieldset>
-          <legend className="mb-1 text-sm font-medium text-ink">Flow</legend>
+          <legend className="mb-1 text-sm font-medium text-ink">{t("Flow")}</legend>
           <div className="flex gap-1.5">
             {(Object.keys(FLOW_LABEL) as PeriodFlow[]).map((f) => (
               <button
@@ -442,7 +445,7 @@ function PeriodDialog({ patientId, start, onClose, onSaved }: { patientId: strin
                 type="button"
                 aria-pressed={flow === f}
                 onClick={() => setFlow(flow === f ? null : f)}
-                className={cn('flex-1 rounded-lg border px-3 py-1.5 text-sm', flow === f ? 'border-brand-500 bg-brand-50 text-brand-800' : 'border-line text-ink-muted')}
+                className={cn('flex-1 rounded-lg border px-3 py-1.5 text-sm', flow === f ? "border-brand-500 bg-brand-50 text-brand-800" : "border-line text-ink-muted")}
               >
                 {FLOW_LABEL[f]}
               </button>
@@ -450,7 +453,7 @@ function PeriodDialog({ patientId, start, onClose, onSaved }: { patientId: strin
           </div>
         </fieldset>
         <fieldset>
-          <legend className="mb-1 text-sm font-medium text-ink">Symptoms</legend>
+          <legend className="mb-1 text-sm font-medium text-ink">{t("Symptoms")}</legend>
           <div className="flex flex-wrap gap-1.5">
             {SYMPTOMS.map((s) => {
               const on = symptoms.includes(s.id)
@@ -460,7 +463,7 @@ function PeriodDialog({ patientId, start, onClose, onSaved }: { patientId: strin
                   type="button"
                   aria-pressed={on}
                   onClick={() => setSymptoms(on ? symptoms.filter((x) => x !== s.id) : [...symptoms, s.id])}
-                  className={cn('rounded-full border px-3 py-1 text-sm', on ? 'border-brand-400 bg-brand-50 text-brand-800' : 'border-line text-ink-muted hover:bg-surface-muted')}
+                  className={cn('rounded-full border px-3 py-1 text-sm', on ? "border-brand-400 bg-brand-50 text-brand-800" : "border-line text-ink-muted hover:bg-surface-muted")}
                 >
                   {s.label}
                 </button>
@@ -468,7 +471,7 @@ function PeriodDialog({ patientId, start, onClose, onSaved }: { patientId: strin
             })}
           </div>
         </fieldset>
-        <Field label="Notes (optional)" htmlFor="pd-notes">
+        <Field label={t("Notes (optional)")} htmlFor="pd-notes">
           <Input id="pd-notes" value={notes} maxLength={200} onChange={(e) => setNotes(e.target.value)} />
         </Field>
         {error && <p className="text-sm font-medium text-danger-fg" role="alert">{error}</p>}
@@ -489,41 +492,41 @@ function PregnancyView({ wh, canWrite, onEdit, onDelivered }: { wh: WH; canWrite
         <CardBody className="space-y-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-wide text-ink-subtle">You are</p>
+              <p className="text-xs uppercase tracking-wide text-ink-subtle">{t("You are")}</p>
               <p className="font-serif text-4xl text-ink">
                 {plural(preg.weeks, 'week')}{preg.days ? <span className="text-2xl text-ink-muted"> + {plural(preg.days, 'day')}</span> : null}
               </p>
               <Badge tone="brand" className="mt-1">{tri} trimester</Badge>
             </div>
             <div className="text-right">
-              <p className="text-xs text-ink-subtle">Due date</p>
+              <p className="text-xs text-ink-subtle">{t("Due date")}</p>
               <p className="text-xl font-semibold text-ink">{formatDate(preg.due_date)}</p>
-              <p className="text-sm text-ink-muted">{preg.days_to_go >= 0 ? `${plural(preg.days_to_go, 'day')} to go` : 'Due date has passed'}</p>
+              <p className="text-sm text-ink-muted">{preg.days_to_go >= 0 ? t('{{days}} to go', { days: plural(preg.days_to_go, 'day') }) : t("Due date has passed")}</p>
             </div>
           </div>
           <div>
-            <div className="relative h-3 rounded-full bg-brand-50" role="progressbar" aria-valuemin={0} aria-valuemax={40} aria-valuenow={preg.weeks} aria-label="Weeks of pregnancy">
+            <div className="relative h-3 rounded-full bg-brand-50" role="progressbar" aria-valuemin={0} aria-valuemax={40} aria-valuenow={preg.weeks} aria-label={t("Weeks of pregnancy")}>
               <div className="h-3 rounded-full bg-brand-gradient" style={{ width: `${progress}%` }} />
               {[13, 27].map((w) => (
                 <span key={w} className="absolute top-0 h-3 w-0.5 bg-white" style={{ left: `${(w / 40) * 100}%` }} aria-hidden="true" />
               ))}
             </div>
             <div className="mt-1 grid grid-cols-[13fr_14fr_13fr] text-[11px] text-ink-subtle">
-              <span>Trimester 1</span>
-              <span className="text-center">Trimester 2</span>
-              <span className="text-right">Trimester 3 · 40 weeks</span>
+              <span>{t("Trimester 1")}</span>
+              <span className="text-center">{t("Trimester 2")}</span>
+              <span className="text-right">{t("Trimester 3 · 40 weeks")}</span>
             </div>
           </div>
-          <p className="text-xs text-ink-subtle">Calculated from {wh.lmp_date ? `your last period (${formatDate(preg.lmp_date)})` : `your due date`}. Your doctor’s dating scan may differ.</p>
+          <p className="text-xs text-ink-subtle">{t("Calculated from")}{' '}{wh.lmp_date ? t("your last period ({{formatDate}})", { formatDate: formatDate(preg.lmp_date) }) : t("your due date")}{t(". Your doctor’s dating scan may differ.")}</p>
           {canWrite && (
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" size="sm" onClick={onEdit}><IconCalendar className="h-4 w-4" /> Change dates</Button>
-              <Button variant="secondary" size="sm" onClick={onDelivered}><IconBaby className="h-4 w-4" /> Baby has arrived</Button>
+              <Button variant="secondary" size="sm" onClick={onEdit}><IconCalendar className="h-4 w-4" /> {t("Change dates")}</Button>
+              <Button variant="secondary" size="sm" onClick={onDelivered}><IconBaby className="h-4 w-4" /> {t("Baby has arrived")}</Button>
             </div>
           )}
         </CardBody>
       </Card>
-      <Alert tone="warn" icon={<IconWarn />} title="When to get help now">{COPY['COPY-44']}</Alert>
+      <Alert tone="warn" icon={<IconWarn />} title={t("When to get help now")}>{COPY['COPY-44']}</Alert>
     </div>
   )
 }
@@ -547,23 +550,23 @@ function PostpartumView({
       <Card>
         <CardBody className="space-y-4">
           <div>
-            <p className="text-xs uppercase tracking-wide text-ink-subtle">Since your baby was born</p>
+            <p className="text-xs uppercase tracking-wide text-ink-subtle">{t("Since your baby was born")}</p>
             <p className="font-serif text-4xl text-ink">
               {pp.weeks_since_delivery >= 1 ? plural(pp.weeks_since_delivery, 'week') : plural(pp.days_since_delivery, 'day')}
             </p>
-            <p className="text-sm text-ink-muted">Born {formatDate(pp.delivery_date)}</p>
+            <p className="text-sm text-ink-muted">{t("Born")}{' '}{formatDate(pp.delivery_date)}</p>
           </div>
           {canWrite && (
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={onAddBaby}><IconBaby className="h-4 w-4" /> Add your baby’s profile</Button>
-              <Button variant="secondary" size="sm" onClick={onEdit}><IconCalendar className="h-4 w-4" /> Change date</Button>
-              <Button variant="secondary" size="sm" onClick={onPeriodsBack}><IconFlower className="h-4 w-4" /> Periods are back</Button>
+              <Button size="sm" onClick={onAddBaby}><IconBaby className="h-4 w-4" /> {t("Add your baby’s profile")}</Button>
+              <Button variant="secondary" size="sm" onClick={onEdit}><IconCalendar className="h-4 w-4" /> {t("Change date")}</Button>
+              <Button variant="secondary" size="sm" onClick={onPeriodsBack}><IconFlower className="h-4 w-4" /> {t("Periods are back")}</Button>
             </div>
           )}
-          <p className="text-xs text-ink-subtle">Add your baby as a family member to keep their vaccination records and reminders in one place.</p>
+          <p className="text-xs text-ink-subtle">{t("Add your baby as a family member to keep their vaccination records and reminders in one place.")}</p>
         </CardBody>
       </Card>
-      <Alert tone="info" icon={<IconHeartPulse />} title="Looking after yourself">{COPY['COPY-45']}</Alert>
+      <Alert tone="info" icon={<IconHeartPulse />} title={t("Looking after yourself")}>{COPY['COPY-45']}</Alert>
     </div>
   )
 }
@@ -602,18 +605,18 @@ function SetupDialog({
     <Dialog
       open
       onClose={onClose}
-      title={mode === 'pregnancy' ? 'Pregnancy dates' : 'When was your baby born?'}
+      title={mode === 'pregnancy' ? t("Pregnancy dates") : t("When was your baby born?")}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button loading={saving} disabled={bad} onClick={save}>Save</Button>
+          <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
+          <Button loading={saving} disabled={bad} onClick={save}>{t("Save")}</Button>
         </>
       }
     >
       <div className="space-y-3">
         {mode === 'pregnancy' && (
-          <div role="radiogroup" aria-label="What do you know?" className="grid grid-cols-2 gap-2">
-            {([['lmp', 'First day of my last period'], ['due', 'My due date']] as const).map(([k, label]) => (
+          <div role="radiogroup" aria-label={t("What do you know?")} className="grid grid-cols-2 gap-2">
+            {([['lmp', t('First day of my last period')], ['due', t('My due date')]] as const).map(([k, label]) => (
               <button
                 key={k}
                 role="radio"
@@ -622,17 +625,17 @@ function SetupDialog({
                   setBasis(k)
                   setDate((k === 'lmp' ? wh.lmp_date : wh.due_date) ?? '')
                 }}
-                className={cn('rounded-xl border px-3 py-2 text-sm', basis === k ? 'border-brand-500 bg-brand-50 text-brand-800' : 'border-line text-ink-muted')}
+                className={cn('rounded-xl border px-3 py-2 text-sm', basis === k ? "border-brand-500 bg-brand-50 text-brand-800" : "border-line text-ink-muted")}
               >
                 {label}
               </button>
             ))}
           </div>
         )}
-        <Field label={mode === 'postpartum' ? 'Date of birth' : basis === 'lmp' ? 'First day of last period' : 'Due date'} htmlFor="wh-date">
+        <Field label={mode === 'postpartum' ? t("Date of birth") : basis === 'lmp' ? t("First day of last period") : t("Due date")} htmlFor="wh-date">
           <Input id="wh-date" type="date" min={range.min} max={range.max} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
-        {mode === 'pregnancy' && <p className="text-xs text-ink-subtle">If your doctor gave you a due date from a scan, use that.</p>}
+        {mode === 'pregnancy' && <p className="text-xs text-ink-subtle">{t("If your doctor gave you a due date from a scan, use that.")}</p>}
       </div>
     </Dialog>
   )
@@ -648,29 +651,29 @@ function RemindersCard({ patientId, wh, canRemind, onAdd }: { patientId: string;
   const presets: ReminderPreset[] =
     wh.mode === 'cycle'
       ? [
-          ...(next ? [{ title: 'Period expected in about 2 days', type: 'other' as const, kind: 'once' as const, date: addDays(next, -2), time: '09:00' }] : []),
-          { title: 'Log period symptoms', type: 'other', kind: 'daily', time: '21:00' },
-          { title: 'Medicine (as prescribed)', type: 'medication', kind: 'daily', time: '08:00' },
+          ...(next ? [{ title: t("Period expected in about 2 days"), type: 'other' as const, kind: 'once' as const, date: addDays(next, -2), time: '09:00' }] : []),
+          { title: t("Log period symptoms"), type: 'other', kind: 'daily', time: '21:00' },
+          { title: t("Medicine (as prescribed)"), type: 'medication', kind: 'daily', time: '08:00' },
         ]
       : wh.mode === 'pregnancy'
         ? [
-            { title: 'Antenatal check-up', type: 'appointment', kind: 'once', time: '10:00' },
-            { title: 'Ultrasound scan', type: 'appointment', kind: 'once', time: '10:00' },
-            { title: 'Blood test', type: 'appointment', kind: 'once', time: '08:00' },
-            { title: 'Medicine (as prescribed)', type: 'medication', kind: 'daily', time: '08:00' },
+            { title: t("Antenatal check-up"), type: 'appointment', kind: 'once', time: '10:00' },
+            { title: t("Ultrasound scan"), type: 'appointment', kind: 'once', time: '10:00' },
+            { title: t("Blood test"), type: 'appointment', kind: 'once', time: '08:00' },
+            { title: t("Medicine (as prescribed)"), type: 'medication', kind: 'daily', time: '08:00' },
           ]
         : [
-            { title: 'Postnatal check-up', type: 'appointment', kind: 'once', time: '10:00' },
-            { title: 'Baby’s vaccination', type: 'appointment', kind: 'once', time: '10:00' },
-            { title: 'Medicine (as prescribed)', type: 'medication', kind: 'daily', time: '08:00' },
+            { title: t("Postnatal check-up"), type: 'appointment', kind: 'once', time: '10:00' },
+            { title: t("Baby’s vaccination"), type: 'appointment', kind: 'once', time: '10:00' },
+            { title: t("Medicine (as prescribed)"), type: 'medication', kind: 'daily', time: '08:00' },
           ]
 
   return (
     <Card>
       <CardBody>
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><IconBell className="h-4 w-4 text-ink-muted" /> Reminders</h2>
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><IconBell className="h-4 w-4 text-ink-muted" /> {t("Reminders")}</h2>
         {upcoming.length === 0 ? (
-          <p className="mt-2 text-sm text-ink-muted">No upcoming reminders yet.</p>
+          <p className="mt-2 text-sm text-ink-muted">{t("No upcoming reminders yet.")}</p>
         ) : (
           <ul className="mt-2 divide-y divide-line">
             {upcoming.map((r) => (
@@ -694,7 +697,7 @@ function RemindersCard({ patientId, wh, canRemind, onAdd }: { patientId: string;
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-xs text-ink-subtle">You can view reminders; the profile owner can add them.</p>
+          <p className="mt-2 text-xs text-ink-subtle">{t("You can view reminders; the profile owner can add them.")}</p>
         )}
       </CardBody>
     </Card>

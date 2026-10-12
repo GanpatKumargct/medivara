@@ -9,7 +9,7 @@
 |---|---|---|---|
 | Text | Typed questions; written answers, brief and timeline; citations and uncertainty notices; plain language; display preferences | P0 | Medical accuracy beyond the synthetic test set |
 | Voice | Read-aloud (planned); speech-to-text question input with transcript confirmation (if ahead) | P1 | A voice assistant, voice navigation, Indian-language speech, reliable recognition of medicine names |
-| Sign language (ISL) | **ISL Visit Assist:** Visit Communication Card plus a curated glossary of official ISL dictionary videos | **P0** | Translation in either direction, sign recognition, signing avatars, coverage of ISL grammar |
+| Sign language (ISL) | **ISL Visit Assist:** Visit Communication Card plus a curated glossary of official ISL dictionary videos; **experimental** sign-assisted questions from a few isolated signs (P1, §4.7) | **P0** | Translation in either direction, sentence-level sign recognition, signing avatars, coverage of ISL grammar |
 
 ## 2. Text mode
 
@@ -83,7 +83,7 @@ Voice navigation (FR-058); server-side transcription and speech with Gemini mode
 | Prerecorded ISL guidance videos made by the team | No: the team members are not qualified signers | Low; risks incorrect signs | Rejected |
 | **Official ISL dictionary videos for selected health terms** | Yes: curation plus embedding | High, if attributed and verified | **Chosen (P0, FR-061)** |
 | **Visit Communication Card with interpreter request** | Yes: frontend only | High; addresses a real barrier at clinics | **Chosen (P0, FR-060)** |
-| Limited sign-to-text recognition (a few isolated signs, in the browser) | Technically possible but would take time from P0, use team-recorded samples and lack validation | Low; invites "translation" over-claims | **Not built** (roadmap FR-064) |
+| Limited sign-to-text recognition (a few isolated signs, in the browser) | Yes, as an experimental question picker (DEC-28) | Moderate when signs only *choose* a question the user then confirms; never presented as translation | **Chosen as experimental P1 (FR-064, §4.7)**; originally not chosen |
 | Signing avatar (text to ISL) | No | Very low without linguists and the community | **Roadmap only** (FR-065) |
 
 ### 4.3 Specification of the MVP capability (SCR-11 ISL Visit Assist)
@@ -104,9 +104,22 @@ Voice navigation (FR-058); server-side transcription and speech with Gemini mode
 
 ### 4.4 Consent and privacy for sign-language features
 
-- The MVP uses no camera and records no video of users.
+- Sign-assisted questions (§4.7) use the camera only after a separate `camera_input` consent; the video never leaves the device and no frames are stored. Recorded sign examples are hand and body point positions, kept in the browser.
 - Glossary videos load from a third-party video platform, which can see that a video was played. This is disclosed in About and in Settings.
-- Any future recognition feature (FR-064) would run on the device, require explicit camera consent for each session, store no frames, and be evaluated with Deaf signers before use.
+- Recognition (FR-064) runs on the device and stores no frames. Evaluation with Deaf signers is still required before any claim beyond "experimental".
+
+### 4.7 Sign-assisted questions (experimental, FR-064, DEC-28)
+
+| Aspect | Specification |
+|---|---|
+| What it does | In **Sign mode** (the camera button in the chat composer; a full-screen view like voice mode), the camera recognises a few **isolated** ISL signs. Each recognised sign is shown as up to 3 guesses to tap; chosen signs build **one question about the user's records** (for example Medicine → "Which medicines are listed in my most recent document?"), placed in the composer's editable box. Nothing is sent until the user presses Send. Sign mode has an Ask view (camera, "Did you sign…" guesses, question builder, words grouped as topics / question words / controls, and a separate Emergency section) and a Teach view (record 3 examples per word). It never translates sentences. |
+| Vocabulary | 16 words (`Frontend/src/lib/signs/vocabulary.ts`): topics (medicine, test, sugar/diabetes, blood pressure, allergy, doctor, hospital), question words (what, when, change), safety (emergency, chest pain, can't breathe) and control (yes, no, again). To be confirmed with a qualified ISL signer. Every word can also be tapped without the camera. |
+| Emergency signs | A safety sign recognised with high confidence, or tapped, sends a fixed phrase at once (for example "I have chest pain."); the existing safety check answers with the emergency card and makes no model call. |
+| How recognition works | MediaPipe hand and pose landmarks in the browser (files served by the app from `/mediapipe/`, fetched by `scripts/fetch-mediapipe.mjs`) → body-relative features → a sign is the time between hands appearing and being lowered → nearest recorded example by dynamic time warping. A sign far from every example is reported as "not sure", never guessed. |
+| Examples | The team pack `/signs/pack.json` (empty until a qualified ISL signer records it, using "Teach signs" and "Export") plus the user's own examples recorded in "Teach signs" and kept in the browser. The INCLUDE dataset (CC BY 4.0) has no health category, so it can't supply this vocabulary; a trained model can replace matching once enough recordings exist. |
+| Consent and privacy | Separate `camera_input` consent (API-05), off by default, revocable in Settings. Video stays on the device; only the confirmed question text is sent, tagged `input_mode: "sign"` (API-21, API-52). |
+| Copy | COPY-47 (camera consent), COPY-48 (experimental notice). COPY-17 stays true. |
+| Evaluation | `npm run test:signs` checks the maths on synthetic movements. Real accuracy is unknown until signs are recorded: target ≥ 90 % top-3 on two held-out signers and < 5 % non-signs accepted. Not validated with Deaf users (H-05). |
 
 ### 4.5 Fallback when sign-language content is unavailable
 

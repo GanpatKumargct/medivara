@@ -11,6 +11,7 @@ import { Badge, Button, Card, CardBody } from '../components/ui'
 import { ErrorBanner, LoadingRows } from '../components/states'
 import { AnimatedNumber } from '../components/motion'
 import { ProgressRing, Sparkline } from '../components/dataviz'
+import { SinceLastVisit } from '../components/since-last-visit'
 import { formatDate, formatTimestampDate, DOCUMENT_TYPE_LABELS } from '../lib/format'
 import {
   IconAsk,
@@ -22,10 +23,11 @@ import {
   IconUpload,
   IconUsers,
 } from '../components/icons'
+import { t } from '../lib/i18n'
 
 function greeting() {
   const h = new Date().getHours()
-  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+  return h < 12 ? t("Good morning") : h < 17 ? t("Good afternoon") : t("Good evening")
 }
 
 export default function Dashboard() {
@@ -61,31 +63,34 @@ export default function Dashboard() {
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{p.display_name}</h1>
           <p className="mt-2 max-w-xl text-sm text-brand-100/90">
             {p.stats.documents_needs_review > 0
-              ? `You have ${p.stats.documents_needs_review} document${p.stats.documents_needs_review > 1 ? 's' : ''} to review and ${docs.length} on file from ${providers} provider${providers === 1 ? '' : 's'}.`
-              : `${docs.length} documents on file from ${providers} provider${providers === 1 ? '' : 's'}, all reviewed.`}
+              ? t('{{toReview}} · {{onFile}} from {{providers}}.', {
+                  toReview: t('You have {{count}} documents to review', { count: p.stats.documents_needs_review }),
+                  onFile: t('{{count}} on file', { count: docs.length }),
+                  providers: t('{{count}} providers', { count: providers }),
+                })
+              : t('{{documents}} from {{providers}}, all reviewed.', {
+                  documents: t('{{count}} documents on file', { count: docs.length }),
+                  providers: t('{{count}} providers', { count: providers }),
+                })}
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             {canUpload && (
               <Link to={`${base}/records`}>
                 <button className="mv-press inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-brand-800 shadow-sm transition hover:bg-brand-50">
-                  <IconUpload className="h-4 w-4" /> Upload document
-                </button>
+                  <IconUpload className="h-4 w-4" /> {t("Upload document")}</button>
               </Link>
             )}
             <Link to={`${base}/brief`}>
               <button className="mv-press inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/25 transition hover:bg-white/25">
-                <IconBrief className="h-4 w-4" /> Consultation brief
-              </button>
+                <IconBrief className="h-4 w-4" /> {t("Consultation brief")}</button>
             </Link>
             <Link to={base}>
               <button className="mv-press inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/25 transition hover:bg-white/25">
-                <IconAsk className="h-4 w-4" /> Ask a question
-              </button>
+                <IconAsk className="h-4 w-4" /> {t("Ask a question")}</button>
             </Link>
             <Link to={`${base}/visit-assist`}>
               <button className="mv-press inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/25 transition hover:bg-white/25">
-                <IconHand className="h-4 w-4" /> Visit Card
-              </button>
+                <IconHand className="h-4 w-4" /> {t("Visit Card")}</button>
             </Link>
           </div>
         </div>
@@ -95,40 +100,42 @@ export default function Dashboard() {
       <div className="mv-stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={<IconDoc className="h-5 w-5" />}
-          label="Documents"
+          label={t("Documents")}
           value={p.stats.documents_total}
-          hint={`${p.stats.documents_failed} failed · ${p.stats.documents_processing} processing`}
+          hint={t("{{documents_failed}} failed · {{documents_processing}} processing", { documents_failed: p.stats.documents_failed, documents_processing: p.stats.documents_processing })}
           to={`${base}/records`}
           grad="bg-grad-blue"
         />
         <Card accent className="mv-lift">
           <CardBody className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-ink-muted">Review progress</p>
+              <p className="text-sm text-ink-muted">{t("Review progress")}</p>
               <p className="mt-1 text-3xl font-bold text-brand-900"><AnimatedNumber value={reviewPct} />%</p>
-              <p className="text-xs text-ink-subtle">{ready} of {docs.length} reviewed</p>
+              <p className="text-xs text-ink-subtle">{ready} {t("of")}{' '}{docs.length} reviewed</p>
             </div>
             <ProgressRing value={reviewPct} label={`${reviewPct}%`} />
           </CardBody>
         </Card>
         <StatCard
           icon={<IconUsers className="h-5 w-5" />}
-          label="Providers"
+          label={t("Providers")}
           value={providers}
-          hint="across your records"
+          hint={t("across your records")}
           to={`${base}/timeline`}
           grad="bg-grad-teal"
         />
         <StatCard
           icon={<IconTimeline className="h-5 w-5" />}
-          label="Needs review"
+          label={t("Needs review")}
           value={p.stats.documents_needs_review}
-          hint={p.stats.documents_needs_review === 1 ? '1 document waiting' : 'documents waiting'}
+          hint={p.stats.documents_needs_review === 1 ? t("1 document waiting") : t("documents waiting")}
           to={`${base}/records`}
           emphasise={p.stats.documents_needs_review > 0}
           grad="bg-grad-violet"
         />
       </div>
+
+      <SinceLastVisit patientId={patientId} />
 
       {/* Lower grid: health snapshot + latest brief */}
       <div className="grid gap-4 lg:grid-cols-3">
@@ -136,9 +143,8 @@ export default function Dashboard() {
           <CardBody>
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
-                <IconSparkle className="h-4 w-4 text-brand-500" /> Health snapshot
-              </h2>
-              <Link to={`${base}/timeline`} className="text-sm font-medium text-brand-700 hover:underline">Timeline →</Link>
+                <IconSparkle className="h-4 w-4 text-brand-500" /> {t("Health snapshot")}</h2>
+              <Link to={`${base}/timeline`} className="text-sm font-medium text-brand-700 hover:underline">{t("Timeline →")}</Link>
             </div>
             {snapshot ? (
               <div className="mt-3 flex items-center justify-between gap-4">
@@ -150,34 +156,34 @@ export default function Dashboard() {
                   <p className="text-xs text-ink-subtle">
                     {snapshot.previous} {snapshot.unit} ({formatDate(snapshot.prevDate)}) → {snapshot.current} {snapshot.unit} ({formatDate(snapshot.curDate)})
                   </p>
-                  <p className="mt-1 text-[11px] text-ink-subtle">Values as written on your reports. Not a medical assessment.</p>
+                  <p className="mt-1 text-[11px] text-ink-subtle">{t("Values as written on your reports. Not a medical assessment.")}</p>
                 </div>
                 <Sparkline data={snapshot.series} width={150} height={56} />
               </div>
             ) : (
-              <p className="mt-3 text-sm text-ink-muted">Your trends appear here once you have results on file.</p>
+              <p className="mt-3 text-sm text-ink-muted">{t("Your trends appear here once you have results on file.")}</p>
             )}
           </CardBody>
         </Card>
 
         <Card className="mv-lift">
           <CardBody>
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><IconBrief className="h-4 w-4 text-brand-500" /> Latest brief</h2>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><IconBrief className="h-4 w-4 text-brand-500" /> {t("Latest brief")}</h2>
             {briefQ.isLoading ? (
-              <p className="mt-3 text-sm text-ink-subtle">Loading…</p>
+              <p className="mt-3 text-sm text-ink-subtle">{t("Loading…")}</p>
             ) : noBrief ? (
               <div className="mt-3">
-                <p className="text-sm text-ink-muted">No brief yet.</p>
+                <p className="text-sm text-ink-muted">{t("No brief yet.")}</p>
                 <Link to={`${base}/brief`} className="mt-3 inline-block">
-                  <Button size="sm">Create first brief</Button>
+                  <Button size="sm">{t("Create first brief")}</Button>
                 </Link>
               </div>
             ) : briefQ.data ? (
               <div className="mt-3">
                 <p className="text-lg font-semibold text-brand-900">{formatTimestampDate(briefQ.data.created_at)}</p>
-                {briefQ.data.stale && <Badge tone="warn">Needs refreshing</Badge>}
+                {briefQ.data.stale && <Badge tone="warn">{t("Needs refreshing")}</Badge>}
                 <Link to={`${base}/brief`} className="mt-3 inline-block">
-                  <Button size="sm" variant="secondary">Open brief</Button>
+                  <Button size="sm" variant="secondary">{t("Open brief")}</Button>
                 </Link>
               </div>
             ) : null}
@@ -190,8 +196,8 @@ export default function Dashboard() {
         <Card>
           <CardBody>
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-ink">Recent documents</h2>
-              <Link to={`${base}/records`} className="text-sm font-medium text-brand-700 hover:underline">View all →</Link>
+              <h2 className="text-sm font-semibold text-ink">{t("Recent documents")}</h2>
+              <Link to={`${base}/records`} className="text-sm font-medium text-brand-700 hover:underline">{t("View all →")}</Link>
             </div>
             <ul className="mt-3 divide-y divide-line">
               {docs.slice(0, 5).map((d) => (
@@ -203,7 +209,7 @@ export default function Dashboard() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-ink group-hover:text-brand-800">{d.title}</p>
                       <p className="truncate text-xs text-ink-subtle">
-                        {DOCUMENT_TYPE_LABELS[d.document_type]} · {d.document_date ? formatDate(d.document_date) : 'Date unknown'}
+                        {DOCUMENT_TYPE_LABELS[d.document_type]} · {d.document_date ? formatDate(d.document_date) : t("Date unknown")}
                       </p>
                     </div>
                     <DocStatusPill doc={d} />
@@ -254,10 +260,10 @@ function StatCard({
 }
 
 function DocStatusPill({ doc }: { doc: DocumentSummary }) {
-  if (doc.status === 'failed') return <Badge tone="danger">Failed</Badge>
-  if (doc.status === 'needs_review') return <Badge tone="warn">Review</Badge>
-  if (doc.status === 'processing' || doc.status === 'queued') return <Badge tone="info">Processing</Badge>
-  return <Badge tone="ok">Reviewed</Badge>
+  if (doc.status === 'failed') return <Badge tone="danger">{t("Failed")}</Badge>
+  if (doc.status === 'needs_review') return <Badge tone="warn">{t("Review")}</Badge>
+  if (doc.status === 'processing' || doc.status === 'queued') return <Badge tone="info">{t("Processing")}</Badge>
+  return <Badge tone="ok">{t("Reviewed")}</Badge>
 }
 
 interface Snapshot {

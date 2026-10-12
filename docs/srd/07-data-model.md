@@ -142,6 +142,14 @@ The latest record per (user_id, consent_type, patient_id) is the current state.
 | discarded_fact_count | integer | Facts dropped because no valid source line was cited |
 | created_at, updated_at, processed_at | timestamps | |
 
+### 3.6a Document versions (DEC-27)
+
+MedicalDocument gains `series_id` (the logical document; equals the first file's id), `file_version` (1, 2, …), `is_current` (exactly one file per series), `superseded_at`, `deleted_at` and `deleted_by_user_id` (Recently deleted, set on every file of the series). User gains `previous_login_at` (the sign-in before the latest; "since your last visit").
+
+**RecordVersion** (`record_version`, append-only): `id` (`rv_…`), `patient_id`, `series_id`, `document_id` (the file at that time), `version_no` (unique per series), `action`, `actor_user_id` (null for automatic steps), `session_id` (the sign-in), `snapshot` (the full state after the change: header fields and every fact with its fields, corrections and status), `summary` (what changed), `at`. Restoring writes a new version; versions are never edited. Snapshots hold record content like facts: patient-scoped, never logged, removed with the document when it is deleted permanently or purged after 30 days, included in snapshot exports and wiped by demo reset.
+
+Schema changes are Alembic migrations (`backend/migrations/versions/`), applied at start-up; `0002` adds the above to existing databases and starts each existing document's history with version 1 `existing`.
+
 ### 3.7 DocumentPage
 
 | Field | Type | Notes |
@@ -339,8 +347,8 @@ Allowed transitions: `unverified` → `confirmed` · `corrected` · `rejected`. 
 
 | Data | Retention in the prototype | Production requirement (future) |
 |---|---|---|
-| Uploaded files and pages | Until document delete (P1) or demo reset | Retention policy, user-initiated deletion with backup purge |
-| Facts and history | Same as the document | Same |
+| Uploaded files and pages | Until permanent delete, 30 days after delete (Recently deleted), or demo reset | Retention policy, user-initiated deletion with backup purge |
+| Facts, history and document versions | Same as the document | Same |
 | Briefs and AI outputs | Until demo reset | Configurable retention; user deletion |
 | Audit events | Until demo reset | Tamper-evident, retained per policy |
 | Sessions | Expire after 12 h; deleted on reset | Short-lived access tokens with refresh rotation |

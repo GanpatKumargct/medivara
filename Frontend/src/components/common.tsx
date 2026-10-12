@@ -5,6 +5,7 @@ import * as api from '../api/endpoints'
 import { COPY } from '../lib/copy'
 import { Alert, Badge } from './ui'
 import { IconInfo, IconShield, IconWarn } from './icons'
+import { t } from '../lib/i18n'
 
 /** COPY-02 — appears in the footer, under answers and in the brief. */
 export function Disclaimer({ className }: { className?: string }) {
@@ -32,10 +33,10 @@ export function UnverifiedBadge() {
   )
 }
 export function CorrectedBadge() {
-  return <Badge tone="info">Corrected by you</Badge>
+  return <Badge tone="info">{t("Corrected by you")}</Badge>
 }
 export function DocumentsDifferBadge() {
-  return <Badge tone="warn">Documents differ</Badge>
+  return <Badge tone="warn">{t("Documents differ")}</Badge>
 }
 export function CachedBadge() {
   return (
@@ -50,8 +51,7 @@ export function SampleBadge() {
 export function SuspiciousBadge() {
   return (
     <Badge tone="danger" icon={<IconWarn className="h-3.5 w-3.5" />}>
-      Suspicious content
-    </Badge>
+      {t("Suspicious content")}</Badge>
   )
 }
 export function SimulatedBadge() {
@@ -69,7 +69,7 @@ export function AiGeneratedBadge() {
   )
 }
 export function SyntheticProfileBadge() {
-  return <Badge tone="neutral">Synthetic profile</Badge>
+  return <Badge tone="neutral">{t("Synthetic profile")}</Badge>
 }
 
 /** Renders the right badge for a document flag. */
@@ -82,9 +82,9 @@ export function FlagBadge({ flag }: { flag: string }) {
     case 'sample':
       return <SampleBadge />
     case 'date_ambiguous':
-      return <Badge tone="warn">Date to check</Badge>
+      return <Badge tone="warn">{t("Date to check")}</Badge>
     case 'ai_transcribed':
-      return <Badge tone="info">AI-transcribed</Badge>
+      return <Badge tone="info">{t("AI-transcribed")}</Badge>
     default:
       return null
   }

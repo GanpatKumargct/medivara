@@ -31,7 +31,7 @@
 | NFR-PRIV-02 | No server-side storage at the AI provider beyond what its terms require | 100 % of Gemini calls set `store=false` and are stateless | Wrapper unit test asserts the parameter; review at IC-2 | Enterprise or paid terms with no training on data; residency review; retention guarantees in contract |
 | NFR-PRIV-03 | No PHI in logs | 0 occurrences of synthetic patient names, medicine names, lab values or question text in application logs after a full rehearsal | TC-SEC-04 (log search) | Central log pipeline with redaction, access control and retention |
 | NFR-PRIV-04 | Synthetic data only | Warning on SCR-01, SCR-02 and SCR-05; every sample PDF watermarked; team script for declining real data | TC-SAFE-09, copy audit | Consent management and a privacy programme aligned with Indian data-protection law (to be assessed by qualified advisers) |
-| NFR-PRIV-05 | Deletion | (P1) Document delete removes file, pages and facts in one request; demo reset wipes everything | TC-DOC-08 | Retention schedules, deletion from backups, data-subject request handling |
+| NFR-PRIV-05 | Deletion | (P1) Document delete hides the document everywhere at once and keeps it in Recently deleted for 30 days (DEC-27); "Delete permanently" removes file, pages, facts and version history in one request, as does the 30-day clean-up; demo reset wipes everything | TC-DOC-08 | Retention schedules, deletion from backups, data-subject request handling |
 | NFR-PRIV-06 | Purpose limitation for caregivers | Caregivers see only granted profiles and scopes; every access recorded | TC-ACC-04…06, TC-FAM-04 | Proxy verification, time-limited access, owner notification of access |
 
 ## 4. Accessibility (NFR-A11Y)

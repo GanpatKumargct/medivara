@@ -193,3 +193,6 @@ export const IconFlower = (p: SVGProps<SVGSVGElement>) => (
 export const IconBaby = (p: SVGProps<SVGSVGElement>) => (
   <Icon {...p}><circle cx="12" cy="8" r="5" /><path d="M10 7.5h.01M14 7.5h.01M10.5 10a2 2 0 003 0M7 21v-3a5 5 0 0110 0v3" /></Icon>
 )
+export const IconCamera = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M15 10l4.5-2.6a.6.6 0 01.9.5v8.2a.6.6 0 01-.9.5L15 14" /><rect x="3" y="6.5" width="12" height="11" rx="2" /></Icon>
+)

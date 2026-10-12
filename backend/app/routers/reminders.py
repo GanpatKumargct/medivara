@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field
 from sqlmodel import Session, func, select
 
+from app.versions import visible_document_ids
 from app import audit
 from app.access import PatientAccess, load_owned, require_access
 from app.db import get_session
@@ -85,6 +86,7 @@ def _check_rules(session: Session, patient_id: str, data: dict) -> None:
                 ExtractedFact.id == data["source_fact_id"],
                 ExtractedFact.patient_id == patient_id,
                 ExtractedFact.status != FactStatus.rejected,
+                ExtractedFact.document_id.in_(visible_document_ids(patient_id)),
             )
         ).first()
         if fact is None:

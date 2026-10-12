@@ -10,6 +10,7 @@ import { COPY } from '../../lib/copy'
 import { cn } from '../../lib/cn'
 import { Button, Checkbox, Dialog, Field, Input } from '../ui'
 import { todayIso } from './CycleVisuals'
+import { t } from '../../lib/i18n'
 
 export interface ReminderPreset {
   title: string
@@ -48,53 +49,52 @@ export function ReminderDialog({ patientId, preset, onClose }: { patientId: stri
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['reminders', patientId] })
-      toast('Reminder added')
+      toast(t("Reminder added"))
       onClose()
     },
-    onError: () => setError('Couldn’t add this reminder. Check the date and time.'),
+    onError: () => setError(t("Couldn’t add this reminder. Check the date and time.")),
   })
 
   return (
     <Dialog
       open
       onClose={onClose}
-      title="Add a reminder"
+      title={t("Add a reminder")}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
           <Button loading={create.isPending} disabled={!title.trim() || !date || !time || (medicine && !attested)} onClick={() => create.mutate()}>
-            Add reminder
-          </Button>
+            {t("Add reminder")}</Button>
         </>
       }
     >
       <div className="space-y-3">
-        <Field label="What to remind you about" htmlFor="wr-title">
+        <Field label={t("What to remind you about")} htmlFor="wr-title">
           <Input id="wr-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
         </Field>
-        <div role="radiogroup" aria-label="How often" className="inline-flex rounded-xl bg-surface-sunken p-1">
+        <div role="radiogroup" aria-label={t("How often")} className="inline-flex rounded-xl bg-surface-sunken p-1">
           {(['once', 'daily'] as const).map((k) => (
             <button
               key={k}
               role="radio"
               aria-checked={kind === k}
               onClick={() => setKind(k)}
-              className={cn('rounded-lg px-3 py-1 text-sm font-medium', kind === k ? 'bg-white text-ink shadow-sm' : 'text-ink-muted')}
+              className={cn('rounded-lg px-3 py-1 text-sm font-medium', kind === k ? "bg-white text-ink shadow-sm" : 'text-ink-muted')}
             >
-              {k === 'once' ? 'Once' : 'Every day'}
+              {k === 'once' ? t("Once") : t("Every day")}
             </button>
           ))}
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={kind === 'once' ? 'Date' : 'Starting'} htmlFor="wr-date">
+          <Field label={kind === 'once' ? t("Date") : t("Starting")} htmlFor="wr-date">
             <Input id="wr-date" type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
-          <Field label="Time (IST)" htmlFor="wr-time">
+          <Field label={t("Time (IST)")} htmlFor="wr-time">
             <Input id="wr-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
           </Field>
         </div>
-        <Field label="Notes (optional)" htmlFor="wr-notes">
-          <Input id="wr-notes" value={notes} maxLength={200} onChange={(e) => setNotes(e.target.value)} placeholder={medicine ? 'Name and dose exactly as prescribed' : 'e.g. clinic name, what to bring'} />
+        <Field label={t("Notes (optional)")} htmlFor="wr-notes">
+          <Input id="wr-notes" value={notes} maxLength={200} onChange={(e) => setNotes(e.target.value)} placeholder={medicine ? t("Name and dose exactly as prescribed") : t("e.g. clinic name, what to bring")} />
         </Field>
         {medicine && <Checkbox id="wr-attest" checked={attested} onChange={setAttested} label={COPY['COPY-24']} />}
         <p className="text-xs text-ink-subtle">{COPY['COPY-23']}</p>

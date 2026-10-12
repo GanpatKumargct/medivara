@@ -70,5 +70,5 @@ def test_health_reflects_ai_mode(client, monkeypatch, mode, available, model):
     body = client.get(f"{API}/health").json()
     assert body["ai"] == {"mode": mode, "available": available, "model": model}
     assert body["demo_mode"] is True
-    assert body["contract_version"] == "1.1.0"
+    assert body["contract_version"] == "1.6.0"
     assert "key" not in str(body).lower()

@@ -1,4 +1,6 @@
-// Display formatting. Dates show as `DD Mon YYYY`; times are labelled IST.
+import { currentLanguage, t } from './i18n'
+// Display formatting. Dates show as `DD Mon YYYY` (month names in the interface language,
+// DEC-29); times are labelled IST.
 // The client never interprets clinical dates — it only formats values the API
 // already parsed (FE scope boundary).
 
@@ -9,12 +11,22 @@ const MONTHS = [
 
 /** `2026-05-04` -> `04 May 2026`. Returns the input unchanged if not ISO date. */
 export function formatDate(iso: string | null | undefined): string {
-  if (!iso) return 'Date unknown'
+  if (!iso) return t("Date unknown")
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
   if (!m) return iso
   const [, y, mo, d] = m
-  const monthName = MONTHS[Number(mo) - 1] ?? mo
+  const lang = currentLanguage().code
+  const monthName =
+    lang === 'en'
+      ? MONTHS[Number(mo) - 1] ?? mo
+      : new Intl.DateTimeFormat(`${lang}-IN`, { month: 'short', timeZone: 'UTC' }).format(Date.UTC(Number(y), Number(mo) - 1, 15))
   return `${d} ${monthName} ${y}`
+}
+
+/** Locale tag for Intl date/time formatting in the interface language, with Western digits
+ * (values must look the same as in the documents). */
+export function dateLocale(): string {
+  return t("{{code}}-IN-u-nu-latn", { code: currentLanguage().code })
 }
 
 /** ISO timestamp -> `DD Mon YYYY` (date part only). */
@@ -31,51 +43,51 @@ export function formatBytes(bytes: number): string {
 }
 
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
-  prescription: 'Prescription',
-  lab_report: 'Lab report',
-  discharge_summary: 'Discharge summary',
-  consultation_note: 'Consultation note',
-  other: 'Other',
-  unknown: 'Unknown type',
+  prescription: t("Prescription"),
+  lab_report: t("Lab report"),
+  discharge_summary: t("Discharge summary"),
+  consultation_note: t("Consultation note"),
+  other: t("Other"),
+  unknown: t("Unknown type"),
 }
 
 export const FACT_TYPE_LABELS: Record<string, string> = {
-  medication: 'Medicines',
-  lab_result: 'Test results',
-  condition: 'Conditions',
-  allergy: 'Allergies',
-  procedure: 'Procedures',
-  vital_sign: 'Vital signs',
-  follow_up: 'Follow-up',
-  instruction: 'Instructions',
+  medication: t("Medicines"),
+  lab_result: t("Test results"),
+  condition: t("Conditions"),
+  allergy: t("Allergies"),
+  procedure: t("Procedures"),
+  vital_sign: t("Vital signs"),
+  follow_up: t("Follow-up"),
+  instruction: t("Instructions"),
 }
 
 export const UNCERTAINTY_LABELS: Record<string, string> = {
-  value_not_in_source: 'The value could not be matched to the source line',
-  name_not_in_source: 'The name could not be matched to the source line',
-  missing_required_field: 'A required detail is missing',
-  missing_unit: 'No unit printed',
-  missing_reference_range: 'No reference range printed',
-  unrecognised_unit: 'Unusual unit',
-  date_ambiguous: 'The date could be read two ways',
-  date_in_future: 'The date is in the future',
-  model_note: 'The reader flagged this as unclear',
+  value_not_in_source: t("The value could not be matched to the source line"),
+  name_not_in_source: t("The name could not be matched to the source line"),
+  missing_required_field: t("A required detail is missing"),
+  missing_unit: t("No unit printed"),
+  missing_reference_range: t("No reference range printed"),
+  unrecognised_unit: t("Unusual unit"),
+  date_ambiguous: t("The date could be read two ways"),
+  date_in_future: t("The date is in the future"),
+  model_note: t("The reader flagged this as unclear"),
 }
 
 export const RELATIONSHIP_LABELS: Record<string, string> = {
-  self: 'You',
-  spouse: 'Spouse / partner',
-  parent: 'Parent',
-  child: 'Child',
-  sibling: 'Sibling',
-  grandparent: 'Grandparent',
-  other: 'Other family',
+  self: t("You"),
+  spouse: t("Spouse / partner"),
+  parent: t("Parent"),
+  child: t("Child"),
+  sibling: t("Sibling"),
+  grandparent: t("Grandparent"),
+  other: t("Other family"),
 }
 
 export const SCOPE_LABELS: Record<string, string> = {
-  view_records: 'View records',
-  upload_documents: 'Add records',
-  manage_reminders: 'Manage reminders',
+  view_records: t("View records"),
+  upload_documents: t("Add records"),
+  manage_reminders: t("Manage reminders"),
 }
 
 export function initials(name: string): string {
